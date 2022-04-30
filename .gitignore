@@ -11,5 +11,19 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# node.js files
+package.json
+package-lock.json
+node_modules
+
+#testing files
+src/
+dist/
+
+# code editor files
+.vs/
+.vscode/
+
+# other files
+*.ini
+
