@@ -17,8 +17,7 @@ package-lock.json
 node_modules
 
 #testing files
-src/
-dist/
+testing/
 
 # code editor files
 .vs/
