@@ -1,4 +1,4 @@
-# arrowpack
+# Arrowpack
 A web bundling application that makes your website faster and easier to maintain
 ## Build instruction (WIP)
 ### Windows 10
