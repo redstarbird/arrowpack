@@ -4,6 +4,9 @@
 *.dll
 *.so
 *.dylib
+*.o
+*.gch
+stack.yaml
 
 # Test binary, built with `go test -c`
 *.test
@@ -25,4 +28,3 @@ testing/
 
 # other files
 *.ini
-
