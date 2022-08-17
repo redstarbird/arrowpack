@@ -3,7 +3,7 @@ import os
 import platform
 import shutil
 import sys
-import requests # test
+import requests # for testing internet connection
 import subprocess
 import re
 import time
@@ -44,7 +44,7 @@ def main():
                         WSLDefaultDistro = line[4:-27].split(" ")[0]
             print(WSLDefaultDistro)
             WSLDefaultDistro = WSLDefaultDistro.replace("\x00", "") # removes null characters from command output string
-            
+
 
 
     elif platform.system() == "Darwin":
