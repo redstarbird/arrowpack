@@ -1,5 +1,3 @@
-from array import ArrayType
-from ast import Str
 import os
 import json
 import re # regex
@@ -15,6 +13,8 @@ if os.path.exists("ArrowPack-Config.json"): # config file
         for key,value in contents.items():
             if config[key]:
                 config[key] = value
+else:
+    print("Config file not found, using default configuration! :)")
 
 srcFiles = []
 
@@ -59,9 +59,9 @@ def findString(regex,slice,fileExtension=".js"):
             f.write(contents)
 findString("<include>.*</include>", [9,-10],".html")"""
 
-GoWrapper = ctypes.cdll.LoadLibrary("./FileHandler.dll") # loads go file
-HTMLHandler = GoWrapper.HTMLHandler # gets html handler function from Go file
-HTMLHandler.argtypes = [ctypes.POINTER(ctypes.c_char_p),ctypes.c_char_p,ctypes.c_char_p] 
+GoWrapper = ctypes.cdll.LoadLibrary("./FileHandler.dll") # loads compiled go file
+FileHandler = GoWrapper.HTMLHandler # gets html handler function from Go file
+FileHandler.argtypes = [ctypes.POINTER(ctypes.c_char_p),ctypes.c_char_p,ctypes.c_char_p] 
 #HTMLHandler.restype = ctypes.c_char_p
 
 #free = GoWrapper.free # used to free C variables when no longer needed to avoid memory leak
@@ -83,6 +83,6 @@ def ConvertToCStringList(StringList):
     return StringArray
 
 
-HTMLHandler(toCStringArray([x for x in srcFiles if x.endswith(".html")]), config["entry"].encode("utf-8"), config["exit"].encode("utf-8"))
+FileHandler(toCStringArray([x for x in srcFiles if x.endswith(".html")]), config["entry"].encode("utf-8"), config["exit"].encode("utf-8"))
 
 #free(success)

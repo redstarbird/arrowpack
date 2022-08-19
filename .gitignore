@@ -28,3 +28,7 @@ testing/
 
 # other files
 *.ini
+lerna-debug.log
+npm-debug.log
+packages/*/lib
+.idea

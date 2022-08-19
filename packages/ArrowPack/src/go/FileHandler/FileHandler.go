@@ -1,6 +1,9 @@
+//go:build js && wasm
+// +build js,wasm
+
 package main
 
-// #include "stdlib.h"
+// #include <stdio.h>
 import "C"
 import (
 	"bufio"
@@ -113,5 +116,5 @@ func HTMLHandler(strs **C.char, entryPathC *C.char, exitPathC *C.char, arrayLeng
 }
 
 func main() {
-	
+	fmt.Println("Test")
 }
