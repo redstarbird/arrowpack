@@ -11,15 +11,23 @@ import time
 wsl = False
 
 def Build():
+    options = {"go": False, "c": False}
+    if len(sys.argv) >= 2:
+        options[sys.argv[1].lower()] = True
 
-    goBuildFiles = {"build/FileHandler.wasm": ["src/go/FileHandler/FileHandler.go"]}
+    goBuildFiles = {"build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
+    CBuildFiles =  {"build/DependancyTree.wasm": "src/DependencyTree.c"}
 
     def BuildLinux():
-        for key, value in goBuildFiles.items():
-            for file in value:
-                runCommand(f"tinygo build -opt=2 -o {key} -target wasm {file}")
-                time.sleep(0.35)
-
+        if options["c"] == False:
+            for key, value in goBuildFiles.items():
+                    print(f"Building go file: {value} with tinygo")
+                    runCommand(f"tinygo build -opt=2 -o {key} -target wasm {value}")
+                    time.sleep(0.1)
+        if options["go"] == False:
+            for key, value in CBuildFiles.items():
+                print(f"Compiling C file: {value} with emscripten")
+                runCommand(f"emcc --no-entry {value} -o {key}")
 
     def runCommand(command):
         if wsl:
