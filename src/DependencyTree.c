@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#ifdef _WIN32
-#include <fileapi.h> // Windows FileAPI
-#endif
 #include <regex.h>
 #include <stdbool.h>
 #include "DependencyTree.h"
@@ -75,8 +72,8 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     if (lastFullStop == 0)
     {
         printf("Error: could not file character \".\" in path %s", path);
-        return;
-    } // return NULL if fullstop is not found in filename
+        exit(1);
+    }
 
     lastFullStop++;
     const int length = pathLen - lastFullStop; // gets length of file ext
@@ -90,7 +87,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     {
         for (int j = 0; j < 4; j++)
         {
-            if (fileRules[i].FileExtensions[j] == NULL || fileRules[i].FileExtensions[j] == '\0')
+            if (fileRules[i].FileExtensions[j] == NULL || *fileRules[i].FileExtensions[j] == '\0')
             {
                 break;
             }
@@ -100,19 +97,20 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
             }
         }
     }
-    return;
+    printf("Could not find rule for processing file %s\n", path);
+    exit(1);
 }
 
 char *getSubstring(char *Text, int StartIndex, int EndIndex)
 {
     const int substringLength = EndIndex - StartIndex + 1;
-    char substring[substringLength];
+    char *substring = malloc(sizeof(char) * substringLength);
     for (int i = 0; i < EndIndex - StartIndex; i++)
     {
         substring[i] = Text[StartIndex + i];
     }
     substring[substringLength] = '\0'; // terminate string with null terminator
-    return *substring;
+    return substring;
 }
 
 char *TurnToAbsolutePath(char *path)
@@ -128,30 +126,22 @@ char *TurnToAbsolutePath(char *path)
         }
     }*/
     char *tempHolder; // Buffer to hold the absolute path
-    if (PATH_SEPARATOR == '/')
+    if (path[0] == '/' || path[0] == '\\')
+    {
+        tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
+        tempHolder = *path + entryPath;
+        realpath(tempHolder, path);
+        return path;
+    }
+    else if (PATH_SEPARATOR == '/')
     { // Linux
         realpath(path, tempHolder);
+        return tempHolder;
     }
-    else
-    { // Windows
-        if (containsCharacter(path, ':'))
-        {
-            return path;
-        }
-        else
-        {
-            int returnLength = GetFullPathNameA(path, 256, tempHolder, NULL);
-            if (returnLength > 256)
-            {
-                GetFullPathNameA(path, returnLength + 1, tempHolder, NULL);
-            }
-        }
-    }
-    return tempHolder;
 }
 
 char **FindAllRegexMatches(char *Text, struct FileRule rule)
-{ // Returns all regex matches as array of strings
+{
     regex_t regexp;
 
     if (regcomp(&regexp, rule.regexPattern, 0) != 0)
@@ -179,7 +169,7 @@ char **FindAllRegexMatches(char *Text, struct FileRule rule)
         matches = malloc(NumOfChars * sizeof(char *)); // no need to multiply NumOfChars by NumOfStrings here
 
         matches[0] = malloc(NumOfChars * sizeof(char));
-        *matches[0] = TurnToAbsolutePath(*getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
+        matches[0] = TurnToAbsolutePath(getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
     }
     else
     {
@@ -201,7 +191,7 @@ char **FindAllRegexMatches(char *Text, struct FileRule rule)
 
             matches = realloc(*matches, NumOfStrings * sizeof(char **)); // Allocate memory (this might be allocating too much memory)
             matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-            *matches[NumOfStrings - 1] = TurnToAbsolutePath(*getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
+            matches[NumOfStrings - 1] = TurnToAbsolutePath(getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
         }
     }
     return matches;
@@ -245,7 +235,7 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
             currentTimesIterated = 0;
             currentFileTypesArrayIndex = 0; // reset variables to zero
 
-            fileRules = (struct FileRules *)realloc(fileRules, arrayElementCount * sizeof(struct FileRule));
+            fileRules = (struct FileRule *)realloc(fileRules, arrayElementCount * sizeof(struct FileRule));
 
             cJSON_ArrayForEach(currentElement, currentArray)
             {
@@ -261,13 +251,13 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
                     {
                         cJSON_ArrayForEach(fileTypesArray, currentElement)
                         {
-                            strncpy(*fileRules[arrayElementCount].FileExtensions[currentFileTypesArrayIndex], fileTypesArray->valuestring, 32);
+                            strncpy(fileRules[arrayElementCount].FileExtensions[currentFileTypesArrayIndex], fileTypesArray->valuestring, 32);
                             currentFileTypesArrayIndex++;
                         }
                     }
                     else if (cJSON_IsString(currentElement))
                     {
-                        strncpy(*fileRules[arrayElementCount].FileExtensions[0], currentElement->valuestring, 32);
+                        strncpy(fileRules[arrayElementCount].FileExtensions[0], currentElement->valuestring, 32);
                     }
                     break;
 
@@ -278,7 +268,7 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
                     }
                     else
                     {
-                        strncpy(*fileRules[arrayElementCount].regexPattern, currentElement->valuestring, 64);
+                        strncpy(fileRules[arrayElementCount].regexPattern, currentElement->valuestring, 64);
                     }
                     break;
 
@@ -330,7 +320,7 @@ struct Node *CreateTree(char **paths, unsigned short int ArrayLength, char *entr
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-        *Tree[i].path = TurnToAbsolutePath(*paths[i]);
+        *Tree[i].path = *TurnToAbsolutePath(paths[i]);
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
     }
@@ -346,12 +336,12 @@ struct Node *CreateTree(char **paths, unsigned short int ArrayLength, char *entr
         }
 
         char **Dependencies = FindAllRegexMatches(data, GetFileRuleFromPath(paths[i], fileRules));
-        char *iteratePointer = *Dependencies[0];
+        char *iteratePointer = Dependencies[0];
         while (iteratePointer++ != NULL)
         {
             for (int j = 0; j < ArrayLength; j++)
             {
-                if (Tree[j].path == *iteratePointer)
+                if (*Tree[j].path == *iteratePointer)
                 {
                     Tree[i].Dependencies[Tree[i].DependenciesInTree] = Tree[j];
                     Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
