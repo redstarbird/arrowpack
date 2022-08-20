@@ -1,0 +1,11 @@
+{
+	"name": "root",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"devDependencies": {
+		"@nrwl/nx-cloud": "^14.4.1",
+		"lerna": "^5.4.3"
+	}
+}
