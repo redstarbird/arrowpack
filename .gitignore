@@ -15,8 +15,6 @@ stack.yaml
 *.out
 
 # node.js files
-package.json
-package-lock.json
 node_modules
 
 #testing files
