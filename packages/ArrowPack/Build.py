@@ -1,4 +1,5 @@
 # This file is WIP and either does not work or is not stable currently
+from email.policy import default
 import os
 import platform
 import shutil
@@ -16,9 +17,10 @@ def Build():
         options[sys.argv[1].lower()] = True
 
     goBuildFiles = {"build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
-    CBuildFiles =  {"build/DependancyTree.wasm": "src/DependencyTree.c"}
+    CBuildFiles =  {"build/DependancyTree.wasm": {"entry": "src/DependencyTree.c", "ExportedFunctions:": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
 
     def BuildLinux():
+        command = ""
         if options["c"] == False:
             for key, value in goBuildFiles.items():
                     print(f"Building go file: {value} with tinygo")
@@ -26,8 +28,18 @@ def Build():
                     time.sleep(0.1)
         if options["go"] == False:
             for key, value in CBuildFiles.items():
-                print(f"Compiling C file: {value} with emscripten")
-                runCommand(f"emcc --no-entry {value} -o {key}")
+                command = f"emcc --no-entry {value['entry']} -o {key}"
+                temp = value.get("ExportedFunctions")
+                if temp != None:
+                    for i,v in temp.enumerate():
+                        if v == 0:
+                            command += " -sEXPORTED_FUNCTIONS=+" + i
+                        else:
+                            command += ",_"+i
+
+                print(f"Compiling C file: {value['entry']} with emscripten")
+
+                runCommand(command)
 
     def runCommand(command):
         if wsl:
