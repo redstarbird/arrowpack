@@ -4,6 +4,7 @@
 package main
 
 // #include <stdio.h>
+// #include "../../DependencyTree.h"
 import "C"
 import (
 	"bufio"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"syscall/js"
 	"unsafe"
 )
 
@@ -79,13 +81,13 @@ func toGoStrings(Cstr **C.char) []string { // https://github.com/fluhus/snopher/
 }
 
 //export HTMLHandler
-func HTMLHandler(strs **C.char, entryPathC *C.char, exitPathC *C.char, arrayLengthC C.uint) { // first few lines of this function are probably not memory safe or something i dunno
+func HandleFiles(strs **C.char, entryPathC *C.char, exitPathC *C.char, arrayLengthC C.uint) { // first few lines of this function are probably not memory safe or something i dunno
 	fmt.Println("Hello World!")
 	srcFiles := toGoStrings(strs)
 	fmt.Println(srcFiles)
 
 
-	entryPath := C.GoString(entryPathC ) // change config variables from C variables to go variables
+	entryPath := C.GoString(entryPathC ) // change config variables from JS variables to go variables
 	exitPath := C.GoString(exitPathC)
 	//C.free(unsafe.Pointer(entryPathC)) // free no longer needed C variables to avoid memory leak
 	//C.free(unsafe.Pointer(exitPathC))
@@ -112,9 +114,9 @@ func HTMLHandler(strs **C.char, entryPathC *C.char, exitPathC *C.char, arrayLeng
 		saveFile(savePath,text)
 	
 	}
-
 }
 
 func main() {
 	fmt.Println("Test")
+	js.Global().Set("HandleFiles", js.FuncOf(HandleFiles))
 }
