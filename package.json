@@ -1,6 +1,7 @@
 {
 	"name": "root",
 	"private": true,
+	"homepage": "https://www.redstarbird.com/arrowstack/",
 	"workspaces": [
 		"packages/*"
 	],
