@@ -1,5 +1,4 @@
 # This file is WIP and either does not work or is not stable currently
-from email.policy import default
 import os
 import platform
 import shutil
@@ -28,7 +27,7 @@ def Build():
                     time.sleep(0.1)
         if options["go"] == False:
             for key, value in CBuildFiles.items():
-                command = f"emcc --no-entry {value['entry']} -o {key}"
+                command = f"emcc -O3 --no-entry {value['entry']} -o {key}"
                 temp = value.get("ExportedFunctions")
                 if temp != None:
                     for i,v in temp.enumerate():
