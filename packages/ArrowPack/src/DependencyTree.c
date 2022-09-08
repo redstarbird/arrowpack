@@ -5,17 +5,11 @@
 #include <regex.h>
 #include <stdbool.h>
 #include "DependencyTree.h"
-#include "C/ReadFile.h"
+#include "./C/ReadFile.h"
 #include <emscripten.h>
-#include "C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
+#include "./C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 
-#ifdef __cplusplus
-#define EXTERN extern "C"
-#else
-#define EXTERN
-#endif
-
-EXTERN EMSCRIPTEN_KEEPALIVE void SortDependencyTree(struct Node *tree, int treeLength)
+void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
     struct Node tempHolder;
     for (int i = 0; i < treeLength - 1; i++)
@@ -43,7 +37,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE void SortDependencyTree(struct Node *tree, int treeL
     }
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE bool containsCharacter(char *string, char character)
+bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character)
 {
     for (int i = 0; i < strlen(string); i++)
     {
@@ -63,7 +57,7 @@ for (unsigned int i = charLen; i >= 0; i--) {
 }
 return true;*/
 
-EXTERN EMSCRIPTEN_KEEPALIVE struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
+struct EMSCRIPTEN_KEEPALIVE FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
 {
 
     unsigned int pathLen = strlen(path);
@@ -108,7 +102,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE struct FileRule GetFileRuleFromPath(const char *path
     exit(1);
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE char *getSubstring(char *Text, int StartIndex, int EndIndex)
+char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex)
 {
     const int substringLength = EndIndex - StartIndex + 1;
     char *substring = malloc(sizeof(char) * substringLength);
@@ -120,7 +114,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE char *getSubstring(char *Text, int StartIndex, int E
     return substring;
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE char *TurnToAbsolutePath(char *path)
+char EMSCRIPTEN_KEEPALIVE *TurnToAbsolutePath(char *path)
 { // Turns a relative path into absolute path
     /*if (!containsCharacter(path, ':')) {
         if (PATH_SEPARATOR) {}
@@ -147,7 +141,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE char *TurnToAbsolutePath(char *path)
     }
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE char **FindAllRegexMatches(char *Text, struct FileRule rule)
+char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule)
 {
     regex_t regexp;
 
@@ -204,13 +198,13 @@ EXTERN EMSCRIPTEN_KEEPALIVE char **FindAllRegexMatches(char *Text, struct FileRu
     return matches;
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE void FatalInvalidFile(const char *filename)
+void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
 { // Throws a fatal error with the given filename
     printf("Fatal error: %s is invalid\n", filename);
     exit(1);
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
+struct EMSCRIPTEN_KEEPALIVE FileRule *InitFileRules() // Gets file rules from FileTypes.json file
 {
     char *rawJSON = ReadDataFromFile("FileTypes.json"); // string containing raw JSON from FileTypes.json file
     struct FileRule *fileRules = (struct FileRule *)malloc(sizeof(struct FileRule));
@@ -316,7 +310,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE struct FileRule *InitFileRules() // Gets file rules 
     return fileRules;
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE struct Node *CreateTree(char **paths, unsigned short int ArrayLength, char *entry)
+struct EMSCRIPTEN_KEEPALIVE Node *CreateTree(char **paths, unsigned short int ArrayLength, char *entry)
 {
     entryPath = entry;
     printf("ArrayLength:%d\n", ArrayLength);

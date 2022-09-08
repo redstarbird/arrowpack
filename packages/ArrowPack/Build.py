@@ -15,8 +15,8 @@ def Build():
     if len(sys.argv) >= 2:
         options[sys.argv[1].lower()] = True
 
-    goBuildFiles = {"build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
-    CBuildFiles =  {"build/DependancyTree.wasm": {"entry": "src/DependencyTree.c", "ExportedFunctions:": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
+    goBuildFiles = {"Build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
+    CBuildFiles =  {"Build/DependancyTree.js": {"entry": "src/DependencyTree.c", "ExportedFunctions": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
 
     def BuildLinux():
         command = ""
@@ -27,16 +27,21 @@ def Build():
                     time.sleep(0.1)
         if options["go"] == False:
             for key, value in CBuildFiles.items():
-                command = f"emcc -O3 --no-entry {value['entry']} -o {key}"
+                ExportedFunctions = ""
                 temp = value.get("ExportedFunctions")
                 if temp != None:
-                    for i,v in temp.enumerate():
-                        if v == 0:
-                            command += " -sEXPORTED_FUNCTIONS=+" + i
+                    for i,v in enumerate(temp):
+                        if i == 0:
+                            ExportedFunctions += "-sEXPORTED_FUNCTIONS=\"_" + v+"\""
                         else:
-                            command += ",_"+i
+                            ExportedFunctions += ",\"_"+v+"\""
 
+                #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
+                command = f"emcc -O3 --no-entry {value[entry]} -o {key} -s WASM=1" # this works even though it shouldn't?!?!?
+
+                print("\n\n\n" + command + "\n\n\n")
                 print(f"Compiling C file: {value['entry']} with emscripten")
+                
 
                 runCommand(command)
 
