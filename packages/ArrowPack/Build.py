@@ -37,7 +37,7 @@ def Build():
                             ExportedFunctions += ",\"_"+v+"\""
 
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value[entry]} -o {key} -s WASM=1" # this works even though it shouldn't?!?!?
+                command = f"emcc -O3 --no-entry {value['entry']} -o {key} -s WASM=1" # this works even though it shouldn't?!?!?
 
                 print("\n\n\n" + command + "\n\n\n")
                 print(f"Compiling C file: {value['entry']} with emscripten")
