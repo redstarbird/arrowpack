@@ -16,7 +16,7 @@ def Build():
         options[sys.argv[1].lower()] = True
 
     goBuildFiles = {"Build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
-    CBuildFiles =  {"Build/DependancyTree.js": {"entry": "src/DependencyTree.c", "ExportedFunctions": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
+    CBuildFiles =  {"Build/DependencyTree.wasm": {"entry": "src/DependencyTree.c", "ExportedFunctions": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
 
     def BuildLinux():
         command = ""
@@ -37,7 +37,7 @@ def Build():
                             ExportedFunctions += ",\"_"+v+"\""
 
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value['entry']} -o {key} -s WASM=1" # this works even though it shouldn't?!?!?
+                command = f"emcc -O3 --no-entry {value['entry']} -o {key} -Wl,--import-memory" # this works even though it shouldn't?!?!?
 
                 print("\n\n\n" + command + "\n\n\n")
                 print(f"Compiling C file: {value['entry']} with emscripten")
