@@ -4,18 +4,15 @@ A web bundling application that makes your website faster and easier to maintain
 
 ## Build instruction (WIP)
 
-### Windows 10/11
+### Linux/ Windows WSL
 
-#### WSL (Only windows compile method currently because of regex.h)
-
-Dependencies (in WSL):
+Dependencies:
 
 -   Go >= 1.11
 -   gcc
 -   Tinygo
 -   Emscripten
-
-**_Run all below commands in WSL_**
+-   Python >= 3.0
 
 Compile go to shared library:
 
