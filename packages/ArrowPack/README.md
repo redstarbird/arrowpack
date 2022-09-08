@@ -12,6 +12,8 @@ Dependencies (in WSL):
 
 -   Go >= 1.11
 -   gcc
+-   Tinygo
+-   Emscripten
 
 **_Run all below commands in WSL_**
 
@@ -21,7 +23,3 @@ Compile go to shared library:
 python3 Build.py
 ```
 
-Compile C to shared library:
-
-1. `gcc -c DependencyTree.c`
-2. `gcc -shared -o DependencyTree.dll DependencyTree.o`
