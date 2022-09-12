@@ -57,7 +57,7 @@ for (unsigned int i = charLen; i >= 0; i--) {
 }
 return true;*/
 
-struct EMSCRIPTEN_KEEPALIVE FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
+struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
 {
 
     unsigned int pathLen = strlen(path);
@@ -204,7 +204,7 @@ void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
     exit(1);
 }
 
-struct EMSCRIPTEN_KEEPALIVE FileRule *InitFileRules() // Gets file rules from FileTypes.json file
+struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
 {
     char *rawJSON = ReadDataFromFile("FileTypes.json"); // string containing raw JSON from FileTypes.json file
     struct FileRule *fileRules = (struct FileRule *)malloc(sizeof(struct FileRule));
@@ -310,14 +310,31 @@ struct EMSCRIPTEN_KEEPALIVE FileRule *InitFileRules() // Gets file rules from Fi
     return fileRules;
 }
 
-struct EMSCRIPTEN_KEEPALIVE Node *CreateTree(char **paths, unsigned short int ArrayLength, char *entry)
+void EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, unsigned int ArrayLength, unsigned int AbsoluteArrayLength, char *entry, struct Node *Tree)
 {
+    unsigned int CurrentWrappedArrayIndex, ElementsUnwrapped, lastNewElement = 0;
+    char **paths = malloc((AbsoluteArrayLength + ArrayLength) * sizeof(char *)); // Allocates extra memory for null terminators (might not be needed)
+    while (ElementsUnwrapped < ArrayLength)
+    {
+        if (Wrapped_paths[CurrentWrappedArrayIndex] == ",")
+        {
+            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
+            {
+                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
+            }
+            lastNewElement = CurrentWrappedArrayIndex;
+            ElementsUnwrapped++;
+        }
+        CurrentWrappedArrayIndex++;
+    }
+    free(Wrapped_paths);
+
     entryPath = entry;
     printf("ArrayLength:%d\n", ArrayLength);
 
     InitFileRules(); // creates list of file rule structs
 
-    struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
+    // struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
