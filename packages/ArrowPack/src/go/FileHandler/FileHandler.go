@@ -1,6 +1,3 @@
-//go:build js && wasm
-// +build js,wasm
-
 package main
 
 // #include <stdio.h>
@@ -81,7 +78,7 @@ func toGoStrings(Cstr **C.char) []string { // https://github.com/fluhus/snopher/
 }
 
 //export HTMLHandler
-func HandleFiles(strs **C.char, entryPathC *C.char, exitPathC *C.char, arrayLengthC C.uint) { // first few lines of this function are probably not memory safe or something i dunno
+func HandleFiles(Files **C.Node) { // first few lines of this function are probably not memory safe or something i dunno
 	fmt.Println("Hello World!")
 	srcFiles := toGoStrings(strs)
 	fmt.Println(srcFiles)
