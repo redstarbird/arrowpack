@@ -2,14 +2,14 @@
 #define _settingsSingleton
 #include <iostream>
 #include <string>
-class Settings
+class SettingsSingleton
 {
     public:
         std::string entry;
         std::string exit;
         bool autoClear;
         
-        Settings(std::string WrappedSettings);
+        SettingsSingleton(std::string WrappedSettings);
         void InitSettings(std::string WrappedSettings);
 };
 #endif
