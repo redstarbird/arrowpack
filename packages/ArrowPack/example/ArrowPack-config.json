@@ -1,5 +1,5 @@
 {
-	"entry": "src",
-	"exit": "dist",
+	"entry": "example/src",
+	"exit": "example/dist",
 	"autoClear": false
 }
