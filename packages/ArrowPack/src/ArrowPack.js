@@ -1,32 +1,38 @@
 "use strict";
 // js wrapper for arrowpack for NPM
 const fs = require("fs");
-const yargs = require("yargs");
+const path = require("path");
 const chalk = require("chalk");
 const boxen = require("boxen");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
-const RecursiveWalkDir = require("./js/recursiveWalkDir ");
-import { WASI } from "wasi";
+const RecursiveWalkDir = require("./js/RecursiveWalkDir");
 const wasm_exec = require("./js/wasm_exec.js");
-const go = new wasm_exec.Go();
-import { version } from "../package.json";
+const go = new Go();
 
-if (process.argv[2]) {
-	if (
-		process.argv[2] == "--version" ||
-		process.argv[2] == "-version" ||
-		process.argv[2] == "-v" ||
-		process.argv[2] == "--v" ||
-		process.argv[2] == "version"
-	) {
-		console.log(version);
-	}
-} else if (process.argv[2] == "build") {
-	const settings = new settingsSingleton(fs.readFileSync("ArrowPack-config.json", "utf8"));
+const argv = require("yargs/yargs")(process.argv.slice(2))
+	.option("c", {
+		alias: "config-path",
+		describe: "Path to config file if not in working directory",
+		type: "string"
+	})
+	.help().argv;
 
-	var WalkedFiles, WalkedDirs = RecursiveWalkDir(settings.getValue("entry")); // eventually add pluginAPI event here
+var CONFIG_FILE_NAME = "ArrowPack-config.json"
 
-	var WrappedWalkedFiles = "";
+
+
+if (argv.c) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME) } else { console.log("no custom file thingy"); }
+
+
+
+var rawconfigData = null;
+if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = fs.readFileSync(CONFIG_FILE_NAME, "utf8"); }
+
+const settings = new settingsSingleton(rawconfigData);
+var WalkedFiles, WalkedDirs = RecursiveWalkDir(settings.getValue("entry")); // eventually add pluginAPI event here
+
+var WrappedWalkedFiles = "";
+if (WalkedFiles && WalkedFiles.length > 0) {
 	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath });
 
 	const DependencyTreeWasmBuffer = fs.readFileSync("../Build/DependencyTree.wasm");
@@ -42,7 +48,7 @@ if (process.argv[2]) {
 			"CreateTree",
 			"number",
 			["string", "number", "string"],
-			[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry")]
+			[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry"), settings.getValue("exit")]
 		)
 	});
 
@@ -52,8 +58,6 @@ if (process.argv[2]) {
 	WebAssembly.instantiate(goWASM, go.importObject).then(function (obj) {
 		GoWASMFileHandler = obj.instance;
 		go.run(GoWASMFileHandler);
-		GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.ToStringFormat);
+		GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.getValue("entry"));
 	});
-} else {
-	console.log('Please specify a command-line arg, such as "ArrowPack build"');
 }

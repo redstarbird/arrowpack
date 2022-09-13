@@ -1,10 +1,9 @@
-module.exports = RecursiveWalkDir;
 const fs = require("fs");
 const path = require("path");
 
 const RecursiveWalkDir = function (path, Files, Directories) {
 	InitialFiles = fs.readdirSync(path);
-
+	console.log(path)
 	Files = Files || [];
 	Directories = Directories || [];
 
@@ -18,3 +17,5 @@ const RecursiveWalkDir = function (path, Files, Directories) {
 	});
 	return Files, Directories;
 };
+
+module.exports = RecursiveWalkDir;

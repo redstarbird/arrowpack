@@ -1,6 +1,6 @@
 "use strict";
-module.exports = settingsSingleton;
-fs = require("fs");
+
+const fs = require("fs");
 
 class settingsSingleton {
 	constructor(json) {
@@ -28,7 +28,7 @@ class settingsSingleton {
 		var settingsString = "";
 
 		for (const [key, value] of this.settings) {
-			settingsString += key + ":" + value + ",";
+			settingsString += key + ":" + value + "::";
 		}
 		return settingsString;
 
@@ -37,3 +37,5 @@ class settingsSingleton {
 		if (this.settings[key] !== undefined) { return this.settings[key]; } else { if (required === true) { throw "Error: could not find required key :("; } else { return null; } }
 	}
 }
+
+module.exports = settingsSingleton;
