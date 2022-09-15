@@ -5,7 +5,7 @@ const path = require("path");
 const chalk = require("chalk");
 const boxen = require("boxen");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
-const RecursiveWalkDir = require("./js/RecursiveWalkDir");
+const DirFunctions = require("./js/DirFunctions");
 const wasm_exec = require("./js/wasm_exec.js");
 const go = new Go();
 
@@ -29,11 +29,22 @@ var rawconfigData = null;
 if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = fs.readFileSync(CONFIG_FILE_NAME, "utf8"); }
 
 const settings = new settingsSingleton(rawconfigData);
-var WalkedFiles, WalkedDirs = RecursiveWalkDir(settings.getValue("entry")); // eventually add pluginAPI event here
+let temp = DirFunctions.RecursiveWalkDir(settings.getValue("entry")); // eventually add pluginAPI event here
+
+var WalkedFiles = temp.Files;
+var WalkedDirs = temp.Directories;
+
+if (WalkedDirs) {
+	WalkedDirs.forEach(Dir => {
+
+	});
+}
+
+console.log(WalkedFiles);
 
 var WrappedWalkedFiles = "";
-if (WalkedFiles && WalkedFiles.length > 0) {
-	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath });
+if (WalkedFiles && WalkedFiles.length > 0 && 0 === 1) {
+	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath; console.log(chalk.bold.blue(FilePath)); });
 
 	const DependencyTreeWasmBuffer = fs.readFileSync("../Build/DependencyTree.wasm");
 	var DependencyTreeMemory = new WebAssembly.Memory({
