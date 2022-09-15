@@ -15,7 +15,7 @@ Dependencies:
 -   gcc
 -   Tinygo
 -   Emscripten
--   Python >= 3.0
+-   Python >= 3.7
 
 Compile go to shared library:
 
