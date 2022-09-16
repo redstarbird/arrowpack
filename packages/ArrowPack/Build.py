@@ -10,37 +10,73 @@ import time
 
 wsl = False
 
+
+class CBuildFile:
+    def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True):
+        self.output = output
+        self.filename = filename
+        self.ExportedFunctions = ExportedFunctions
+        self.SourceFiles = SourceFiles
+        self.Modularize = Modularize
+
+class GoBuildFile:
+    def __init__(self, output, filename):
+        self.output = output
+        self.filename = filename
+
+
 def Build():
     options = {"go": False, "c": False}
     if len(sys.argv) >= 2:
         options[sys.argv[1].lower()] = True
 
-    goBuildFiles = {"Build/FileHandler.wasm": "src/go/FileHandler/FileHandler.go"}
-    CBuildFiles =  {"Build/DependencyTree.wasm": {"entry": "src/DependencyTree.c", "ExportedFunctions": ("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse")}}
+    GoBuildFiles = (
+        GoBuildFile("Build/FileHandler.wasm", "src/go/FileHandler/FileHandler.go")
+    )
+    
+    CBuildFiles = (
+        CBuildFile(
+        "Build/DependencyTree.js",
+        "src/DependencyTree.c",
+        ExportedFunctions=("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
+        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c")
+        ),
+    )
+    
 
     def BuildLinux():
         command = ""
         if options["c"] == False:
-            for key, value in goBuildFiles.items():
+            for key, value in GoBuildFiles:
                     print(f"Building go file: {value} with tinygo")
                     runCommand(f"tinygo build -opt=2 -o {key} -target wasm {value}")
                     time.sleep(0.1)
         if options["go"] == False:
-            for key, value in CBuildFiles.items():
+            for value in CBuildFiles:
                 ExportedFunctions = ""
-                temp = value.get("ExportedFunctions")
-                if temp != None:
-                    for i,v in enumerate(temp):
+                
+                if value.ExportedFunctions != None:
+                    for i,v in enumerate(value.ExportedFunctions):
                         if i == 0:
                             ExportedFunctions += "-sEXPORTED_FUNCTIONS=\"_" + v+"\""
                         else:
                             ExportedFunctions += ",\"_"+v+"\""
 
+                SourceFiles = ""
+                
+                if value.SourceFiles != None:
+                    for i,v in enumerate(value.SourceFiles):
+                        SourceFiles += " " + v
+
+                Modularize = ""
+                if value.Modularize == True:
+                    Modularize = " -s EXPORT_ES6=1 -s MODULARIZE=1 -s USE_ES6_IMPORT_META=0"
+
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value['entry']} -o {key} -Wl,--import-memory" # this works even though it shouldn't?!?!?
+                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize} -o {value.output} -Wl,--import-memory" # this works even though it shouldn't?!?!?
 
                 print("\n\n\n" + command + "\n\n\n")
-                print(f"Compiling C file: {value['entry']} with emscripten")
+                #print(f"Compiling C file: {value['entry']} with emscripten")
                 
 
                 runCommand(command)
