@@ -7,6 +7,7 @@ const boxen = require("boxen");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
 const DirFunctions = require("./js/DirFunctions");
 const wasm_exec = require("./js/wasm_exec.js");
+const CFunctionFactory = require("../Build/CFunctions.js");
 const go = new Go();
 
 const argv = require("yargs/yargs")(process.argv.slice(2))
@@ -40,35 +41,31 @@ if (WalkedDirs) {
 	});
 }
 
-console.log(WalkedFiles);
-
 var WrappedWalkedFiles = "";
-if (WalkedFiles && WalkedFiles.length > 0 && 0 === 1) {
+if (WalkedFiles && WalkedFiles.length > 0) {
 	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath; console.log(chalk.bold.blue(FilePath)); });
 
-	const DependencyTreeWasmBuffer = fs.readFileSync("../Build/DependencyTree.wasm");
-	var DependencyTreeMemory = new WebAssembly.Memory({
-		initial: 10,
-		maximum: 4096,
-		shared: true,
-	});
-
 	var StructsPointer;
-	WebAssembly.instantiateStreaming(DependencyTreeWasmBuffer, DependencyTreeMemory).then((instance) => {
-		StructsPointer = instance.ccall(
-			"CreateTree",
-			"number",
-			["string", "number", "string"],
-			[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry"), settings.getValue("exit")]
-		)
-	});
 
-	var GoWASMFileHandler;
-	const goWASM = fs.readFileSync("../Build/FileHandler.wasm");
-
-	WebAssembly.instantiate(goWASM, go.importObject).then(function (obj) {
-		GoWASMFileHandler = obj.instance;
-		go.run(GoWASMFileHandler);
-		GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.getValue("entry"));
+	CFunctionFactory().then((CFunctions) => {
+		CFunctions._testWasm();
 	});
+	/*
+		WebAssembly.instantiateStreaming(DependencyTreeWasmBuffer, DependencyTreeMemory).then((instance) => {
+			StructsPointer = instance.ccall(
+				"CreateTree",
+				"number",
+				["string", "number", "string"],
+				[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry"), settings.getValue("exit")]
+			)
+		});
+	
+		var GoWASMFileHandler;
+		const goWASM = fs.readFileSync("../Build/FileHandler.wasm");
+	
+		WebAssembly.instantiate(goWASM, go.importObject).then(function (obj) {
+			GoWASMFileHandler = obj.instance;
+			go.run(GoWASMFileHandler);
+			GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.getValue("entry"));
+		});*/
 }
