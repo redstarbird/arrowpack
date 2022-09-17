@@ -73,20 +73,19 @@ def Build():
 
                 Modularize = ""
                 if value.Modularize == True:
-                    Modularize = " -s EXPORT_ES6=1 -s MODULARIZE=1 -s USE_ES6_IMPORT_META=0 "
+                    Modularize = " -s EXPORT_ES6=0 -s MODULARIZE -s USE_ES6_IMPORT_META=0 "
 
                 ExportedRuntimeMethods = ""
                 if value.ExportedRuntimeMethods != None:
-                    ExportedRuntimeMethods = "-s EXTRA_EXPORTED_RUNTIME_METHODS=["
+                    ExportedRuntimeMethods = "-s EXPORTED_RUNTIME_METHODS=["
                     for v in value.ExportedRuntimeMethods:
                         ExportedRuntimeMethods += "\"" + v + "\""
                     ExportedRuntimeMethods += "] "
     
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods} -o {value.output} -Wl,--import-memory" # this works even though it shouldn't?!?!?
+                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods} -o {value.output}"
 
                 print("\n\n\n" + command + "\n\n\n")
-                #print(f"Compiling C file: {value['entry']} with emscripten")
                 
 
                 runCommand(command)
