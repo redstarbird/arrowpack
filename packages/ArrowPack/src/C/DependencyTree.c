@@ -5,9 +5,9 @@
 #include <regex.h>
 #include <stdbool.h>
 #include "DependencyTree.h"
-#include "./C/ReadFile.h"
+#include "ReadFile.h"
 #include <emscripten.h>
-#include "./C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
+#include "./cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {

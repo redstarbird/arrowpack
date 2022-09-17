@@ -12,12 +12,13 @@ wsl = False
 
 
 class CBuildFile:
-    def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True):
+    def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True, ExportedRuntimeMethods = None):
         self.output = output
         self.filename = filename
         self.ExportedFunctions = ExportedFunctions
         self.SourceFiles = SourceFiles
         self.Modularize = Modularize
+        self.ExportedRuntimeMethods = ExportedRuntimeMethods
 
 class GoBuildFile:
     def __init__(self, output, filename):
@@ -36,10 +37,12 @@ def Build():
     
     CBuildFiles = (
         CBuildFile(
-        "Build/DependencyTree.js",
-        "src/DependencyTree.c",
-        ExportedFunctions=("ReadDataFromFile","cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
-        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c")
+        "Build/CFuntions.js",
+        "src/Main.c",
+        ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
+        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
+        Modularize=True,
+        ExportedRuntimeMethods=("malloc",)
         ),
     )
     
@@ -70,10 +73,17 @@ def Build():
 
                 Modularize = ""
                 if value.Modularize == True:
-                    Modularize = " -s EXPORT_ES6=1 -s MODULARIZE=1 -s USE_ES6_IMPORT_META=0"
+                    Modularize = " -s EXPORT_ES6=1 -s MODULARIZE=1 -s USE_ES6_IMPORT_META=0 "
 
+                ExportedRuntimeMethods = ""
+                if value.ExportedRuntimeMethods != None:
+                    ExportedRuntimeMethods = "-s EXTRA_EXPORTED_RUNTIME_METHODS=["
+                    for v in value.ExportedRuntimeMethods:
+                        ExportedRuntimeMethods += "\"" + v + "\""
+                    ExportedRuntimeMethods += "] "
+    
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize} -o {value.output} -Wl,--import-memory" # this works even though it shouldn't?!?!?
+                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods} -o {value.output} -Wl,--import-memory" # this works even though it shouldn't?!?!?
 
                 print("\n\n\n" + command + "\n\n\n")
                 #print(f"Compiling C file: {value['entry']} with emscripten")
