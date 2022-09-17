@@ -37,7 +37,7 @@ def Build():
     
     CBuildFiles = (
         CBuildFile(
-        "Build/CFuntions.js",
+        "Build/CFunctions.js",
         "src/Main.c",
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
