@@ -10,7 +10,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"syscall/js"
 	"unsafe"
 )
 
@@ -78,25 +77,28 @@ func toGoStrings(Cstr **C.char) []string { // https://github.com/fluhus/snopher/
 }
 
 //export HTMLHandler
-func HandleFiles(Files **C.Node) { // first few lines of this function are probably not memory safe or something i dunno
+func HandleFiles(Files **C.Node, entry string) { // first few lines of this function are probably not memory safe or something i dunno
 	fmt.Println("Hello World!")
-	srcFiles := toGoStrings(strs)
+	srcFiles := []string{"test","GoTest"}
+	/*srcFiles := toGoStrings(strs)
 	fmt.Println(srcFiles)
-
-
+	*/
+	entryPath := "test"
+	exitPath := "test"
+	/*
 	entryPath := C.GoString(entryPathC ) // change config variables from JS variables to go variables
 	exitPath := C.GoString(exitPathC)
 	//C.free(unsafe.Pointer(entryPathC)) // free no longer needed C variables to avoid memory leak
-	//C.free(unsafe.Pointer(exitPathC))
+	//C.free(unsafe.Pointer(exitPathC))*/
 
-
+	return
 	for _, file := range srcFiles {
 		var text string = getFileContents(file, true) // gets file contents
 
-		re := regexp.MustCompile("<include>.*</include>") // regex pattern
+		re := regexp.MustCompile("<include src\".*\">") // regex pattern
 		results := re.FindAllStringSubmatch(text,-1) // searchs for regex pattern in file contents
 
-		for _, resultArray := range results { // loops through all <import> tags found
+		for _, resultArray := range results { // loops through all <include> tags found
 
 			for _, result := range resultArray { // regexp gives nested arrays of results for some reason so nested for loops need to be used
 				
@@ -108,12 +110,13 @@ func HandleFiles(Files **C.Node) { // first few lines of this function are proba
 			}
 		}
 		savePath := strings.Replace(file,entryPath,exitPath,1) // replaces entry path with exit path in file path
-		saveFile(savePath,text)
+		fmt.Println(savePath)
+		// saveFile(savePath,text)
 	
 	}
 }
-
+/*
 func main() {
 	fmt.Println("Test")
 	js.Global().Set("HandleFiles", js.FuncOf(HandleFiles))
-}
+}*/
