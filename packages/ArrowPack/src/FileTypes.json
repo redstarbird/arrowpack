@@ -1,4 +1,4 @@
 [
-	[[".html", ".htm"], "<include src=\".*\">", 9, 10],
+	[[".html", ".htm"], "<include src=\".*\">", 14, 2],
 	[".js", "idk", 1, 2]
 ]
