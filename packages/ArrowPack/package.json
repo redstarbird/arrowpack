@@ -29,8 +29,8 @@
 		"ArrowPack": "src/ArrowPack.js"
 	},
 	"dependencies": {
-		"boxen": "4.0",
-		"chalk": "2.4",
+		"boxen": ">=4.0",
+		"chalk": ">=2.4",
 		"yargs": "^17.5.1"
 	}
 }
