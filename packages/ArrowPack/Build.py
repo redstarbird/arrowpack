@@ -42,7 +42,7 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
         Modularize=True,
-        ExportedRuntimeMethods=("malloc",)
+        ExportedRuntimeMethods=("malloc","ccall")
         ),
     )
     
@@ -78,7 +78,9 @@ def Build():
                 ExportedRuntimeMethods = ""
                 if value.ExportedRuntimeMethods != None:
                     ExportedRuntimeMethods = "-s EXPORTED_RUNTIME_METHODS=["
-                    for v in value.ExportedRuntimeMethods:
+                    for i,v in enumerate(value.ExportedRuntimeMethods):
+                        if i != 0:
+                            ExportedRuntimeMethods += ","
                         ExportedRuntimeMethods += "\"" + v + "\""
                     ExportedRuntimeMethods += "] "
     

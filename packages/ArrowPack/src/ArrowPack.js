@@ -41,15 +41,24 @@ if (WalkedDirs) {
 	});
 }
 
+var AbsoluteFilesCharLength = 0;
 var WrappedWalkedFiles = "";
 if (WalkedFiles && WalkedFiles.length > 0) {
-	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath; console.log(chalk.bold.blue(FilePath)); });
+	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
 
 	var StructsPointer;
 
 	CFunctionFactory().then((CFunctions) => {
-		CFunctions._testWasm();
+		CFunctions._CheckWasm();
+		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
+		StructsPointer = CFunctions.ccall(
+			"CreateTree",
+			"number",
+			["string", "number"],
+			[WrappedWalkedFiles, WalkedFiles.length]
+		);
 	});
+
 	/*
 		WebAssembly.instantiateStreaming(DependencyTreeWasmBuffer, DependencyTreeMemory).then((instance) => {
 			StructsPointer = instance.ccall(

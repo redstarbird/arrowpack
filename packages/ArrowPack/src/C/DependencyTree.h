@@ -24,6 +24,6 @@ typedef struct Node
     unsigned int DependenciesInTree, DependentsInTree;
 } Node;
 
-void *CreateTree(char *Wrapped_paths, unsigned int ArrayLength, unsigned int AbsoluteArrayLength, char *entry, struct Node *Tree);
+struct Node *CreateTree(char *Wrapped_paths, int ArrayLength);
 
 #endif

@@ -310,31 +310,37 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
     return fileRules;
 }
 
-void EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, unsigned int ArrayLength, unsigned int AbsoluteArrayLength, char *entry, struct Node *Tree)
+struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength)
 {
-    unsigned int CurrentWrappedArrayIndex, ElementsUnwrapped, lastNewElement = 0;
-    char **paths = malloc((AbsoluteArrayLength + ArrayLength) * sizeof(char *)); // Allocates extra memory for null terminators (might not be needed)
-    while (ElementsUnwrapped < ArrayLength)
+    int CurrentWrappedArrayIndex = 0;
+    int lastNewElement = 0;
+    int ElementsUnwrapped = 0;
+
+    char **paths = malloc((ArrayLength) * sizeof(char *)); // Allocates memory for array of strings
+
+    while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths))
     {
-        if (Wrapped_paths[CurrentWrappedArrayIndex] == ",")
+
+        if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
         {
-            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
+            printf("Found path divider character");
+            paths[ElementsUnwrapped] = (char *)malloc((CurrentWrappedArrayIndex - lastNewElement + 1) * sizeof(char));
+
+            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement - 1; i++)
             {
-                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
+                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i + 1];
             }
-            lastNewElement = CurrentWrappedArrayIndex;
+            lastNewElement = CurrentWrappedArrayIndex + 1;
             ElementsUnwrapped++;
+            CurrentWrappedArrayIndex++;
         }
         CurrentWrappedArrayIndex++;
     }
     free(Wrapped_paths);
 
-    entryPath = entry;
-    printf("ArrayLength:%d\n", ArrayLength);
-
     InitFileRules(); // creates list of file rule structs
 
-    // struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
+    struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
@@ -348,6 +354,7 @@ void EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, unsigned int ArrayLen
     for (int i = 0; i < ArrayLength; i++)
     {
         char *data = ReadDataFromFile(paths[i]);
+        printf("%s\n", data);
         if (data == NULL)
         {
             continue;
