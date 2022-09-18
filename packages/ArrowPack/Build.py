@@ -12,13 +12,14 @@ wsl = False
 
 
 class CBuildFile:
-    def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True, ExportedRuntimeMethods = None):
+    def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True, ExportedRuntimeMethods = None, ForceFS = False):
         self.output = output
         self.filename = filename
         self.ExportedFunctions = ExportedFunctions
         self.SourceFiles = SourceFiles
         self.Modularize = Modularize
         self.ExportedRuntimeMethods = ExportedRuntimeMethods
+        self.ForceFS = ForceFS
 
 class GoBuildFile:
     def __init__(self, output, filename):
@@ -42,7 +43,8 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
         Modularize=True,
-        ExportedRuntimeMethods=("malloc","ccall")
+        ExportedRuntimeMethods=("malloc","ccall"),
+        ForceFS=True,
         ),
     )
     
@@ -83,9 +85,12 @@ def Build():
                             ExportedRuntimeMethods += ","
                         ExportedRuntimeMethods += "\"" + v + "\""
                     ExportedRuntimeMethods += "] "
+                ForceFS = ""
+                if value.ForceFS == True:
+                    ForceFS = "-s NODERAWFS=1"
     
                 #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods} -o {value.output}"
+                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods}{ForceFS} -o {value.output}"
 
                 print("\n\n\n" + command + "\n\n\n")
                 
