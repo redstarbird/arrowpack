@@ -1,4 +1,4 @@
-# This file is WIP and either does not work or is not stable currently
+# This file is WIP and is not the most stable. It is also very messy code
 import os
 import platform
 import shutil
