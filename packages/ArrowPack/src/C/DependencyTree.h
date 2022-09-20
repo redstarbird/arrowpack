@@ -1,12 +1,9 @@
 #ifndef DEPENDENCYTREE_H
 #define DEPENDENCYTREE_H
 
-#ifdef _WIN32
-#define PATH_SEPARATOR '\\'
-#endif // DEBUG
-#ifndef _WIN32
 #define PATH_SEPARATOR '/'
-#endif // !_W
+
+unsigned int *GetNumOfRegexMatches(const char *Text, const char *Pattern);
 
 typedef struct FileRule
 {
@@ -24,6 +21,8 @@ typedef struct Node
     unsigned int DependenciesInTree, DependentsInTree;
 } Node;
 
-struct Node *CreateTree(char *Wrapped_paths, int ArrayLength);
+struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Quite self explanatory
+
+char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
 
 #endif

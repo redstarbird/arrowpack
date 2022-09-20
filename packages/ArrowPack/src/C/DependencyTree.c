@@ -37,6 +37,24 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     }
 }
 
+char **SplitStringByChar(char *str, const char delimiter)
+{
+    unsigned int NumOfTokens = 0;
+    char **Result = malloc(sizeof(char *));
+    char *token = strtok(str, delimiter);
+
+    while (token != NULL)
+    {
+        NumOfTokens++;
+        Result = (char **)malloc(sizeof(char *) * NumOfTokens);
+        Result[NumOfTokens - 1] = (char *)malloc(sizeof(char) * strlen(token));
+
+        strcpy(Result[NumOfTokens - 1], token);
+        token = strtok(NULL, delimiter);
+    }
+    return Result;
+}
+
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character)
 {
     for (int i = 0; i < strlen(string); i++)
@@ -88,6 +106,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     {
         for (int j = 0; j < 4; j++)
         {
+            printf("%s\n", fileRules[i].FileExtensions[j]);
             if (fileRules[i].FileExtensions[j] == NULL || *fileRules[i].FileExtensions[j] == '\0')
             {
                 break;
@@ -114,7 +133,49 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
     return substring;
 }
 
-char EMSCRIPTEN_KEEPALIVE *TurnToAbsolutePath(char *path)
+unsigned int EMSCRIPTEN_KEEPALIVE *GetNumOfRegexMatches(const char *Text, const char *Pattern)
+{
+    regex_t regexp;
+
+    if (regcomp(&regexp, Pattern, 0) != 0)
+    {
+        fprintf(stderr, "Could not compile regex");
+        exit(1);
+    }; // compiles regex
+
+    const int N_MATCHES = 128;
+
+    regmatch_t match[N_MATCHES];
+
+    int error = regexec(&regexp, Text, 0, match, 0);
+
+    unsigned int NumOfStrings = 0;
+    if (error == 0)
+    {
+        NumOfStrings = 1;
+    }
+    else
+    {
+        return NULL;
+    }
+
+    while (1)
+    {
+        error = regexec(&regexp, Text, 0, match, 0);
+        if (error)
+        {
+            break;
+        }
+        else
+        {
+            NumOfStrings++;
+        }
+    }
+    regfree(&regexp);
+    return NumOfStrings;
+}
+
+char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 { // Turns a relative path into absolute path
     /*if (!containsCharacter(path, ':')) {
         if (PATH_SEPARATOR) {}
@@ -130,15 +191,65 @@ char EMSCRIPTEN_KEEPALIVE *TurnToAbsolutePath(char *path)
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
-        tempHolder = *path + entryPath;
-        realpath(tempHolder, path);
-        return path;
-    }
-    else if (PATH_SEPARATOR == '/')
-    { // Linux
-        realpath(path, tempHolder);
+        strcpy(tempHolder, entryPath);
+        strcat(tempHolder, path);
         return tempHolder;
     }
+    else
+    {
+        unsigned int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
+
+        if (MatchesNum > 0) // Handles paths containing ../
+        {
+            if (BasePath == NULL)
+            { // BasePath is only needed for paths with ../
+                printf("Error no base path specified");
+                exit(1);
+            }
+            char *PathCopy;
+            strcpy(PathCopy, BasePath); // Create a copy of the path variable so it doesn't get overwritten by strtok()
+
+            char **SplitString = SplitStringByChar(PathCopy, "/");
+
+            char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(entryPath))); // Probably very inefficient
+            int ArrayIndex = 0;
+            for (int i = 0; i < (sizeof(SplitString) / sizeof(char *)) - MatchesNum; i++) // loops through array except for elements that need to be removed
+            {
+                for (int j = 0; j < (sizeof(SplitString[i]) / sizeof(char)); i++) // Need to implement better way to do this
+                {
+                    if (SplitString[i][j] == '\0' || SplitString[i][j] == NULL)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        FinalString[ArrayIndex] = SplitString[i][j];
+                    }
+                    ArrayIndex++;
+                }
+                FinalString[ArrayIndex] = '/';
+                ArrayIndex++;
+            }
+            FinalString[ArrayIndex] = '\0';
+            char *TempEntry;
+            strcpy(TempEntry, entryPath);
+            strcat(TempEntry, FinalString);
+            strcat(TempEntry, path);
+            return TempEntry;
+        }
+        else
+        {
+            char *TempPath; // Very messy code
+            strcpy(TempPath, BasePath);
+            strncat(TempPath, '/', 1);
+            strcat(TempPath, path);
+            return TempPath;
+        }
+    }
+}
+
+char EMSCRIPTEN_KEEPALIVE **FindDependencies(char *Path)
+{
 }
 
 char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule)
@@ -170,7 +281,7 @@ char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule
         matches = malloc(NumOfChars * sizeof(char *)); // no need to multiply NumOfChars by NumOfStrings here
 
         matches[0] = malloc(NumOfChars * sizeof(char));
-        matches[0] = TurnToAbsolutePath(getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
+        matches[0] = getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos);
     }
     else
     {
@@ -190,9 +301,9 @@ char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule
             currentAmountOfChars = match->rm_eo - match->rm_so;
             NumOfChars += currentAmountOfChars;
 
-            matches = realloc(*matches, NumOfStrings * sizeof(char **)); // Allocate memory (this might be allocating too much memory)
+            matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
             matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-            matches[NumOfStrings - 1] = TurnToAbsolutePath(getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos));
+            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos);
         }
     }
     return matches;
@@ -206,8 +317,11 @@ void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
 
 struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
 {
-    char *rawJSON = ReadDataFromFile("FileTypes.json"); // string containing raw JSON from FileTypes.json file
-    struct FileRule *fileRules = (struct FileRule *)malloc(sizeof(struct FileRule));
+
+    char *rawJSON = ReadDataFromFile("src/FileTypes.json"); // string containing raw JSON from FileTypes.json file
+
+    struct FileRule *fileRules = (struct FileRule *)malloc(sizeof(struct FileRule) * 2);
+
     cJSON *json = cJSON_Parse(rawJSON);
     cJSON *currentArray;
     cJSON *currentElement;
@@ -318,19 +432,21 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     char **paths = malloc((ArrayLength) * sizeof(char *)); // Allocates memory for array of strings
 
+    printf("%s\n", Wrapped_paths);
+
     while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths))
     {
 
         if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
         {
-            printf("Found path divider character");
             paths[ElementsUnwrapped] = (char *)malloc((CurrentWrappedArrayIndex - lastNewElement + 1) * sizeof(char));
 
-            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement - 1; i++)
+            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
             {
-                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i + 1];
+                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
             }
-            lastNewElement = CurrentWrappedArrayIndex + 1;
+            printf("this path is %s\n", paths[ElementsUnwrapped]);
+            lastNewElement = CurrentWrappedArrayIndex + 2;
             ElementsUnwrapped++;
             CurrentWrappedArrayIndex++;
         }
@@ -338,13 +454,13 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     }
     free(Wrapped_paths);
 
-    InitFileRules(); // creates list of file rule structs
-
     struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-        *Tree[i].path = *TurnToAbsolutePath(paths[i]);
+        printf("Abs path: %s\n", TurnToFullRelativePath(paths[i], NULL));
+
+        *Tree[i].path = *TurnToFullRelativePath(paths[i], NULL);
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
     }
@@ -353,6 +469,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++)
     {
+
         char *data = ReadDataFromFile(paths[i]);
         printf("%s\n", data);
         if (data == NULL)
