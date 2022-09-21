@@ -3,7 +3,7 @@
 
 #define PATH_SEPARATOR '/'
 
-unsigned int *GetNumOfRegexMatches(const char *Text, const char *Pattern);
+int GetNumOfRegexMatches(const char *Text, const char *Pattern);
 
 typedef struct FileRule
 {

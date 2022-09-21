@@ -41,21 +41,21 @@ char **SplitStringByChar(char *str, const char delimiter)
 {
     unsigned int NumOfTokens = 0;
     char **Result = malloc(sizeof(char *));
-    char *token = strtok(str, delimiter);
+    char *token = strtok(str, &delimiter);
 
     while (token != NULL)
     {
         NumOfTokens++;
-        Result = (char **)malloc(sizeof(char *) * NumOfTokens);
+        Result = (char **)malloc(sizeof(char *) * NumOfTokens + 1);
         Result[NumOfTokens - 1] = (char *)malloc(sizeof(char) * strlen(token));
 
         strcpy(Result[NumOfTokens - 1], token);
-        token = strtok(NULL, delimiter);
+        token = strtok(NULL, &delimiter);
     }
     return Result;
 }
 
-bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character)
+bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character) // Checks if string contains a certain character
 {
     for (int i = 0; i < strlen(string); i++)
     {
@@ -121,7 +121,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     exit(1);
 }
 
-char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex)
+char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
 {
     const int substringLength = EndIndex - StartIndex + 1;
     char *substring = malloc(sizeof(char) * substringLength);
@@ -133,14 +133,14 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
     return substring;
 }
 
-unsigned int EMSCRIPTEN_KEEPALIVE *GetNumOfRegexMatches(const char *Text, const char *Pattern)
+int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern)
 {
     regex_t regexp;
-
+    printf("%s\n", Pattern);
     if (regcomp(&regexp, Pattern, 0) != 0)
     {
         fprintf(stderr, "Could not compile regex");
-        exit(1);
+        return 0;
     }; // compiles regex
 
     const int N_MATCHES = 128;
@@ -149,17 +149,18 @@ unsigned int EMSCRIPTEN_KEEPALIVE *GetNumOfRegexMatches(const char *Text, const 
 
     int error = regexec(&regexp, Text, 0, match, 0);
 
-    unsigned int NumOfStrings = 0;
+    int NumOfStrings = 0;
     if (error == 0)
     {
-        NumOfStrings = 1;
+        NumOfStrings++;
     }
     else
     {
-        return NULL;
+        regfree(&regexp);
+        return NumOfStrings;
     }
 
-    while (1)
+    while (!error)
     {
         error = regexec(&regexp, Text, 0, match, 0);
         if (error)
@@ -172,6 +173,7 @@ unsigned int EMSCRIPTEN_KEEPALIVE *GetNumOfRegexMatches(const char *Text, const 
         }
     }
     regfree(&regexp);
+    printf("%i\n", NumOfStrings);
     return NumOfStrings;
 }
 
@@ -187,7 +189,9 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             return entryPath;
         }
     }*/
+    printf("turning %s to absolute path", path);
     char *tempHolder; // Buffer to hold the absolute path
+
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
@@ -197,40 +201,48 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     }
     else
     {
-        unsigned int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
+        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
 
-        if (MatchesNum > 0) // Handles paths containing ../
-        {
+        if (MatchesNum > 0)
+        { // Handles paths containing ../
+
             if (BasePath == NULL)
             { // BasePath is only needed for paths with ../
                 printf("Error no base path specified");
                 exit(1);
+                char *NeedVariableForNoError = malloc(sizeof(char));
+                return NeedVariableForNoError;
             }
             char *PathCopy;
             strcpy(PathCopy, BasePath); // Create a copy of the path variable so it doesn't get overwritten by strtok()
 
-            char **SplitString = SplitStringByChar(PathCopy, "/");
+            char **SplitString = SplitStringByChar(PathCopy, '/');
 
-            char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(entryPath))); // Probably very inefficient
+            char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(entryPath) + 1)); // Probably very inefficient
             int ArrayIndex = 0;
             for (int i = 0; i < (sizeof(SplitString) / sizeof(char *)) - MatchesNum; i++) // loops through array except for elements that need to be removed
             {
-                for (int j = 0; j < (sizeof(SplitString[i]) / sizeof(char)); i++) // Need to implement better way to do this
+                for (int j = 0; j < sizeof(*SplitString[i]); j++) // Need to implement better way to do this
                 {
-                    if (SplitString[i][j] == '\0' || SplitString[i][j] == NULL)
+                    if (!SplitString[i][j])
+                    {
+                        break;
+                    }
+                    if (SplitString[i][j] == '\0')
                     {
                         break;
                     }
                     else
                     {
                         FinalString[ArrayIndex] = SplitString[i][j];
+                        printf("SplitString[i][j] = '%c'\n", SplitString[i][j]);
                     }
                     ArrayIndex++;
                 }
                 FinalString[ArrayIndex] = '/';
                 ArrayIndex++;
             }
-            FinalString[ArrayIndex] = '\0';
+            // FinalString[ArrayIndex] = '\0';
             char *TempEntry;
             strcpy(TempEntry, entryPath);
             strcat(TempEntry, FinalString);
@@ -239,13 +251,21 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
+            if (strstr(path, entryPath) == NULL) // path is already full path (might accidentally include paths with entry name in folder path)
+            {
+                printf("Already full path: %s\n", path);
+                return path;
+            }
             char *TempPath; // Very messy code
             strcpy(TempPath, BasePath);
-            strncat(TempPath, '/', 1);
+            strncat(TempPath, "/", 1);
             strcat(TempPath, path);
             return TempPath;
         }
     }
+    char *NeedVariableForNoError = malloc(sizeof(char) * 2);
+    NeedVariableForNoError[1] = '\0';
+    return NeedVariableForNoError;
 }
 
 char EMSCRIPTEN_KEEPALIVE **FindDependencies(char *Path)
@@ -453,14 +473,16 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
         CurrentWrappedArrayIndex++;
     }
     free(Wrapped_paths);
-
+    printf("test\n");
     struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
-
+    printf("test2\n");
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-        printf("Abs path: %s\n", TurnToFullRelativePath(paths[i], NULL));
+        printf("test3\n");
+        printf("Abs path: %s\n", TurnToFullRelativePath(paths[i], ""));
 
-        *Tree[i].path = *TurnToFullRelativePath(paths[i], NULL);
+        //*Tree[i].path = *TurnToFullRelativePath(paths[i], NULL);
+        strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], NULL));
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
     }
@@ -471,7 +493,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     {
 
         char *data = ReadDataFromFile(paths[i]);
-        printf("%s\n", data);
+        printf("Data %s\n", data);
         if (data == NULL)
         {
             continue;
