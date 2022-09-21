@@ -37,6 +37,34 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     }
 }
 
+char *GetFileExtension(const char *path)
+{
+    unsigned int pathLen = strlen(path);
+
+    int lastFullStop = 0;
+    for (unsigned int i = 0; i < pathLen; i++)
+    {
+        if (path[i] == '.')
+        {
+            lastFullStop = i;
+        }
+    }
+    if (lastFullStop == 0)
+    {
+        printf("Error: could not file character \".\" in path %s", path);
+        exit(1);
+    }
+
+    lastFullStop++;
+    const int length = pathLen - lastFullStop; // gets length of file ext
+    char *extension = malloc(length + 1);
+    for (int i = 0; i < length; i++)
+    {
+        extension[i] = path[lastFullStop + i]; // string includes fullstop
+    }
+    return extension;
+}
+
 char **SplitStringByChar(char *str, const char delimiter)
 {
     unsigned int NumOfTokens = 0;
@@ -251,7 +279,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            if (strstr(path, entryPath) == NULL) // path is already full path (might accidentally include paths with entry name in folder path)
+            if (strstr(path, entryPath) == NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 printf("Already full path: %s\n", path);
                 return path;
@@ -270,6 +298,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 
 char EMSCRIPTEN_KEEPALIVE **FindDependencies(char *Path)
 {
+    char **temp = malloc(sizeof(char *) * 5);
+    return temp;
 }
 
 char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule)
