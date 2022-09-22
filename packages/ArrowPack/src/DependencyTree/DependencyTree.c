@@ -8,6 +8,7 @@
 #include "ReadFile.h"
 #include <emscripten.h>
 #include "./cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
+#include "../Regex/RegexFunctions.h"
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
@@ -37,11 +38,11 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     }
 }
 
-char *GetFileExtension(const char *path)
+char *GetFileExtension(const char *path) // Returns the file extension for the given path without the dot char
 {
     unsigned int pathLen = strlen(path);
 
-    int lastFullStop = 0;
+    unsigned int lastFullStop = 0;
     for (unsigned int i = 0; i < pathLen; i++)
     {
         if (path[i] == '.')
@@ -55,12 +56,12 @@ char *GetFileExtension(const char *path)
         exit(1);
     }
 
-    lastFullStop++;
+    lastFullStop++;                            // Stops fullstop character being included
     const int length = pathLen - lastFullStop; // gets length of file ext
     char *extension = malloc(length + 1);
     for (int i = 0; i < length; i++)
     {
-        extension[i] = path[lastFullStop + i]; // string includes fullstop
+        extension[i] = path[lastFullStop + i]; // string doesn't include fullstop
     }
     return extension;
 }
@@ -161,50 +162,6 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
     return substring;
 }
 
-int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern)
-{
-    regex_t regexp;
-    printf("%s\n", Pattern);
-    if (regcomp(&regexp, Pattern, 0) != 0)
-    {
-        fprintf(stderr, "Could not compile regex");
-        return 0;
-    }; // compiles regex
-
-    const int N_MATCHES = 128;
-
-    regmatch_t match[N_MATCHES];
-
-    int error = regexec(&regexp, Text, 0, match, 0);
-
-    int NumOfStrings = 0;
-    if (error == 0)
-    {
-        NumOfStrings++;
-    }
-    else
-    {
-        regfree(&regexp);
-        return NumOfStrings;
-    }
-
-    while (!error)
-    {
-        error = regexec(&regexp, Text, 0, match, 0);
-        if (error)
-        {
-            break;
-        }
-        else
-        {
-            NumOfStrings++;
-        }
-    }
-    regfree(&regexp);
-    printf("%i\n", NumOfStrings);
-    return NumOfStrings;
-}
-
 char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 { // Turns a relative path into absolute path
     /*if (!containsCharacter(path, ':')) {
@@ -296,67 +253,29 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     return NeedVariableForNoError;
 }
 
-char EMSCRIPTEN_KEEPALIVE **FindDependencies(char *Path)
+char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)
 {
-    char **temp = malloc(sizeof(char *) * 5);
+    char *FileExtension = GetFileExtension(Path);
+    printf("File extension: %s\n", FileExtension);
+    // Very unfortunate that C doesn't support switch statements for strings
+    if (strcmp(FileExtension, "html") == 0 || strcmp(FileExtension, "htm") == 0)
+    {
+    }
+    else if (strcmp(FileExtension, "css") == 0)
+    {
+        printf("CSS not implemented yet");
+    }
+    else if (strcmp(FileExtension, "js") == 0)
+    {
+        printf("JS not implemented yet");
+    }
+    else if (strcmp(FileExtension, "scss") == 0)
+    {
+        printf("SCSS not implemented yet");
+    }
+
+    char **temp = malloc(sizeof(char *) * 5); // just here temporarily so compiler doesnt throw an error
     return temp;
-}
-
-char EMSCRIPTEN_KEEPALIVE **FindAllRegexMatches(char *Text, struct FileRule rule)
-{
-    regex_t regexp;
-
-    if (regcomp(&regexp, rule.regexPattern, 0) != 0)
-    {
-        fprintf(stderr, "Could not compile regex");
-        exit(1);
-    }; // compiles regex
-
-    const int N_MATCHES = 128;
-
-    regmatch_t match[N_MATCHES];
-
-    int error = regexec(&regexp, Text, 0, match, 0);
-    char **matches;
-    unsigned int currentAmountOfChars = 0;
-
-    unsigned int NumOfStrings = 0;
-    unsigned int NumOfChars = 0;
-    if (error == 0)
-    {
-        NumOfStrings = 1;
-        currentAmountOfChars = match->rm_eo - match->rm_so;
-        NumOfChars = currentAmountOfChars;
-
-        matches = malloc(NumOfChars * sizeof(char *)); // no need to multiply NumOfChars by NumOfStrings here
-
-        matches[0] = malloc(NumOfChars * sizeof(char));
-        matches[0] = getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos);
-    }
-    else
-    {
-        return NULL;
-    }
-
-    while (1)
-    {
-        error = regexec(&regexp, Text, 0, match, 0);
-        if (error)
-        {
-            break;
-        }
-        else
-        {
-            NumOfStrings++;
-            currentAmountOfChars = match->rm_eo - match->rm_so;
-            NumOfChars += currentAmountOfChars;
-
-            matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
-            matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + rule.StartPos, (int)match->rm_eo - rule.EndPos);
-        }
-    }
-    return matches;
 }
 
 void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
@@ -496,6 +415,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
                 paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
             }
             printf("this path is %s\n", paths[ElementsUnwrapped]);
+            printf("This file extension is %s\n", GetFileExtension(paths[ElementsUnwrapped]));
             lastNewElement = CurrentWrappedArrayIndex + 2;
             ElementsUnwrapped++;
             CurrentWrappedArrayIndex++;
@@ -505,11 +425,9 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     free(Wrapped_paths);
     printf("test\n");
     struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
-    printf("test2\n");
+
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-        printf("test3\n");
-        printf("Abs path: %s\n", TurnToFullRelativePath(paths[i], ""));
 
         //*Tree[i].path = *TurnToFullRelativePath(paths[i], NULL);
         strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], NULL));
