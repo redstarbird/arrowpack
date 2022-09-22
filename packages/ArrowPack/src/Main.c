@@ -5,7 +5,7 @@
 #include "./C/DependencyTree.h"
 #include <emscripten.h>
 
-void EMSCRIPTEN_KEEPALIVE testWasm()
+void EMSCRIPTEN_KEEPALIVE CheckWasm()
 {
-    printf("Wasm Running Successfully...\n");
+    printf("Wasm started Successfully...\n");
 }
