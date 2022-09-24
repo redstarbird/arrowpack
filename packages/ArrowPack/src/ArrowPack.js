@@ -44,7 +44,7 @@ if (WalkedDirs) {
 var AbsoluteFilesCharLength = 0;
 var WrappedWalkedFiles = "";
 if (WalkedFiles && WalkedFiles.length > 0) {
-	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += "::" + FilePath; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
+	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
 
 	var StructsPointer;
 
