@@ -3,7 +3,6 @@
 
 char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
 { // returns contents of file
-    printf("Path: %s\n", path);
     FILE *filePtr;
     filePtr = fopen(path, "r");
     char *buffer = 0;
