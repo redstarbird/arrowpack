@@ -28,7 +28,7 @@ class GoBuildFile:
 
 
 def Build():
-    options = {"go": False, "c": False}
+    options = {"go": False, "c": False, "dev": False}
     if len(sys.argv) >= 2:
         options[sys.argv[1].lower()] = True
 
@@ -43,7 +43,7 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
         Modularize=True,
-        ExportedRuntimeMethods=("malloc","ccall"),
+        ExportedRuntimeMethods=("ccall",),
         ForceFS=True,
         ),
     )
@@ -51,51 +51,55 @@ def Build():
 
     def BuildLinux():
         command = ""
-        if options["c"] == False:
+        if options["go"] == True:
             for key, value in GoBuildFiles:
                     print(f"Building go file: {value} with tinygo")
                     runCommand(f"tinygo build -opt=2 -o {key} -target wasm {value}")
                     time.sleep(0.1)
-        if options["go"] == False:
-            for value in CBuildFiles:
-                ExportedFunctions = ""
+        
+        for value in CBuildFiles:
+            ExportedFunctions = ""
                 
-                if value.ExportedFunctions != None:
-                    for i,v in enumerate(value.ExportedFunctions):
-                        if i == 0:
-                            ExportedFunctions += "-sEXPORTED_FUNCTIONS=\"_" + v+"\""
-                        else:
-                            ExportedFunctions += ",\"_"+v+"\""
+            if value.ExportedFunctions != None:
+                for i,v in enumerate(value.ExportedFunctions):
+                    if i == 0:
+                        ExportedFunctions += "-sEXPORTED_FUNCTIONS=\"_" + v+"\""
+                    else:
+                        ExportedFunctions += ",\"_"+v+"\""
 
-                SourceFiles = ""
-                
-                if value.SourceFiles != None:
-                    for i,v in enumerate(value.SourceFiles):
-                        SourceFiles += " " + v
+            SourceFiles = ""
+            
+            if value.SourceFiles != None:
+                for i,v in enumerate(value.SourceFiles):
+                    SourceFiles += " " + v
 
-                Modularize = ""
-                if value.Modularize == True:
-                    Modularize = " -s EXPORT_ES6=0 -s MODULARIZE -s USE_ES6_IMPORT_META=0 "
+            Modularize = ""
+            if value.Modularize == True:
+                Modularize = " -s EXPORT_ES6=0 -s MODULARIZE -s USE_ES6_IMPORT_META=0 "
 
-                ExportedRuntimeMethods = ""
-                if value.ExportedRuntimeMethods != None:
-                    ExportedRuntimeMethods = "-s EXPORTED_RUNTIME_METHODS=["
-                    for i,v in enumerate(value.ExportedRuntimeMethods):
-                        if i != 0:
-                            ExportedRuntimeMethods += ","
-                        ExportedRuntimeMethods += "\"" + v + "\""
-                    ExportedRuntimeMethods += "] "
-                ForceFS = ""
-                if value.ForceFS == True:
-                    ForceFS = "-s NODERAWFS=1"
-    
-                #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-                command = f"emcc -O3 --no-entry {value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods}{ForceFS} -o {value.output}"
+            ExportedRuntimeMethods = ""
+            if value.ExportedRuntimeMethods != None:
+                ExportedRuntimeMethods = "-s EXPORTED_RUNTIME_METHODS=["
+                for i,v in enumerate(value.ExportedRuntimeMethods):
+                    if i != 0:
+                        ExportedRuntimeMethods += ","
+                    ExportedRuntimeMethods += "\"" + v + "\""
+                ExportedRuntimeMethods += "] "
+            ForceFS = ""
+            if value.ForceFS == True:
+                ForceFS = "-s NODERAWFS=1"
 
-                print("\n\n\n" + command + "\n\n\n")
-                
+            Dev = ""
+            if options.Dev == True:
+                Dev = "-Werror --profiling -fsanitize=undefined "
 
-                runCommand(command)
+            #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
+            command = f"emcc -O3 --no-entry {Dev}{value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods}{ForceFS} -sALLOW_MEMORY_GROWTH -o {value.output}"
+
+            print("\n\n\n" + command + "\n\n\n")
+            
+
+            runCommand(command)
 
     def runCommand(command):
         if wsl:
