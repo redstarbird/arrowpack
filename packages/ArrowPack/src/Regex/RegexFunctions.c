@@ -40,11 +40,10 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Patt
         }
     }
     regfree(&regexp);
-    printf("%i\n", NumOfStrings);
     return NumOfStrings;
 }
 
-char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern)
+char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
 {
     regex_t regexp;
 
@@ -77,6 +76,7 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern)
     }
     else
     {
+        regfree(&regexp);
         return NULL;
     }
 
@@ -95,8 +95,51 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern)
 
             matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
             matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so, (int)match->rm_eo);
+            if (StartPos != NULL && EndPos != NULL)
+            {
+                matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, (int)match->rm_eo - EndPos);
+            }
+            else
+            {
+                matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so, (int)match->rm_eo); // DRY
+            }
         }
     }
+    regfree(&regexp);
     return matches;
+}
+
+bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
+{
+    regex_t regexp;
+
+    int Error;
+
+    Error = regcomp(&regexp, pattern, 0);
+
+    if (Error != 0) // Throws an error if regex doesn't compile
+    {
+        regfree(&regexp);
+        printf("Error compiling regex: %s\n", pattern);
+        exit(1);
+    }
+
+    Error = regexec(&regexp, text, 0, NULL, 0);
+
+    if (!Error)
+    {
+        regfree(&regexp);
+        return true;
+    }
+    else if (Error == REG_NOMATCH)
+    {
+        regfree(&regexp);
+        return false;
+    }
+    else
+    {
+        regfree(&regexp);
+        printf("Error when running regex on %s with pattern of %s\n", text, pattern);
+        exit(1);
+    }
 }
