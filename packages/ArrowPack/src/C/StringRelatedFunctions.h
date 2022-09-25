@@ -1,10 +1,11 @@
 #ifndef STRINGRELATEDFUNCTIONS_H
 #define STRINGRELATEDFUNCTIONS_H
 
-#include <string>
+#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <emscripten.h>
+#include <stdlib.h>
 
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
 

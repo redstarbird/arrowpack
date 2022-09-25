@@ -4,6 +4,8 @@
 #include <emscripten.h>
 #include <regex.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include "../C/StringRelatedFunctions.h"
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern); // returns the number of regex matches
 

@@ -95,14 +95,8 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
 
             matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
             matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-            if (StartPos != NULL && EndPos != NULL)
-            {
-                matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, (int)match->rm_eo - EndPos);
-            }
-            else
-            {
-                matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so, (int)match->rm_eo); // DRY
-            }
+
+            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, (int)match->rm_eo - EndPos);
         }
     }
     regfree(&regexp);
@@ -142,4 +136,8 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
         printf("Error when running regex on %s with pattern of %s\n", text, pattern);
         exit(1);
     }
+}
+
+void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start, unsigned int end)
+{
 }

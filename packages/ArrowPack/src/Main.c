@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include "./C/ReadFile.h"
-#include "./C/DependencyTree.h"
+#include "./DependencyTree/DependencyTree.h"
 #include <emscripten.h>
 
 void EMSCRIPTEN_KEEPALIVE CheckWasm()
