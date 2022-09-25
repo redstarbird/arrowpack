@@ -7,8 +7,9 @@
 #include "DependencyTree.h"
 #include "ReadFile.h"
 #include <emscripten.h>
-#include "./cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
+#include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 #include "../Regex/RegexFunctions.h"
+#include "../C/HandleFiles.h"
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
@@ -17,7 +18,7 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     {
         if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
         {
-            tempHolder = tree[i];
+            tempHolder = tree[i]; // Basic code to swap array elements
             tree[i] = tree[i + 1];
             tree[i + 1] = tempHolder;
         }
@@ -38,34 +39,6 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     }
 }
 
-char *GetFileExtension(const char *path) // Returns the file extension for the given path without the dot char
-{
-    unsigned int pathLen = strlen(path);
-
-    unsigned int lastFullStop = 0;
-    for (unsigned int i = 0; i < pathLen; i++)
-    {
-        if (path[i] == '.')
-        {
-            lastFullStop = i;
-        }
-    }
-    if (lastFullStop == 0)
-    {
-        printf("Error: could not file character \".\" in path %s", path);
-        exit(1);
-    }
-
-    lastFullStop++;                            // Stops fullstop character being included
-    const int length = pathLen - lastFullStop; // gets length of file ext
-    char *extension = malloc(length + 1);
-    for (int i = 0; i < length; i++)
-    {
-        extension[i] = path[lastFullStop + i]; // string doesn't include fullstop
-    }
-    return extension;
-}
-
 char **SplitStringByChar(char *str, const char delimiter)
 {
     unsigned int NumOfTokens = 0;
@@ -82,16 +55,6 @@ char **SplitStringByChar(char *str, const char delimiter)
         token = strtok(NULL, &delimiter);
     }
     return Result;
-}
-
-bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character) // Checks if string contains a certain character
-{
-    for (int i = 0; i < strlen(string); i++)
-    {
-        if (string[i] == character)
-            return true;
-    }
-    return false;
 }
 
 char *entryPath; // global variable for entry (base) path
@@ -148,18 +111,6 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     }
     printf("Could not find rule for processing file %s\n", path);
     exit(1);
-}
-
-char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
-{
-    const int substringLength = EndIndex - StartIndex + 1;
-    char *substring = malloc(sizeof(char) * substringLength);
-    for (int i = 0; i < EndIndex - StartIndex; i++)
-    {
-        substring[i] = Text[StartIndex + i];
-    }
-    substring[substringLength] = '\0'; // terminate string with null terminator
-    return substring;
 }
 
 char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
@@ -248,9 +199,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             return TempPath;
         }
     }
-    char *NeedVariableForNoError = malloc(sizeof(char) * 2);
-    NeedVariableForNoError[1] = '\0';
-    return NeedVariableForNoError;
+    return path; // Stops compiler from throwing exception on higher optimization levels
 }
 
 char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)
