@@ -41,7 +41,7 @@ def Build():
         "Build/CFunctions.js",
         "src/Main.c",
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
-        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/C/DependencyTree.c"),
+        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c", "./src/Regex/RegexFunctions.c"),
         Modularize=True,
         ExportedRuntimeMethods=("ccall",),
         ForceFS=True,
@@ -90,7 +90,7 @@ def Build():
                 ForceFS = "-s NODERAWFS=1"
 
             Dev = ""
-            if options.Dev == True:
+            if options["dev"] == True:
                 Dev = "-Werror --profiling -fsanitize=undefined "
 
             #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
