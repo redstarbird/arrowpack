@@ -14,12 +14,22 @@ typedef struct FileRule
 
 char **FindAllRegexMatches(char *Text, struct FileRule rule); // function that returns an array matches as strings
 
-typedef struct Node
-{ // structure for individual nodes in the tree
+typedef struct Node Node;
+
+typedef struct Dependency // Wraps a regular Node struct and includes the start and end positions of where the node is referenced so it doesn't need to be worked out again
+{
+    unsigned int StartRefPos;
+    unsigned int EndRefPos;
+    struct Node *Dependency;
+} Dependency;
+
+struct Node
+{ // structure for individual nodes (Modules/Files) in the tree
     char path[256];
-    struct Node *Dependents, *Dependencies;
+    struct Node *Dependents;
+    struct Dependency *Dependencies;
     unsigned int DependenciesInTree, DependentsInTree;
-} Node;
+};
 
 struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Quite self explanatory
 
