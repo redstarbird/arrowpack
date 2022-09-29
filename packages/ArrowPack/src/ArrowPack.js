@@ -43,7 +43,7 @@ if (WalkedDirs) {
 
 var AbsoluteFilesCharLength = 0;
 var WrappedWalkedFiles = "";
-if (WalkedFiles && WalkedFiles.length > 0) {
+if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one string because passing array of strings from JS to C is complicated
 	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
 
 	var StructsPointer;
