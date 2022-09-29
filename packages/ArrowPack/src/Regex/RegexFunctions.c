@@ -2,8 +2,8 @@
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern)
 {
+    return 0; // Temp for debugging need to remember
     regex_t regexp;
-    printf("%s\n", Pattern);
     if (regcomp(&regexp, Pattern, 0) != 0)
     {
         fprintf(stderr, "Could not compile regex");
@@ -27,19 +27,13 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Patt
         return NumOfStrings;
     }
 
-    while (!error)
+    while (error != REG_NOMATCH && match[NumOfStrings].rm_eo != 0)
     {
-        error = regexec(&regexp, Text, 0, match, 0);
-        if (error)
-        {
-            break;
-        }
-        else
-        {
-            NumOfStrings++;
-        }
+        error = regexec(&regexp, Text + match[NumOfStrings].rm_eo, 0, match, 0);
+        NumOfStrings++;
     }
     regfree(&regexp);
+
     return NumOfStrings;
 }
 
@@ -55,11 +49,15 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
 
     const int N_MATCHES = 128;
 
+    printf("Regex Text: %s and Pattern: %s\n", Text, Pattern);
+
     regmatch_t match[N_MATCHES];
 
     int error = regexec(&regexp, Text, 0, match, 0);
-    char **matches = NULL;
+    char **matches = malloc(sizeof(char *));
     unsigned int currentAmountOfChars = 0;
+
+    unsigned int TextLength = strlen(Text);
 
     unsigned int NumOfStrings = 0;
     unsigned int NumOfChars = 0;
@@ -69,8 +67,6 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
         currentAmountOfChars = match->rm_eo - match->rm_so;
         NumOfChars = currentAmountOfChars;
 
-        matches = malloc(NumOfChars * sizeof(char *)); // no need to multiply NumOfChars by NumOfStrings here
-
         matches[0] = malloc(NumOfChars * sizeof(char));
         matches[0] = getSubstring(Text, (int)match->rm_so, (int)match->rm_eo);
     }
@@ -79,10 +75,12 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
         regfree(&regexp);
         return NULL;
     }
+    /*
+
 
     while (1)
     {
-        error = regexec(&regexp, Text, 0, match, 0);
+        error = regexec(&regexp, Text + match->rm_eo, 0, match, 0);
         if (error)
         {
             break;
@@ -96,10 +94,10 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
             matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
             matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
 
-            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, (int)match->rm_eo - EndPos);
+            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, TextLength - (int)match->rm_eo - EndPos);
         }
     }
-    regfree(&regexp);
+    regfree(&regexp);*/
     return matches;
 }
 
@@ -140,4 +138,40 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
 
 void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start, unsigned int end)
 {
+}
+
+void EMSCRIPTEN_KEEPALIVE regextest(char *text, const char *pattern)
+{
+    printf("\n\nRegex test\n");
+    regex_t regexp;
+
+    const char *TextStartPointer = text; //  points to start of string after match
+
+    const int N_MATCHES = 256; // Maximum number of matches
+
+    regmatch_t match[N_MATCHES]; // Contains all matches
+
+    unsigned int matchesCompleted = 0;
+
+    if (regcomp(&regexp, pattern, 0) != 0)
+    {
+        fprintf(stderr, "Could not compile regex");
+        exit(1);
+    } // compiles regex
+    else
+    {
+        printf("Compiled regex successfully\n");
+    }
+
+    int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
+    if (error != 0)
+    {
+        printf("not found regex :(\n");
+    }
+    else
+    {
+        printf("Substring start: %d, Substring end: %d\n", (int)match[0].rm_so, (int)match[0].rm_eo);
+        printf("Matched text: %s\n", TextStartPointer);
+        // printf("Substring text: %s\n", getSubstring(text, (int)match[0].rm_so, strlen(text) - (int)match[0].rm_eo));
+    }
 }

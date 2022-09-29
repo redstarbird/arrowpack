@@ -13,4 +13,6 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
 
 bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern);
 
+void EMSCRIPTEN_KEEPALIVE regextest(char *text, const char *pattern);
+
 #endif // !REGEXFUNCTIONS_H
