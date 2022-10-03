@@ -1,6 +1,3 @@
 [submodule "packages/ArrowPack/src/C/cJSON"]
 	path = packages/ArrowPack/src/C/cJSON
 	url = https://github.com/DaveGamble/cJSON
-[submodule "packages/arrowpack/src/C/pcre2"]
-	path = packages/arrowpack/src/C/pcre2
-	url = https://github.com/PCRE2Project/pcre2
