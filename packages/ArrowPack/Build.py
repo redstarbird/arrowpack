@@ -10,6 +10,12 @@ import time
 
 wsl = False
 
+def runCommand(command):
+        if wsl:
+            command = "wsl " + command
+        success = os.system(command)
+        if success != 0:
+            raise Exception("Failed to run command",command,"Please check if dependencies are installed")
 
 class CBuildFile:
     def __init__(self, output, filename, ExportedFunctions = None, SourceFiles = None, Modularize = True, ExportedRuntimeMethods = None, ForceFS = False):
@@ -26,9 +32,25 @@ class GoBuildFile:
         self.output = output
         self.filename = filename
 
+def BuildPCRE2(version="10.40"):
+    print(f"Building PCRE2 version: {version}")
+    runCommand("mkdir -p pcre2tempbuild") # Makes temp install directory
+
+    runCommand(f"curl -L -o pcre2tempbuild/pcre2-{version}.tar.bz2 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{version}/pcre2-{version}.tar.bz2") # Downloads pcre2 tar archive from github
+
+    runCommand(f"tar -xvjf pcre2tempbuild/pcre2-{version}.tar.bz2 -C pcre2tempbuild") # Unpacks pcre2 tar archive
+    os.chdir(f"pcre2tempbuild/pcre2-{version}")
+
+    runCommand(f"emconfigure ./configure --prefix=/src/local --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000")
+    runCommand(f"emmake make")
+    runCommand(f"emmake make install")
+
+    os.chdir("../../")
+    runCommand(f"rm -rf pcre2tempbuild") # Deletes directory
+
 
 def Build():
-    options = {"go": False, "c": False, "dev": False}
+    options = {"go": False, "c": False, "dev": False, "pcre2":False}
     if len(sys.argv) >= 2:
         options[sys.argv[1].lower()] = True
 
@@ -40,9 +62,9 @@ def Build():
         CBuildFile(
         "Build/CFunctions.js",
         "src/Main.c",
-        ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse"),
+        ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse","pcre2_compile_16","pcre2_get_error_message_16"),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c",
-        "./src/Regex/RegexFunctions.c", "./src/DependencyTree/FindDependencies.c"),
+        "./src/Regex/RegexFunctions.c", "./src/DependencyTree/FindDependencies.c",),
         Modularize=True,
         ExportedRuntimeMethods=("ccall",),
         ForceFS=True,
@@ -92,22 +114,19 @@ def Build():
 
             Dev = ""
             if options["dev"] == True:
-                Dev = "-Werror --profiling -fsanitize=undefined "
+                Dev = "--profiling -fsanitize=undefined -Werror -sLLD_REPORT_UNDEFINED "
+
+
+            # Command to compile pcre2 library: emconfigure ./configure --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000 && emmake make && emmake install
 
             #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-            command = f"emcc -O3 --no-entry {Dev}{value.filename}{SourceFiles}{Modularize}{ExportedRuntimeMethods}{ForceFS} -sALLOW_MEMORY_GROWTH -o {value.output}"
+            command = f"emcc -O3 -g2 --no-entry {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sASSERTIONS=2 -sBINARYEN=1 -sALLOW_MEMORY_GROWTH -I/usr/local/lib -L/usr/local/lib -lpcre2-16 -o {value.output}"
 
             print("\n\n\n" + command + "\n\n\n")
             
+            
 
             runCommand(command)
-
-    def runCommand(command):
-        if wsl:
-            command = "wsl " + command
-        success = os.system(command)
-        if success != 0:
-            raise Exception("Failed to run command",command,"Please check if dependencies are installed")
 
     def checkInstalled(program, autoInstall=False, required=True):
         if required and not autoInstall:
@@ -120,37 +139,43 @@ def Build():
             except requests.ConnectionError:
                 raise Exception("Error: An internet connection is required")
 
-    if platform.system() == "Windows":
-        if checkInstalled("wsl"): # checks if WSL is installed
-            WSLDefaultDistro = subprocess.check_output(["wsl", "--list", "--verbose"]).decode("utf-8")
+    pcre2 = False
+    if len(sys.argv) > 1:
+        pcre2 = sys.argv[1].lower() == "pcre2"
 
-            time.sleep(1)
-            WSLDefaultDistro = re.sub(" +", " ",WSLDefaultDistro) # removes multiple consecutive strings
-            print(WSLDefaultDistro)
-            WSLDefaultDistro = WSLDefaultDistro.split("\n")
-
-
-
-            for index, line in enumerate(WSLDefaultDistro):
-                if len(line) > 3:
-                    if line[1] == "*":
-                        WSLDefaultDistro = line[4:-27].split(" ")[0]
-            print(WSLDefaultDistro)
-            WSLDefaultDistro = WSLDefaultDistro.replace("\x00", "") # removes null characters from command output string
-
-            if not "Ubuntu" in WSLDefaultDistro or "Debian" in WSLDefaultDistro:
-                print("Your WSL distro may not be supported errors may occur when installing, continuing with installation")
-            global wsl
-            wsl = True
-            BuildLinux()
-
-
-    elif platform.system() == "Darwin":
-        print("Building on mac is not supported currently")
-    elif platform.system() == "Linux":
-        BuildLinux()
+    if pcre2:
+        BuildPCRE2()
     else:
-        print("Your operating system is not supported currently")
+        if platform.system() == "Windows":
+            if checkInstalled("wsl"): # checks if WSL is installed
+                WSLDefaultDistro = subprocess.check_output(["wsl", "--list", "--verbose"]).decode("utf-8")
+
+                time.sleep(1)
+                WSLDefaultDistro = re.sub(" +", " ",WSLDefaultDistro) # removes multiple consecutive strings
+                print(WSLDefaultDistro)
+                WSLDefaultDistro = WSLDefaultDistro.split("\n")
+
+
+
+                for index, line in enumerate(WSLDefaultDistro):
+                    if len(line) > 3:
+                        if line[1] == "*":
+                            WSLDefaultDistro = line[4:-27].split(" ")[0]
+                print(WSLDefaultDistro)
+                WSLDefaultDistro = WSLDefaultDistro.replace("\x00", "") # removes null characters from command output string
+
+                if not "Ubuntu" in WSLDefaultDistro or "Debian" in WSLDefaultDistro:
+                    print("Your WSL distro may not be supported errors may occur when installing, continuing with installation")
+                global wsl
+                wsl = True
+                BuildLinux()
+
+            elif platform.system() == "Darwin":
+                print("Building on mac is not supported currently")
+            elif platform.system() == "Linux":
+                BuildLinux()
+            else:
+                print("Your operating system is not supported currently")
 
 
 if __name__ == "__main__": # Driver Code
