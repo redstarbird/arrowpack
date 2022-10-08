@@ -31,3 +31,6 @@ npm-debug.log
 packages/*/lib
 .idea
 desktop.ini
+
+# PCRE2 temp build directory
+packages/ArrowPack/pcre2tempbuild
