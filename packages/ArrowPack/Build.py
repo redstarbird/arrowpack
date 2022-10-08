@@ -39,13 +39,13 @@ def BuildPCRE2(version="10.40"):
     runCommand(f"curl -L -o pcre2tempbuild/pcre2-{version}.tar.bz2 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{version}/pcre2-{version}.tar.bz2") # Downloads pcre2 tar archive from github
 
     runCommand(f"tar -xvjf pcre2tempbuild/pcre2-{version}.tar.bz2 -C pcre2tempbuild") # Unpacks pcre2 tar archive
-    os.chdir(f"pcre2tempbuild/pcre2-{version}")
+    os.chdir(f"pcre2tempbuild/pcre2-{version}") # Moves to newly extracted pcre2 directory so that no temp files are created in the arrowpack base directory
 
-    runCommand(f"emconfigure ./configure --prefix=/src/local --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000")
-    runCommand(f"emmake make")
-    runCommand(f"emmake make install")
+    runCommand(f"emconfigure ./configure --prefix=/src/local --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000") # compiles the library
+    runCommand(f"emmake make") # also compiles the library
+    runCommand(f"emmake make install") # this also compiles the library
 
-    os.chdir("../../")
+    os.chdir("../../") # moves back to arrowpack workind dir
     runCommand(f"rm -rf pcre2tempbuild") # Deletes directory
 
 
