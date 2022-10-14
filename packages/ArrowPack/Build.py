@@ -32,18 +32,25 @@ class GoBuildFile:
         self.output = output
         self.filename = filename
 
-def BuildPCRE2(version="10.40"):
+def BuildPCRE2(version="10.34"): # For building the pcre2 regex library (only needed to be used once to install pcre2 files to system)
     print(f"Building PCRE2 version: {version}")
     runCommand("mkdir -p pcre2tempbuild") # Makes temp install directory
 
     runCommand(f"curl -L -o pcre2tempbuild/pcre2-{version}.tar.bz2 https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{version}/pcre2-{version}.tar.bz2") # Downloads pcre2 tar archive from github
 
     runCommand(f"tar -xvjf pcre2tempbuild/pcre2-{version}.tar.bz2 -C pcre2tempbuild") # Unpacks pcre2 tar archive
+    runCommand(f"touch pcre2tempbuild/pcre2-{version}")
     os.chdir(f"pcre2tempbuild/pcre2-{version}") # Moves to newly extracted pcre2 directory so that no temp files are created in the arrowpack base directory
 
-    runCommand(f"emconfigure ./configure --prefix=/src/local --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000") # compiles the library
-    runCommand(f"emmake make") # also compiles the library
+    runCommand(f"emconfigure ./configure --prefix=/src/local  --disable-shared --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000") # compiles the library
+    runCommand(f"emmake make -sSIDE_MODULE") # also compiles the library
     runCommand(f"emmake make install") # this also compiles the library
+    #runCommand(f"mv .libs/libpcre2-16.a /usr/local/lib")
+    #runCommand(f"mv .libs/libpcre2-16.la /usr/local/lib")
+    #runCommand(f"mv .libs/libpcre2-16.lai /usr/local/lib")
+    #runCommand(f"mv .libs/libpcre2-16.so /usr/local/lib")
+    #runCommand(f"mv .libs/libpcre2-16.so.0 /usr/local/lib")
+    #runCommand(f"mv .libs/libpcre2-16.so.0.11.0 /usr/local/lib")
 
     os.chdir("../../") # moves back to arrowpack workind dir
     runCommand(f"rm -rf pcre2tempbuild") # Deletes directory
@@ -62,7 +69,7 @@ def Build():
         CBuildFile(
         "Build/CFunctions.js",
         "src/Main.c",
-        ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse","pcre2_compile_16","pcre2_get_error_message_16"),
+        ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse",),
         SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c",
         "./src/Regex/RegexFunctions.c", "./src/DependencyTree/FindDependencies.c",),
         Modularize=True,
@@ -98,7 +105,7 @@ def Build():
 
             Modularize = ""
             if value.Modularize == True:
-                Modularize = " -s EXPORT_ES6=0 -s MODULARIZE -s USE_ES6_IMPORT_META=0 "
+                Modularize = "-s EXPORT_ES6=0 -s MODULARIZE -s USE_ES6_IMPORT_META=0 "
 
             ExportedRuntimeMethods = ""
             if value.ExportedRuntimeMethods != None:
@@ -112,15 +119,19 @@ def Build():
             if value.ForceFS == True:
                 ForceFS = "-s NODERAWFS=1"
 
+            optimizations = "-O3 "
+
             Dev = ""
             if options["dev"] == True:
-                Dev = "--profiling -fsanitize=undefined -Werror -sLLD_REPORT_UNDEFINED "
+                Dev = "--profiling -fsanitize=address -sRUNTIME_DEBUG=1 -fsanitize=undefined -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
+                optimizations = ""
 
+            
 
             # Command to compile pcre2 library: emconfigure ./configure --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000 && emmake make && emmake install
 
             #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-            command = f"emcc -O3 -g2 --no-entry {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sASSERTIONS=2 -sBINARYEN=1 -sALLOW_MEMORY_GROWTH -I/usr/local/lib -L/usr/local/lib -lpcre2-16 -o {value.output}"
+            command = f"emcc {optimizations}--no-entry -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sALLOW_MEMORY_GROWTH /src/local/lib/libpcre2-16.a  -I/src/local/include -L/src/local/lib -lpcre2-16 -o {value.output}"
 
             print("\n\n\n" + command + "\n\n\n")
             
@@ -142,8 +153,8 @@ def Build():
     pcre2 = False
     if len(sys.argv) > 1:
         pcre2 = sys.argv[1].lower() == "pcre2"
-
-    if pcre2:
+    print("PCRE2: " + str(pcre2))
+    if pcre2 == True:
         BuildPCRE2()
     else:
         if platform.system() == "Windows":
@@ -170,11 +181,11 @@ def Build():
                 wsl = True
                 BuildLinux()
 
-            elif platform.system() == "Darwin":
+        elif platform.system() == "Darwin":
                 print("Building on mac is not supported currently")
-            elif platform.system() == "Linux":
+        elif platform.system() == "Linux":
                 BuildLinux()
-            else:
+        else:
                 print("Your operating system is not supported currently")
 
 
