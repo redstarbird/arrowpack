@@ -54,8 +54,8 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 		StructsPointer = CFunctions.ccall(
 			"CreateTree",
 			"number",
-			["string", "number"],
-			[WrappedWalkedFiles, WalkedFiles.length]
+			["string", "number", "string"],
+			[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry")]
 		);
 	});
 
