@@ -131,7 +131,7 @@ def Build():
             # Command to compile pcre2 library: emconfigure ./configure --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000 && emmake make && emmake install
 
             #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-            command = f"emcc {optimizations}--no-entry -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sALLOW_MEMORY_GROWTH /src/local/lib/libpcre2-16.a  -I/src/local/include -L/src/local/lib -lpcre2-16 -o {value.output}"
+            command = f"emcc {optimizations}--no-entry -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sALLOW_MEMORY_GROWTH -o {value.output}"
 
             print("\n\n\n" + command + "\n\n\n")
             

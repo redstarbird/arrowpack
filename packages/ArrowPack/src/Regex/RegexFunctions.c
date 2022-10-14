@@ -141,36 +141,7 @@ void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start,
 {
 }
 
-void EMSCRIPTEN_KEEPALIVE regextest2(char *Text, const char *Pattern)
-{
-}
-
 void EMSCRIPTEN_KEEPALIVE regextest(char *Text, const char *Pattern)
 {
     printf("regextest\n");
-    pcre2_code *re;
-    PCRE2_SPTR pattern = (PCRE2_SPTR)Pattern;
-    PCRE2_SPTR text = (PCRE2_SPTR)Text;
-    printf("after text\n");
-    PCRE2_SIZE patternlength = (PCRE2_SIZE)(strlen(Pattern) - 1);
-    printf("after length\n");
-    pcre2_match_data *match_data;
-    printf("after match data\n");
-    int errorNumber;
-    PCRE2_SIZE errorOffset;
-    printf("test\n");
-    // uint16_t *version;
-    printf("declared\n");
-    // pcre2_config(PCRE2_CONFIG_VERSION, version);
-    // printf("version: %d\n", (int)version);
-
-    re = pcre2_compile(pattern, patternlength, PCRE2_ZERO_TERMINATED, &errorNumber, &errorOffset, NULL);
-
-    if (re == NULL)
-    {
-        PCRE2_UCHAR ErrorBuffer[256];
-        pcre2_get_error_message(errorNumber, ErrorBuffer, sizeof(ErrorBuffer));
-        printf("PCRE2 pattern \"%s\" failed to compile at offset %d: %s\n", Pattern, (int)errorOffset, (char *)ErrorBuffer);
-        exit(1);
-    }
 }
