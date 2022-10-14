@@ -2,7 +2,8 @@
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern)
 {
-    return 0; // Temp for debugging need to remember
+    printf("running code from regex file!!!!!\n");
+    return 0; // Temp for debugging need to remember to remove
     regex_t regexp;
     if (regcomp(&regexp, Pattern, 0) != 0)
     {
@@ -140,38 +141,36 @@ void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start,
 {
 }
 
-void EMSCRIPTEN_KEEPALIVE regextest(char *text, const char *pattern)
+void EMSCRIPTEN_KEEPALIVE regextest2(char *Text, const char *Pattern)
 {
-    printf("\n\nRegex test\n");
-    regex_t regexp;
+}
 
-    const char *TextStartPointer = text; //  points to start of string after match
+void EMSCRIPTEN_KEEPALIVE regextest(char *Text, const char *Pattern)
+{
+    printf("regextest\n");
+    pcre2_code *re;
+    PCRE2_SPTR pattern = (PCRE2_SPTR)Pattern;
+    PCRE2_SPTR text = (PCRE2_SPTR)Text;
+    printf("after text\n");
+    PCRE2_SIZE patternlength = (PCRE2_SIZE)(strlen(Pattern) - 1);
+    printf("after length\n");
+    pcre2_match_data *match_data;
+    printf("after match data\n");
+    int errorNumber;
+    PCRE2_SIZE errorOffset;
+    printf("test\n");
+    // uint16_t *version;
+    printf("declared\n");
+    // pcre2_config(PCRE2_CONFIG_VERSION, version);
+    // printf("version: %d\n", (int)version);
 
-    const int N_MATCHES = 256; // Maximum number of matches
+    re = pcre2_compile(pattern, patternlength, PCRE2_ZERO_TERMINATED, &errorNumber, &errorOffset, NULL);
 
-    regmatch_t match[N_MATCHES]; // Contains all matches
-
-    unsigned int matchesCompleted = 0;
-
-    if (regcomp(&regexp, pattern, 0) != 0)
+    if (re == NULL)
     {
-        fprintf(stderr, "Could not compile regex");
+        PCRE2_UCHAR ErrorBuffer[256];
+        pcre2_get_error_message(errorNumber, ErrorBuffer, sizeof(ErrorBuffer));
+        printf("PCRE2 pattern \"%s\" failed to compile at offset %d: %s\n", Pattern, (int)errorOffset, (char *)ErrorBuffer);
         exit(1);
-    } // compiles regex
-    else
-    {
-        printf("Compiled regex successfully\n");
-    }
-
-    int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
-    if (error != 0)
-    {
-        printf("not found regex :(\n");
-    }
-    else
-    {
-        printf("Substring start: %d, Substring end: %d\n", (int)match[0].rm_so, (int)match[0].rm_eo);
-        printf("Matched text: %s\n", TextStartPointer);
-        // printf("Substring text: %s\n", getSubstring(text, (int)match[0].rm_so, strlen(text) - (int)match[0].rm_eo));
     }
 }

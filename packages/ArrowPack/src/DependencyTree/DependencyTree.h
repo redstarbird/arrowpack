@@ -25,13 +25,13 @@ typedef struct Dependency // Wraps a regular Node struct and includes the start 
 
 struct Node
 { // structure for individual nodes (Modules/Files) in the tree
-    char path[256];
+    char *path;
     struct Node *Dependents;
     struct Dependency *Dependencies;
     unsigned int DependenciesInTree, DependentsInTree;
 };
 
-struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Quite self explanatory
+struct Node *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath); // Quite self explanatory
 
 char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
 

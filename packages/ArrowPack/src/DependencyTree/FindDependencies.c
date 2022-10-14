@@ -3,7 +3,7 @@
 #include "../C/StringRelatedFunctions.h"
 #include "FindDependencies.h"
 
-char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(const char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
+char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
     char *FileContents = ReadDataFromFile(filename);
     if (FileContents == NULL)
@@ -11,6 +11,7 @@ char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(const char *filename, const c
         return NULL;
     }
 
+    printf("Num of matches: %d\n", GetNumOfRegexMatches(FileContents, pattern));
     char **RegexMatches = GetAllRegexMatches(FileContents, pattern, Startpos, Endpos);
 
     if (RegexMatches == NULL)
@@ -21,12 +22,13 @@ char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(const char *filename, const c
     return RegexMatches;
 }
 
-char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(const char *filename)
+char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(char *filename)
 {
-    return BasicRegexDependencies(filename, "<include src=\".*\">", 14, 2);
+
+    return BasicRegexDependencies(filename, "<include src=\"[^<]*\">", 14, 2); // Abstraction
 }
 
-char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(const char *filename)
+char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(char *filename)
 {
     char **Dependencies = BasicRegexDependencies(filename, "@import .*;", 9, 2);
     for (int i = 0; i < sizeof(Dependencies) / sizeof(char *); i++)

@@ -5,11 +5,13 @@
 #include <regex.h>
 #include <stdbool.h>
 #include "DependencyTree.h"
-#include "ReadFile.h"
+#include "../C/ReadFile.h"
 #include <emscripten.h>
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 #include "../Regex/RegexFunctions.h"
-#include "../C/HandleFiles.h"
+#include "../C/BundleFiles.h"
+#include "../C/StringRelatedFunctions.h"
+#include "./FindDependencies.h"
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
@@ -125,9 +127,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             return entryPath;
         }
     }*/
-    printf("turning %s to absolute path", path);
     char *tempHolder; // Buffer to hold the absolute path
-
+    printf("Finding full path for: %s\n", path);
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
@@ -137,12 +138,14 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     }
     else
     {
-        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
 
+        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
+        printf("after matches num \n");
+        printf("matches num: %d\n", MatchesNum);
         if (MatchesNum > 0)
         { // Handles paths containing ../
-
-            if (BasePath == NULL)
+            printf("shoudnt run here\n");
+            if (BasePath[0] == '\0')
             { // BasePath is only needed for paths with ../
                 printf("Error no base path specified");
                 exit(1);
@@ -187,11 +190,13 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            if (strstr(path, entryPath) == NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
+            printf("here\n");
+            if (!strstr(path, entryPath)) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
-                printf("Already full path: %s\n", path);
+                printf("confused\n");
                 return path;
             }
+            printf("here!\n");
             char *TempPath; // Very messy code
             strcpy(TempPath, BasePath);
             strncat(TempPath, "/", 1);
@@ -205,10 +210,10 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)
 {
     char *FileExtension = GetFileExtension(Path);
-    printf("File extension: %s\n", FileExtension);
     // Very unfortunate that C doesn't support switch statements for strings
     if (strcmp(FileExtension, "html") == 0 || strcmp(FileExtension, "htm") == 0)
     {
+        return FindHTMLDependencies(Path);
     }
     else if (strcmp(FileExtension, "css") == 0)
     {
@@ -342,80 +347,82 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
     return fileRules;
 }
 
-struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength)
+struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath) // Main function for creating dependency tree
 {
+    entryPath = (char *)malloc(25);
+    strcpy(entryPath, TempEntryPath);
+    printf("Started creating dependency tree\n");
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
     int ElementsUnwrapped = 0;
-
-    char **paths = malloc((ArrayLength) * sizeof(char *)); // Allocates memory for array of strings
-
-    printf("%s\n", Wrapped_paths);
-
-    while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths))
+    printf("Array index: %d\n", ArrayLength);
+    char **paths = malloc((ArrayLength) * (sizeof(char *) + 1)); // Allocates memory for array of strings
+    printf("past paths malloc\n");
+    while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Paths are wrapped into one string because passing array of strings from JS to C is complicated
     {
-
         if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
         {
-            paths[ElementsUnwrapped] = (char *)malloc((CurrentWrappedArrayIndex - lastNewElement + 1) * sizeof(char));
+            paths[ElementsUnwrapped] = (char *)malloc(CurrentWrappedArrayIndex - lastNewElement + 1);
 
             for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
             {
                 paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
             }
-            printf("this path is %s\n", paths[ElementsUnwrapped]);
-            printf("This file extension is %s\n", GetFileExtension(paths[ElementsUnwrapped]));
+            paths[ElementsUnwrapped][CurrentWrappedArrayIndex - lastNewElement] = '\0';
             lastNewElement = CurrentWrappedArrayIndex + 2;
             ElementsUnwrapped++;
             CurrentWrappedArrayIndex++;
         }
+
         CurrentWrappedArrayIndex++;
     }
-    free(Wrapped_paths);
-    printf("test\n");
+    printf("about to free\n");
+    // free(Wrapped_paths);
+    printf("Here?\n");
     struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
+
+    printf("Tree created\n");
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-
-        //*Tree[i].path = *TurnToFullRelativePath(paths[i], NULL);
-        strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], NULL));
+        printf("loop\n");
+        printf("paths[%d]: %s\n", i, paths[i]);
+        printf("looping\n");
+        Tree[i].path = TurnToFullRelativePath(paths[i], "");
+        // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
     }
 
-    struct FileRule *fileRules = InitFileRules();
+    printf("Finding dependencies...\n");
 
     for (int i = 0; i < ArrayLength; i++)
     {
 
-        char *data = ReadDataFromFile(paths[i]);
-        printf("Data %s\n", data);
-        if (data == NULL)
-        {
-            continue;
-        }
-
-        char **Dependencies = FindAllRegexMatches(data, GetFileRuleFromPath(paths[i], fileRules));
-        char *iteratePointer = Dependencies[0];
+        char **Dependencies = GetDependencies(paths[i]); /*
+         char *iteratePointer = Dependencies[0];
         while (iteratePointer++ != NULL)
-        {
-            for (int j = 0; j < ArrayLength; j++)
-            {
-                if (*Tree[j].path == *iteratePointer)
-                {
-                    Tree[i].Dependencies[Tree[i].DependenciesInTree] = Tree[j];
-                    Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
-                    Tree[i].DependenciesInTree++;
-                    Tree[j].DependentsInTree++;
-                    free(iteratePointer);
-                    break;
-                }
-            }
-        }
-        free(Dependencies);
-        free(iteratePointer);
-    }
+         {
+             for (int j = 0; j < ArrayLength; j++)
+             {
+                 if (*Tree[j].path == *iteratePointer)
+                 {
+                     struct Dependency *TempDependency = malloc(sizeof(struct Dependency));
+                     TempDependency->Dependency = &Tree[j];
+                     Tree[i].Dependencies[Tree[i].DependenciesInTree] = *TempDependency;
+                     Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
+                     Tree[i].DependenciesInTree++;
+                     Tree[j].DependentsInTree++;
+                     free(iteratePointer);
+                     break;
+                 }
+             }
+         }
+         free(Dependencies);
+         free(iteratePointer);
+     }
 
+     SortDependencyTree(Tree, ArrayLength);*/
+    }
     return Tree;
 }

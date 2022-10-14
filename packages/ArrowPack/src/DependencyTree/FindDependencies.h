@@ -6,10 +6,10 @@
 #include <string.h>
 #include <emscripten.h>
 
-char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(const char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
+char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
 
-char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(const char *filename);
+char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(char *filename);
 
-char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(const char *filename);
+char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(char *filename);
 
 #endif // !FINDDEPENENCIESH
