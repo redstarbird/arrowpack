@@ -128,7 +128,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
     }*/
     char *tempHolder; // Buffer to hold the absolute path
-    printf("Finding full path for: %s\n", path);
+
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
@@ -140,8 +140,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     {
 
         int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
-        printf("after matches num \n");
-        printf("matches num: %d\n", MatchesNum);
+
         if (MatchesNum > 0)
         { // Handles paths containing ../
             printf("shoudnt run here\n");
@@ -174,7 +173,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
                     else
                     {
                         FinalString[ArrayIndex] = SplitString[i][j];
-                        printf("SplitString[i][j] = '%c'\n", SplitString[i][j]);
                     }
                     ArrayIndex++;
                 }
@@ -190,13 +188,10 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            printf("here\n");
             if (!strstr(path, entryPath)) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
-                printf("confused\n");
                 return path;
             }
-            printf("here!\n");
             char *TempPath; // Very messy code
             strcpy(TempPath, BasePath);
             strncat(TempPath, "/", 1);
@@ -355,9 +350,9 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
     int ElementsUnwrapped = 0;
-    printf("Array index: %d\n", ArrayLength);
+
     char **paths = malloc((ArrayLength) * (sizeof(char *) + 1)); // Allocates memory for array of strings
-    printf("past paths malloc\n");
+
     while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Paths are wrapped into one string because passing array of strings from JS to C is complicated
     {
         if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
@@ -376,18 +371,13 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
         CurrentWrappedArrayIndex++;
     }
-    printf("about to free\n");
-    // free(Wrapped_paths);
-    printf("Here?\n");
-    struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
-    printf("Tree created\n");
+    // free(Wrapped_paths);
+
+    struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
     for (unsigned int i = 0; i < ArrayLength; i++)
     {
-        printf("loop\n");
-        printf("paths[%d]: %s\n", i, paths[i]);
-        printf("looping\n");
         Tree[i].path = TurnToFullRelativePath(paths[i], "");
         // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
         Tree[i].DependenciesInTree = 0;
@@ -399,30 +389,30 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     for (int i = 0; i < ArrayLength; i++)
     {
 
-        char **Dependencies = GetDependencies(paths[i]); /*
-         char *iteratePointer = Dependencies[0];
+        char **Dependencies = GetDependencies(paths[i]);
+        char *iteratePointer = Dependencies[0];
         while (iteratePointer++ != NULL)
-         {
-             for (int j = 0; j < ArrayLength; j++)
-             {
-                 if (*Tree[j].path == *iteratePointer)
-                 {
-                     struct Dependency *TempDependency = malloc(sizeof(struct Dependency));
-                     TempDependency->Dependency = &Tree[j];
-                     Tree[i].Dependencies[Tree[i].DependenciesInTree] = *TempDependency;
-                     Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
-                     Tree[i].DependenciesInTree++;
-                     Tree[j].DependentsInTree++;
-                     free(iteratePointer);
-                     break;
-                 }
-             }
-         }
-         free(Dependencies);
-         free(iteratePointer);
-     }
-
-     SortDependencyTree(Tree, ArrayLength);*/
+        {
+            for (int j = 0; j < ArrayLength; j++)
+            {
+                if (*Tree[j].path == *iteratePointer)
+                {
+                    struct Dependency *TempDependency = malloc(sizeof(struct Dependency));
+                    TempDependency->Dependency = &Tree[j];
+                    Tree[i].Dependencies[Tree[i].DependenciesInTree] = *TempDependency;
+                    Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
+                    Tree[i].DependenciesInTree++;
+                    Tree[j].DependentsInTree++;
+                    free(iteratePointer);
+                    break;
+                }
+            }
+        }
+        free(Dependencies);
+        free(iteratePointer);
     }
+
+    SortDependencyTree(Tree, ArrayLength);
+
     return Tree;
 }
