@@ -34,12 +34,13 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
     {
         extension[i] = path[lastFullStop + i]; // string doesn't include fullstop
     }
+    extension[length] = '\0';
     return extension;
 }
 
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
 {
-    const int substringLength = EndIndex - StartIndex + 1;
+    const int substringLength = EndIndex - StartIndex + 2;
     char *substring = malloc(sizeof(char) * substringLength);
     for (int i = 0; i < EndIndex - StartIndex; i++)
     {
