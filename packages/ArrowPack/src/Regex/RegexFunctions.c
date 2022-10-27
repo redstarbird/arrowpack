@@ -2,7 +2,7 @@
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern)
 {
-    printf("running code from regex file!!!!!\n");
+    // printf("Getting num of regex matches for text %s\n", Text);
     return 0; // Temp for debugging need to remember to remove
     regex_t regexp;
     if (regcomp(&regexp, Pattern, 0) != 0)
@@ -143,5 +143,37 @@ void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start,
 
 void EMSCRIPTEN_KEEPALIVE regextest(char *Text, const char *Pattern)
 {
-    printf("regextest\n");
+    const int N_MATCHES = 512;
+    printf("\n\nregextest started\n");
+    char **matches = malloc(sizeof(char *));
+    regex_t regexp;
+
+    char *TextStartPointer = Text; //  points to start of string after match
+
+    regmatch_t match[N_MATCHES]; // Contains all matches
+
+    unsigned int matchesCompleted = 0;
+
+    if (regcomp(&regexp, Pattern, 0) != 0)
+    {
+        fprintf(stderr, "Could not compile regex");
+        exit(1);
+    }; // compiles regex
+    printf("regex compiled\n");
+    while (1)
+    {
+        int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
+        if (error == 0)
+        {
+            matches = (char **)realloc(matches, matchesCompleted * sizeof(char *));                               // Reallocates memory for matches array
+            matches[matchesCompleted] = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so);                // Allocates memory for match
+            matches[matchesCompleted] = getSubstring(TextStartPointer, (int)match[0].rm_so, (int)match[0].rm_eo); // Adds substring to matchs array
+            TextStartPointer += (int)match[0].rm_eo;                                                              // Uses pointer arithmetic to setup textStartPointer to end of match
+            matchesCompleted++;                                                                                   // Increments count of matches
+        }
+        else
+        {
+            break;
+        }
+    }
 }
