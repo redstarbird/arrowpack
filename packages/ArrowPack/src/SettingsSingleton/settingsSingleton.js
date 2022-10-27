@@ -24,15 +24,6 @@ class settingsSingleton {
 			}
 		}
 	}
-	get ToStringFormat() {
-		var settingsString = "";
-
-		for (const [key, value] of this.settings) {
-			settingsString += key + ":" + value + "::";
-		}
-		return settingsString;
-
-	}
 	getValue(key, required) { // Will throw an error if the key is not present and required is true
 		if (this.settings[key] !== undefined) { return this.settings[key]; } else { if (required === true) { throw "Error: could not find required key :("; } else { return null; } }
 	}
