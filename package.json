@@ -6,7 +6,7 @@
 		"packages/*"
 	],
 	"devDependencies": {
-		"@nrwl/nx-cloud": "^14.4.1",
+		"@nrwl/nx-cloud": "^15.0.0",
 		"lerna": "^6.0.0"
 	}
 }
