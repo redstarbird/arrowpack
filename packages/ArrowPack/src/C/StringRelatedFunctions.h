@@ -13,4 +13,6 @@ char EMSCRIPTEN_KEEPALIVE *GetFileExtension(const char *path); // Returns the fi
 
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex); // Returns substring between start and end indexes
 
+char **SplitStringByChar(char *str, const char delimiter);
+
 #endif // !STRINGFUNCTIONS_H

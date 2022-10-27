@@ -41,24 +41,6 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     }
 }
 
-char **SplitStringByChar(char *str, const char delimiter)
-{
-    unsigned int NumOfTokens = 0;
-    char **Result = malloc(sizeof(char *));
-    char *token = strtok(str, &delimiter);
-
-    while (token != NULL)
-    {
-        NumOfTokens++;
-        Result = (char **)malloc(sizeof(char *) * NumOfTokens + 1);
-        Result[NumOfTokens - 1] = (char *)malloc(sizeof(char) * strlen(token));
-
-        strcpy(Result[NumOfTokens - 1], token);
-        token = strtok(NULL, &delimiter);
-    }
-    return Result;
-}
-
 char *entryPath; // global variable for entry (base) path
 
 /*if (pathLen < charLen) {return false;}
@@ -188,7 +170,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            if (!strstr(path, entryPath)) // path is already full path (might accidentally include paths with entry name in folder path)path o
+            if (strstr(path, entryPath) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
@@ -344,8 +326,8 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
 
 struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath) // Main function for creating dependency tree
 {
-    entryPath = (char *)malloc(25);
-    strcpy(entryPath, TempEntryPath);
+    entryPath = TempEntryPath;
+
     printf("Started creating dependency tree\n");
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
@@ -361,6 +343,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
             for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
             {
+
                 paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
             }
             paths[ElementsUnwrapped][CurrentWrappedArrayIndex - lastNewElement] = '\0';
@@ -371,8 +354,6 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
         CurrentWrappedArrayIndex++;
     }
-
-    // free(Wrapped_paths);
 
     struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
 
@@ -388,8 +369,8 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++)
     {
+        char **Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
 
-        char **Dependencies = GetDependencies(paths[i]);
         char *iteratePointer = Dependencies[0];
         while (iteratePointer++ != NULL)
         {

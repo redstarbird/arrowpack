@@ -49,3 +49,21 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
     substring[substringLength] = '\0'; // terminate string with null terminator
     return substring;
 }
+
+char **SplitStringByChar(char *str, const char delimiter)
+{
+    unsigned int NumOfTokens = 0;
+    char **Result = malloc(sizeof(char *));
+    char *token = strtok(str, &delimiter);
+
+    while (token != NULL)
+    {
+        NumOfTokens++;
+        Result = (char **)malloc(sizeof(char *) * NumOfTokens + 1);
+        Result[NumOfTokens - 1] = (char *)malloc(sizeof(char) * strlen(token));
+
+        strcpy(Result[NumOfTokens - 1], token);
+        token = strtok(NULL, &delimiter);
+    }
+    return Result;
+}
