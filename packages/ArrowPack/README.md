@@ -17,7 +17,7 @@ Dependencies:
 -   Emscripten
 -   Python >= 3.7
 
-Run build script:
+## Run build script:
 
 ```sh
 python3 Build.py
