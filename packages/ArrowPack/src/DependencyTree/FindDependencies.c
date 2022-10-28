@@ -5,15 +5,20 @@
 
 char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
+    printf("filename: %s\n", filename);
     char *FileContents = ReadDataFromFile(filename);
     if (FileContents == NULL)
     {
         return NULL;
     }
-
-    printf("Num of matches: %d\n", GetNumOfRegexMatches(FileContents, pattern));
+    // printf("file contents: %s\n", FileContents);
+    printf("num of regex mathces %d\n", GetNumOfRegexMatches(FileContents, pattern));
     char **RegexMatches = GetAllRegexMatches(FileContents, pattern, Startpos, Endpos);
-
+    for (int i = 0; i < sizeof(RegexMatches) / sizeof(char *); i++)
+    {
+        RegexMatches[i] = TurnToFullRelativePath(RegexMatches[i], "test");
+    }
+    printf("Got all regex matches\n");
     if (RegexMatches == NULL)
     {
         return NULL;
@@ -25,7 +30,7 @@ char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(char *filename, const char *p
 char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(char *filename)
 {
 
-    return BasicRegexDependencies(filename, "<include src=\"[^<]*\">", 14, 2); // Abstraction
+    return BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 1); // Abstraction
 }
 
 char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(char *filename)
