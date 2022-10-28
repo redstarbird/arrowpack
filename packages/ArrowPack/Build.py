@@ -123,7 +123,7 @@ def Build():
 
             Dev = ""
             if options["dev"] == True:
-                Dev = "--profiling -fsanitize=address -sRUNTIME_DEBUG=1 -fsanitize=undefined -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
+                Dev = "--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
                 optimizations = ""
 
             
