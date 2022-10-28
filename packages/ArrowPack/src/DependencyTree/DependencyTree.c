@@ -12,6 +12,7 @@
 #include "../C/BundleFiles.h"
 #include "../C/StringRelatedFunctions.h"
 #include "./FindDependencies.h"
+#include "../SettingsSingleton/settingsSingleton.h"
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
@@ -95,93 +96,6 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     }
     printf("Could not find rule for processing file %s\n", path);
     exit(1);
-}
-
-char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
-{ // Turns a relative path into absolute path
-    /*if (!containsCharacter(path, ':')) {
-        if (PATH_SEPARATOR) {}
-    }
-    if (!containsCharacter(path,':') || PATH_SEPARATOR == '/') {
-        if (path[0] == '/' || path[0] == '\\') {
-            *path += 1;
-            strcat(entryPath, path);
-            return entryPath;
-        }
-    }*/
-    char *tempHolder; // Buffer to hold the absolute path
-
-    if (path[0] == '/' || path[0] == '\\')
-    {
-        tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(entryPath)) + 1);
-        strcpy(tempHolder, entryPath);
-        strcat(tempHolder, path);
-        return tempHolder;
-    }
-    else
-    {
-
-        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
-
-        if (MatchesNum > 0)
-        { // Handles paths containing ../
-            printf("shoudnt run here\n");
-            if (BasePath[0] == '\0')
-            { // BasePath is only needed for paths with ../
-                printf("Error no base path specified");
-                exit(1);
-                char *NeedVariableForNoError = malloc(sizeof(char));
-                return NeedVariableForNoError;
-            }
-            char *PathCopy;
-            strcpy(PathCopy, BasePath); // Create a copy of the path variable so it doesn't get overwritten by strtok()
-
-            char **SplitString = SplitStringByChar(PathCopy, '/');
-
-            char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(entryPath) + 1)); // Probably very inefficient
-            int ArrayIndex = 0;
-            for (int i = 0; i < (sizeof(SplitString) / sizeof(char *)) - MatchesNum; i++) // loops through array except for elements that need to be removed
-            {
-                for (int j = 0; j < sizeof(*SplitString[i]); j++) // Need to implement better way to do this
-                {
-                    if (!SplitString[i][j])
-                    {
-                        break;
-                    }
-                    if (SplitString[i][j] == '\0')
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        FinalString[ArrayIndex] = SplitString[i][j];
-                    }
-                    ArrayIndex++;
-                }
-                FinalString[ArrayIndex] = '/';
-                ArrayIndex++;
-            }
-            // FinalString[ArrayIndex] = '\0';
-            char *TempEntry;
-            strcpy(TempEntry, entryPath);
-            strcat(TempEntry, FinalString);
-            strcat(TempEntry, path);
-            return TempEntry;
-        }
-        else
-        {
-            if (strstr(path, entryPath) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
-            {
-                return path;
-            }
-            char *TempPath; // Very messy code
-            strcpy(TempPath, BasePath);
-            strncat(TempPath, "/", 1);
-            strcat(TempPath, path);
-            return TempPath;
-        }
-    }
-    return path; // Stops compiler from throwing exception on higher optimization levels
 }
 
 char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)

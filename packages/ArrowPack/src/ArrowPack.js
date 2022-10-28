@@ -29,8 +29,8 @@ if (argv.c) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME) } else { co
 var rawconfigData = null;
 if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = fs.readFileSync(CONFIG_FILE_NAME, "utf8"); }
 
-const settings = new settingsSingleton(rawconfigData);
-let temp = DirFunctions.RecursiveWalkDir(settings.getValue("entry")); // eventually add pluginAPI event here
+const Settings = new settingsSingleton(rawconfigData);
+let temp = DirFunctions.RecursiveWalkDir(Settings.getValue("entry")); // eventually add pluginAPI event here
 
 var WalkedFiles = temp.Files;
 var WalkedDirs = temp.Directories;
@@ -50,12 +50,27 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 
 	CFunctionFactory().then((CFunctions) => {
 		CFunctions._CheckWasm();
+		for (let k in Settings.settings) {
+			CFunctions.ccall(
+				"SendSettingsString",
+				"void",
+				["string"],
+				[k]
+			);
+			CFunctions.ccall(
+				"SendSettingsString",
+				"void",
+				["string"],
+				[Settings.getValue(k)]
+			);
+		}
+
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
 		StructsPointer = CFunctions.ccall(
 			"CreateTree",
 			"number",
 			["string", "number", "string"],
-			[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry")]
+			[WrappedWalkedFiles, WalkedFiles.length, Settings.getValue("entry")]
 		);
 	});
 
