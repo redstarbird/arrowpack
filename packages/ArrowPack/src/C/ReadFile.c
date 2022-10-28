@@ -3,26 +3,64 @@
 
 char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
 { // returns contents of file
-    FILE *filePtr;
-    filePtr = fopen(path, "r");
-    char *buffer = 0;
-    if (filePtr == NULL)
+    FILE *filePTR = fopen(path, "r");
+
+    if (filePTR == NULL)
     {
-        printf("%s has returned NULL\n", path);
+        printf("Error opening file %s\n", path);
         return NULL;
     }
+    fseek(filePTR, 0, SEEK_END);      // seek to end of file
+    long int length = ftell(filePTR); // get length of file
+    fseek(filePTR, 0, SEEK_SET);      // go back to start of file
 
-    fseek(filePtr, 0, SEEK_END);  // seek to end of file
-    long length = ftell(filePtr); // get length of file
-    fseek(filePtr, 0, SEEK_SET);  // go back to start of file
-    buffer = malloc(length);      // allocate memory for buffer to store file contents
-
-    if (buffer)
+    char *buffer = malloc(length + 1);
+    int currentChar = 0;
+    do
     {
-        fread(buffer, 1, length, filePtr); // read file into buffer
-    }
-
-    fclose(filePtr); // close the file
-
+        if (feof(filePTR))
+        {
+            break;
+        }
+        buffer[currentChar] = fgetc(filePTR);
+        currentChar++;
+    } while (1);
+    fclose(filePTR);
+    buffer[currentChar - 1] = '\0';
     return buffer;
+    /*
+        FILE *filePtr;
+        filePtr = fopen(path, "r");
+        printf("Reading from file %s\n", path);
+        char *buffer;
+        if (filePtr == NULL)
+        {
+            printf("%s has returned NULL\n", path);
+            return NULL;
+        }
+        printf("confused\n");
+        fseek(filePtr, 0, SEEK_END);         // seek to end of file
+        long int length = ftell(filePtr);    // get length of file
+        fseek(filePtr, 0, SEEK_SET);         // go back to start of file
+        buffer = (char *)malloc(length + 1); // allocate memory for buffer to store file contents
+        printf(":(\n");
+        if (buffer)
+        {
+            printf("buffer\n");
+            if (fread(buffer, length, 1, filePtr) == -1)
+            {
+                printf("error reading data from file :(\n");
+                exit(1);
+            } // read file into buffer
+        }
+        printf(":D\n");
+        printf("Buffer: %s\n", buffer);
+        printf("sdasdas\n");
+        if (fclose(filePtr) != 0)
+        {
+            printf("Error closing file: %s\n", path);
+            exit(1);
+        } // close the file
+        printf("what?!?!?!?!?");
+        return buffer;*/
 }
