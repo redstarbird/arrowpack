@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <emscripten.h>
 #include <stdlib.h>
+#include "../Regex/RegexFunctions.h"
+#include "../SettingsSingleton/settingsSingleton.h"
 
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
 
@@ -14,5 +16,9 @@ char EMSCRIPTEN_KEEPALIVE *GetFileExtension(const char *path); // Returns the fi
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex); // Returns substring between start and end indexes
 
 char **SplitStringByChar(char *str, const char delimiter);
+
+char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath);
+
+extern struct SettingsSingleton Settings;
 
 #endif // !STRINGFUNCTIONS_H
