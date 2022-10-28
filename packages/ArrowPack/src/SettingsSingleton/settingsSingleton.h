@@ -3,17 +3,13 @@
 #include <emscripten.h>
 #include "../C/StringRelatedFunctions.h"
 
-struct SettingsSingleton Settings;
-
 typedef struct SettingsSingleton
 {
     char *entry;
     char *exit;
     bool autoClear;
-}; // need to implement
+} SettingsSingleton; // need to implement
 
-static void EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
-
-struct SettingsSingleton InitSettings(char *WrappedSettings); // also need to implement
+void EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
 
 #endif // !_settingsSingleton

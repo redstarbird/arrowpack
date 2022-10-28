@@ -1,5 +1,7 @@
 #include "settingsSingleton.h"
 
+struct SettingsSingleton Settings = {.entry = "src", .exit = "dist"}; // Initialises global settings structure
+
 static bool LastStringWasKey;
 static char *LastKey;
 static int KeysSent = 0;
@@ -27,9 +29,10 @@ int SetSetting(char *key, char *value)
     {
         return 0;
     }
+    return 1;
 }
 
-static void SendSettingsString(char *String)
+void EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
 {
     if (!LastStringWasKey)
     {
@@ -37,7 +40,7 @@ static void SendSettingsString(char *String)
     }
     else
     {
-        if (SetSetting(LastKey, String) != 0)
+        if (SetSetting(LastKey, String) == 0)
         {
             printf("Error applying settings %s with value %s with Wasm!\n", LastKey, String);
         }
