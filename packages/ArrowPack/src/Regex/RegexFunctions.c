@@ -40,65 +40,38 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Patt
 
 char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
 {
+    const int N_MATCHES = 512;
+    char **matches = malloc(sizeof(char *));
     regex_t regexp;
 
-    if (regcomp(&regexp, Pattern, 0) != 0)
+    char *TextStartPointer = Text; //  points to start of string after match
+
+    regmatch_t match[N_MATCHES]; // Contains all matches
+
+    unsigned int matchesCompleted = 0;
+
+    if (regcomp(&regexp, Pattern, 0) != 0) // compiles regex
     {
         fprintf(stderr, "Could not compile regex");
-        exit(1);
-    }; // compiles regex
-
-    const int N_MATCHES = 128;
-
-    printf("Regex Text: %s and Pattern: %s\n", Text, Pattern);
-
-    regmatch_t match[N_MATCHES];
-
-    int error = regexec(&regexp, Text, 0, match, 0);
-    char **matches = malloc(sizeof(char *));
-    unsigned int currentAmountOfChars = 0;
-
-    unsigned int TextLength = strlen(Text);
-
-    unsigned int NumOfStrings = 0;
-    unsigned int NumOfChars = 0;
-    if (error == 0)
-    {
-        NumOfStrings = 1;
-        currentAmountOfChars = match->rm_eo - match->rm_so;
-        NumOfChars = currentAmountOfChars;
-
-        matches[0] = malloc(NumOfChars * sizeof(char));
-        matches[0] = getSubstring(Text, (int)match->rm_so, (int)match->rm_eo);
-    }
-    else
-    {
-        regfree(&regexp);
-        return NULL;
-    }
-    /*
-
-
+        exit(1); // Exits if an error occured during regex compilation
+    };
     while (1)
     {
-        error = regexec(&regexp, Text + match->rm_eo, 0, match, 0);
-        if (error)
+        int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
+        if (error == 0)
         {
-            break;
+            matches = (char **)realloc(matches, matchesCompleted * sizeof(char *));                                                   // Reallocates memory for matches array
+            matches[matchesCompleted] = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so);                                    // Allocates memory for match
+            matches[matchesCompleted] = getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos); // Adds substring to matchs array
+            TextStartPointer += (int)match[0].rm_eo;                                                                                  // Uses pointer arithmetic to set textStartPointer to end of match
+            matchesCompleted++;                                                                                                       // Increments count of matches
         }
         else
         {
-            NumOfStrings++;
-            currentAmountOfChars = match->rm_eo - match->rm_so;
-            NumOfChars += currentAmountOfChars;
-
-            matches = realloc(*matches, NumOfStrings * sizeof(char *)); // Allocate memory (this might be allocating too much memory)
-            matches[NumOfStrings - 1] = malloc(currentAmountOfChars * sizeof(char));
-
-            matches[NumOfStrings - 1] = getSubstring(Text, (int)match->rm_so + StartPos, TextLength - (int)match->rm_eo - EndPos);
+            break;
         }
     }
-    regfree(&regexp);*/
+    regfree(&regexp);
     return matches;
 }
 
@@ -143,37 +116,4 @@ void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start,
 
 void EMSCRIPTEN_KEEPALIVE regextest(char *Text, const char *Pattern)
 {
-    const int N_MATCHES = 512;
-    printf("\n\nregextest started\n");
-    char **matches = malloc(sizeof(char *));
-    regex_t regexp;
-
-    char *TextStartPointer = Text; //  points to start of string after match
-
-    regmatch_t match[N_MATCHES]; // Contains all matches
-
-    unsigned int matchesCompleted = 0;
-
-    if (regcomp(&regexp, Pattern, 0) != 0)
-    {
-        fprintf(stderr, "Could not compile regex");
-        exit(1);
-    }; // compiles regex
-    printf("regex compiled\n");
-    while (1)
-    {
-        int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
-        if (error == 0)
-        {
-            matches = (char **)realloc(matches, matchesCompleted * sizeof(char *));                               // Reallocates memory for matches array
-            matches[matchesCompleted] = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so);                // Allocates memory for match
-            matches[matchesCompleted] = getSubstring(TextStartPointer, (int)match[0].rm_so, (int)match[0].rm_eo); // Adds substring to matchs array
-            TextStartPointer += (int)match[0].rm_eo;                                                              // Uses pointer arithmetic to setup textStartPointer to end of match
-            matchesCompleted++;                                                                                   // Increments count of matches
-        }
-        else
-        {
-            break;
-        }
-    }
 }
