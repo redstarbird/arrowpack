@@ -9,6 +9,7 @@ const DirFunctions = require("./js/DirFunctions");
 const wasm_exec = require("./js/wasm_exec.js");
 const CFunctionFactory = require("../Build/CFunctions.js");
 const go = new Go();
+const Sleep = require("../src/js/Sleep");
 
 const argv = require("yargs/yargs")(process.argv.slice(2))
 	.option("c", {
@@ -46,23 +47,33 @@ var WrappedWalkedFiles = "";
 if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one string because passing array of strings from JS to C is complicated
 	WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
 
+	console.log(chalk.red(WalkedFiles.length));
+
 	var StructsPointer;
 
 	CFunctionFactory().then((CFunctions) => {
 		CFunctions._CheckWasm();
 		for (let k in Settings.settings) {
-			CFunctions.ccall(
+			if (CFunctions.ccall(
 				"SendSettingsString",
-				"void",
+				"number",
 				["string"],
 				[k]
-			);
-			CFunctions.ccall(
+			) != 1) {
+				throw "Error sending Wasm settings string: " + k;
+			}
+			console.log(chalk.bold.blue(k));
+			// Gives time to apply settings
+			if (CFunctions.ccall(
 				"SendSettingsString",
-				"void",
+				"number",
 				["string"],
-				[Settings.getValue(k)]
-			);
+				[Settings.settings[k].toString()]
+			) != 1) {
+				throw "Error sending Wasm settings string: " + Settings.settings[k];
+			}
+			console.log(chalk.bold.blue(Settings.settings[k]));
+			// Also gives time to apply settings
 		}
 
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8

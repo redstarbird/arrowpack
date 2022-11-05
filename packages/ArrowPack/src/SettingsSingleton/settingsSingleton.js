@@ -6,9 +6,9 @@ class settingsSingleton {
 	constructor(json) {
 		this.settings = { entry: "src", exit: "public", autoClear: false };
 
-		if (fs.existsSync("./lib")) {
+		/*if (fs.existsSync("./lib")) {
 			this.settings.entry = "lib";
-		}
+		}*/
 		if (fs.existsSync("./dist")) {
 			this.settings.exit = "dist";
 		} else if (fs.existsSync("./build")) {

@@ -3,25 +3,21 @@
 struct SettingsSingleton Settings = {.entry = "src", .exit = "dist"}; // Initialises global settings structure
 
 static bool LastStringWasKey;
+static size_t LastKeyLength = 0;
 static char *LastKey;
-static int KeysSent = 0;
 
-bool StringToBool(const char *str)
-{
-    return strcasecmp(str, "true") == 0;
-}
-
-int SetSetting(char *key, char *value)
+static int SetSetting(char *key, char *value)
 { // Returns 1 if successful, 0 otherwise
-    if (strcasecmp(key, "Entry"))
+    if (strcasecmp(key, "entry") == 0)
     {
+        printf("settings entry to %s\n", value);
         Settings.entry = value;
     }
-    else if (strcasecmp(key, "exit"))
+    else if (strcasecmp(key, "exit") == 0)
     {
         Settings.exit = value;
     }
-    else if (strcasecmp(key, "autoClear"))
+    else if (strcasecmp(key, "autoClear") == 0)
     {
         Settings.autoClear = StringToBool(value);
     }
@@ -32,18 +28,21 @@ int SetSetting(char *key, char *value)
     return 1;
 }
 
-void EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
+int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
 {
-    if (!LastStringWasKey)
+    printf("Received settings string: %s,Last key: %s, Last string was key: %i \n", String, LastKey, LastStringWasKey);
+    if (LastStringWasKey == false)
     {
-        strcpy(LastKey, String);
+        LastKey = strdup(String);
     }
     else
     {
-        if (SetSetting(LastKey, String) == 0)
+        if (SetSetting(LastKey, strdup(String)) == 0)
         {
             printf("Error applying settings %s with value %s with Wasm!\n", LastKey, String);
+            return 0;
         }
     }
     LastStringWasKey = !LastStringWasKey;
+    return 1; // Allows javascript to know when the function has been completed
 }

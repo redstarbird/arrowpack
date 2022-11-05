@@ -2,6 +2,7 @@
 #define SETTINGSSINGLETON_H
 #include <emscripten.h>
 #include "../C/StringRelatedFunctions.h"
+#include <stdlib.h>
 
 typedef struct SettingsSingleton
 {
@@ -10,6 +11,6 @@ typedef struct SettingsSingleton
     bool autoClear;
 } SettingsSingleton; // need to implement
 
-void EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
+int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
 
 #endif // !_settingsSingleton
