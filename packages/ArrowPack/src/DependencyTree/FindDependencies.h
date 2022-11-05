@@ -5,11 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <emscripten.h>
+#include "../C/ReadFile.h"
+#include "../Regex/RegexFunctions.h"
+#include "../C/StringRelatedFunctions.h"
+#include "../SettingsSingleton/settingsSingleton.h"
 
-char EMSCRIPTEN_KEEPALIVE **BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
+RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
 
-char EMSCRIPTEN_KEEPALIVE **FindHTMLDependencies(char *filename);
+RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename);
 
-char EMSCRIPTEN_KEEPALIVE **FindCSSDependencies(char *filename);
+RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename);
 
 #endif // !FINDDEPENENCIESH

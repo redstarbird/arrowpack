@@ -38,10 +38,11 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Patt
     return NumOfStrings;
 }
 
-char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
 {
     const int N_MATCHES = 512;
-    char **matches = malloc(sizeof(char *));
+    size_t RegexMatchesSize = sizeof(struct RegexMatch);
+    RegexMatch *matches = (RegexMatch *)malloc(sizeof(char *));
     regex_t regexp;
 
     char *TextStartPointer = Text; //  points to start of string after match
@@ -60,11 +61,11 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
         int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
         if (error == 0)
         {
-            matches = (char **)realloc(matches, matchesCompleted * sizeof(char *));                                                   // Reallocates memory for matches array
-            matches[matchesCompleted] = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so);                                    // Allocates memory for match
-            matches[matchesCompleted] = getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos); // Adds substring to matchs array
-            TextStartPointer += (int)match[0].rm_eo;                                                                                  // Uses pointer arithmetic to set textStartPointer to end of match
-            matchesCompleted++;                                                                                                       // Increments count of matches
+            matches = (RegexMatch *)realloc(matches, (matchesCompleted + 2) * RegexMatchesSize);                                           // Reallocates memory for matches array
+            matches[matchesCompleted].Text = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so + 1);                                // Allocates memory for match
+            matches[matchesCompleted].Text = getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos); // Adds substring to matchs array
+            TextStartPointer += (int)match[0].rm_eo;                                                                                       // Uses pointer arithmetic to set textStartPointer to end of match
+            matchesCompleted++;                                                                                                            // Increments count of matches
         }
         else
         {
@@ -72,6 +73,7 @@ char EMSCRIPTEN_KEEPALIVE **GetAllRegexMatches(char *Text, const char *Pattern, 
         }
     }
     regfree(&regexp);
+
     return matches;
 }
 

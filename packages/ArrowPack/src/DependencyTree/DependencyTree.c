@@ -98,12 +98,13 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     exit(1);
 }
 
-char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)
+RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path)
 {
     char *FileExtension = GetFileExtension(Path);
     // Very unfortunate that C doesn't support switch statements for strings
     if (strcmp(FileExtension, "html") == 0 || strcmp(FileExtension, "htm") == 0)
     {
+        printf("Returning HTML Dependencies\n");
         return FindHTMLDependencies(Path);
     }
     else if (strcmp(FileExtension, "css") == 0)
@@ -119,7 +120,7 @@ char EMSCRIPTEN_KEEPALIVE **GetDependencies(char *Path)
         printf("SCSS not implemented yet");
     }
 
-    char **temp = malloc(sizeof(char *) * 5); // just here temporarily so compiler doesnt throw an error
+    struct RegexMatch *temp = malloc(sizeof(RegexMatch) * 5); // just here temporarily so compiler doesnt throw an error
     return temp;
 }
 
@@ -238,9 +239,16 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
     return fileRules;
 }
 
+struct Dependency EMSCRIPTEN_KEEPALIVE *DependencyFromRegexMatch(struct RegexMatch *match)
+{
+    struct Dependency *dependency = malloc(sizeof(struct Dependency)); // Allocates memory for Dependency
+    dependency->StartRefPos = match->StartIndex;
+    dependency->EndRefPos = match->EndIndex;
+    return dependency;
+}
+
 struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath) // Main function for creating dependency tree
 {
-    entryPath = TempEntryPath;
 
     printf("Started creating dependency tree\n");
     int CurrentWrappedArrayIndex = 0;
@@ -268,10 +276,11 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
         CurrentWrappedArrayIndex++;
     }
+    size_t TreeSize = (int)sizeof(struct Node) * ArrayLength;
+    printf("Tree Size: %d\n", TreeSize);
+    struct Node *Tree = (struct Node *)malloc(TreeSize);
 
-    struct Node *Tree = malloc(sizeof(struct Node) * ArrayLength);
-
-    for (unsigned int i = 0; i < ArrayLength; i++)
+    for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
     {
         Tree[i].path = TurnToFullRelativePath(paths[i], "");
         // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
@@ -280,31 +289,39 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     }
 
     printf("Finding dependencies...\n");
+    bool DependencyFound = false;
 
-    for (int i = 0; i < ArrayLength; i++)
+    for (int i = 0; i < ArrayLength; i++) // Gets dependencies for each file
     {
-        char **Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
+        RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
 
-        char *iteratePointer = Dependencies[0];
-        while (iteratePointer++ != NULL)
+        for (int k = 0; k <= sizeof(Dependencies) / sizeof(char *); k++) // Loops through each dependency
         {
-            for (int j = 0; j < ArrayLength; j++)
+            printf("Dependency: %s, k: %i\n", Dependencies[i].Text, k);
+            for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
             {
-                if (*Tree[j].path == *iteratePointer)
+
+                if (strcasecmp(Tree[j].path, Dependencies[k].Text) == 0)
                 {
-                    struct Dependency *TempDependency = malloc(sizeof(struct Dependency));
-                    TempDependency->Dependency = &Tree[j];
-                    Tree[i].Dependencies[Tree[i].DependenciesInTree] = *TempDependency;
+
+                    printf("Path: %s\n", Dependencies[k].Text);
+                    Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree);
+                    Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(&Dependencies[k]);
+                    Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
                     Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
                     Tree[i].DependenciesInTree++;
                     Tree[j].DependentsInTree++;
-                    free(iteratePointer);
+                    DependencyFound = true;
                     break;
                 }
             }
+            if (!DependencyFound)
+            {
+                printf("Couldn't find dependency %s in tree. External dependancies are not yet supported :(\n", Dependencies[k].Text);
+            }
+            DependencyFound = false;
         }
         free(Dependencies);
-        free(iteratePointer);
     }
 
     SortDependencyTree(Tree, ArrayLength);
