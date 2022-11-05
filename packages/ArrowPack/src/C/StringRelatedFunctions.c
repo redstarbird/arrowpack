@@ -50,6 +50,11 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
     return substring;
 }
 
+bool StringToBool(const char *str)
+{
+    return strcasecmp(str, "true") == 0;
+}
+
 char **SplitStringByChar(char *str, const char delimiter)
 {
     unsigned int NumOfTokens = 0;
@@ -85,7 +90,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 
     if (path[0] == '/' || path[0] == '\\')
     {
-        tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(Settings.entry)) + 1);
+        // tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(Settings.entry)) + 1);
         strcpy(tempHolder, Settings.entry);
         strcat(tempHolder, path);
         return tempHolder;

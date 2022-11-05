@@ -19,6 +19,8 @@ char **SplitStringByChar(char *str, const char delimiter);
 
 char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath);
 
+bool StringToBool(const char *str);
+
 extern struct SettingsSingleton Settings;
 
 #endif // !STRINGFUNCTIONS_H
