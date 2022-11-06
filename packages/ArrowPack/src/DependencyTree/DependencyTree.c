@@ -16,6 +16,7 @@
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
+    printf("Sorting dependency tree...\n");
     struct Node tempHolder;
     for (int i = 0; i < treeLength - 1; i++)
     {
@@ -277,7 +278,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
         CurrentWrappedArrayIndex++;
     }
     size_t TreeSize = (int)sizeof(struct Node) * ArrayLength;
-    printf("Tree Size: %d\n", TreeSize);
+
     struct Node *Tree = (struct Node *)malloc(TreeSize);
 
     for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
@@ -288,40 +289,50 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
         Tree[i].DependentsInTree = 0;
     }
 
-    printf("Finding dependencies...\n");
+    printf("Finding dependencies...\n\n\n");
     bool DependencyFound = false;
 
     for (int i = 0; i < ArrayLength; i++) // Gets dependencies for each file
     {
-        RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
-
-        for (int k = 0; k <= sizeof(Dependencies) / sizeof(char *); k++) // Loops through each dependency
+        printf("File: %s\n", Tree[i].path);
+        struct RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
+        if (Dependencies != NULL)
         {
-            printf("Dependency: %s, k: %i\n", Dependencies[i].Text, k);
-            for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
+            struct RegexMatch *IteratePointer = &Dependencies[0];
+            while (strlen(IteratePointer->Text) > 0) // Loops through each dependency
             {
 
-                if (strcasecmp(Tree[j].path, Dependencies[k].Text) == 0)
+                for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
                 {
+                    printf("Tree[j]: %s, Dependencies[k]: %s\n", Tree[j].path, IteratePointer->Text);
+                    if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
+                    {
 
-                    printf("Path: %s\n", Dependencies[k].Text);
-                    Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree);
-                    Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(&Dependencies[k]);
-                    Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
-                    Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
-                    Tree[i].DependenciesInTree++;
-                    Tree[j].DependentsInTree++;
-                    DependencyFound = true;
-                    break;
+                        printf("Path: %s\n", IteratePointer->Text);
+                        Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree); // Reallocates memory for dependencies list to add space for new dependency
+                        Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);                 // Adds Dependency to lists of dependencies
+                        Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
+                        Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
+                        Tree[i].DependenciesInTree++;
+                        Tree[j].DependentsInTree++;
+                        DependencyFound = true;
+                        printf("tset\n");
+                        break;
+                    }
                 }
+                if (!DependencyFound)
+                {
+                    printf("Couldn't find dependency %s in tree. External dependancies are not yet supported :(\n", IteratePointer->Text);
+                }
+                DependencyFound = false;
+                IteratePointer++;
             }
-            if (!DependencyFound)
-            {
-                printf("Couldn't find dependency %s in tree. External dependancies are not yet supported :(\n", Dependencies[k].Text);
-            }
-            DependencyFound = false;
+            printf("about to free\n");
+            // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
+
+            printf("Freed!\n");
         }
-        free(Dependencies);
+        printf("\n\nFile has %i dependencies!\n\n", Tree[i].DependenciesInTree);
     }
 
     SortDependencyTree(Tree, ArrayLength);
