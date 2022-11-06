@@ -336,6 +336,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     }
 
     SortDependencyTree(Tree, ArrayLength);
-
+    Tree = realloc(Tree, (ArrayLength + 1) * sizeof(struct Node));
+    printf("Finished sorting dependency tree\n");
     return Tree;
 }
