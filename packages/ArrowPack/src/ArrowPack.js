@@ -83,6 +83,12 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 			["string", "number", "string"],
 			[WrappedWalkedFiles, WalkedFiles.length, Settings.getValue("entry")]
 		);
+		CFunctions.ccall(
+			"BundleFiles",
+			"number",
+			["number"],
+			[StructsPointer]
+		);
 	});
 
 	/*

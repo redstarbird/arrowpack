@@ -7,4 +7,6 @@
 #include "ReadFile.h"
 #include "../DependencyTree/DependencyTree.h"
 
+bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree);
+
 #endif // !BUNDLEFILES_H5
