@@ -1,5 +1,33 @@
 #include "StringRelatedFunctions.h"
 
+int EMSCRIPTEN_KEEPALIVE GetLastFullstop(const char *text)
+{
+    int LastFullStop = -1;
+
+    for (unsigned int i = 0; i < strlen(text); i++)
+    {
+        if (text[i] == '.')
+        {
+            LastFullStop = i;
+        }
+    }
+    return LastFullStop;
+}
+
+int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character)
+{
+    int LastOccurence = -1;
+
+    for (unsigned int i = 0; i < strlen(text); i++)
+    {
+        if (text[i] == character)
+        {
+            LastOccurence = i;
+        }
+    }
+    return LastOccurence;
+}
+
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character) // Checks if string contains a certain character
 {
     for (int i = 0; i < strlen(string); i++)
@@ -13,20 +41,11 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
 {
     unsigned int pathLen = strlen(path);
 
-    unsigned int lastFullStop = 0;
-    for (unsigned int i = 0; i < pathLen; i++)
+    unsigned int lastFullStop = GetLastFullstop(path);
+    if (lastFullStop == -1)
     {
-        if (path[i] == '.')
-        {
-            lastFullStop = i;
-        }
+        return NULL;
     }
-    if (lastFullStop == 0)
-    {
-        printf("Error: could not file character \".\" in path %s", path);
-        exit(1);
-    }
-
     lastFullStop++;                            // Stops fullstop character being included
     const int length = pathLen - lastFullStop; // gets length of file ext
     char *extension = malloc(length + 1);
@@ -107,8 +126,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             { // BasePath is only needed for paths with ../
                 printf("Error no base path specified");
                 exit(1);
-                char *NeedVariableForNoError = malloc(sizeof(char));
-                return NeedVariableForNoError;
             }
             char *PathCopy;
             strcpy(PathCopy, BasePath); // Create a copy of the path variable so it doesn't get overwritten by strtok()
@@ -159,4 +176,16 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
     }
     return path; // Stops compiler from throwing exception on higher optimization levels
+}
+
+char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
+{
+    int LastFullStop = LastOccurenceOfChar(filename, '/');
+    char *BasePath = (char *)malloc(LastFullStop);
+    for (unsigned int i = 0; i < LastFullStop; i++)
+    {
+        BasePath[i] = filename[i];
+    }
+    BasePath[LastFullStop] = '\0';
+    return BasePath;
 }

@@ -21,6 +21,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath);
 
 bool StringToBool(const char *str);
 
+char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename);
+
 extern struct SettingsSingleton Settings;
 
 #endif // !STRINGFUNCTIONS_H
