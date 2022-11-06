@@ -14,7 +14,7 @@ typedef struct RegexMatch
     unsigned int StartIndex, EndIndex;
 } RegexMatch;
 
-int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(const char *Text, const char *Pattern); // returns the number of regex matches
+int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern); // returns the number of regex matches
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos); // returns all regex matches as an array of strings
 
