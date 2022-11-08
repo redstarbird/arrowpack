@@ -19,7 +19,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
     struct RegexMatch *IteratePointer = &RegexMatches[0];
     while (strlen(IteratePointer->Text) > 0)
     {
-        IteratePointer->Text = strdup(TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename)));
+        IteratePointer->Text = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
         printf("DIfferent loop technique: %s\n", IteratePointer->Text);
         IteratePointer++;
     }

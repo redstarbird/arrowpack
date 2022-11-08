@@ -104,7 +104,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             return entryPath;
         }
     }*/
-
+    printf("This makes no sense:  %s\n", BasePath);
     char *tempHolder; // Buffer to hold the absolute path
 
     if (path[0] == '/' || path[0] == '\\')
@@ -116,12 +116,13 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     }
     else
     {
+        printf("BasePath45: %s\n", BasePath);
 
-        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
-
+        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./"); // This is adding broken char to end of BasePath for some reason
+        printf("BasePath5435: %s\n", BasePath);
+        printf("MatchesNum: %i, path: %s\n", MatchesNum, path);
         if (MatchesNum > 0)
         { // Handles paths containing ../
-            printf("shoudnt run here\n");
             if (BasePath[0] == '\0')
             { // BasePath is only needed for paths with ../
                 printf("Error no base path specified");
@@ -164,14 +165,22 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
+            printf("Base path: %s, path: %s\n", BasePath, path);
             if (strstr(path, Settings.entry) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
-            char *TempPath; // Very messy code
-            strcpy(TempPath, BasePath);
-            strncat(TempPath, "/", 1);
+            for (int test = 0; test < strlen(BasePath); test++)
+            {
+                printf("I: %i, basepath: %c\n", test, BasePath[test]);
+            }
+            printf("True of false? %i\n", BasePath[strlen(BasePath + 1)] == '\0');
+            char *TempPath = strdup(BasePath); // Very messy code
+            printf("TempPath1 = %s\n", TempPath);
+            printf("Temppatj2 = %s\n", TempPath);
+            printf("P{ATH: %s\n", path);
             strcat(TempPath, path);
+            printf(" Final temp path : %s\n", TempPath);
             return TempPath;
         }
     }
@@ -180,12 +189,15 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 
 char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 {
-    int LastFullStop = LastOccurenceOfChar(filename, '/');
-    char *BasePath = (char *)malloc(LastFullStop);
-    for (unsigned int i = 0; i < LastFullStop; i++)
+    int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
+    printf("last patj cjar: %i\n", LastPathChar);
+    char *BasePath = (char *)malloc(LastPathChar * sizeof(char));
+    for (unsigned int i = 0; i < LastPathChar; i++)
     {
+        printf("i: %i, c: %c\n", i, filename[i]);
         BasePath[i] = filename[i];
     }
-    BasePath[LastFullStop] = '\0';
+    BasePath[LastPathChar] = '\0';
+    printf("Base: %s\n", BasePath);
     return BasePath;
 }

@@ -6,7 +6,9 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     const int N_MATCHES = 512;
     regex_t regexp;
 
-    char *TextStartPointer = &Text[0]; //  points to start of string after match
+    char *TextCopy = strdup(Text);
+
+    char *TextStartPointer = &TextCopy[0]; //  points to start of string after match
 
     regmatch_t match[N_MATCHES]; // Contains all matches
 
