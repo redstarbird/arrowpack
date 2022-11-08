@@ -165,22 +165,13 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            printf("Base path: %s, path: %s\n", BasePath, path);
             if (strstr(path, Settings.entry) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
-            for (int test = 0; test < strlen(BasePath); test++)
-            {
-                printf("I: %i, basepath: %c\n", test, BasePath[test]);
-            }
-            printf("True of false? %i\n", BasePath[strlen(BasePath + 1)] == '\0');
+
             char *TempPath = strdup(BasePath); // Very messy code
-            printf("TempPath1 = %s\n", TempPath);
-            printf("Temppatj2 = %s\n", TempPath);
-            printf("P{ATH: %s\n", path);
             strcat(TempPath, path);
-            printf(" Final temp path : %s\n", TempPath);
             return TempPath;
         }
     }
@@ -190,7 +181,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 {
     int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
-    printf("last patj cjar: %i\n", LastPathChar);
     char *BasePath = (char *)malloc(LastPathChar * sizeof(char));
     for (unsigned int i = 0; i < LastPathChar; i++)
     {
@@ -198,6 +188,14 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
         BasePath[i] = filename[i];
     }
     BasePath[LastPathChar] = '\0';
-    printf("Base: %s\n", BasePath);
     return BasePath;
+}
+
+char *ReplaceSectionOfString(char *string, unsigned int start, unsigned int end, const char *ReplaceString)
+{
+    char *StringCopy = getSubstring(string, 0, start - 1);
+
+    printf("Modified string: %s", StringCopy);
+
+    return StringCopy;
 }
