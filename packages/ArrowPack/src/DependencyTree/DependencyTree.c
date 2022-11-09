@@ -294,7 +294,6 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++) // Gets dependencies for each file
     {
-        printf("File: %s\n", Tree[i].path);
         struct RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
         if (Dependencies != NULL)
         {
@@ -304,19 +303,17 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
                 for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
                 {
-                    printf("Tree[j]: %s, Dependencies[k]: %s\n", Tree[j].path, IteratePointer->Text);
                     if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
                     {
 
-                        printf("Path: %s\n", IteratePointer->Text);
                         Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree); // Reallocates memory for dependencies list to add space for new dependency
-                        Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);                 // Adds Dependency to lists of dependencies
+                        Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);
+                        Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(Tree[j].path); // Adds Dependency to lists of dependencies
                         Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
                         Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
                         Tree[i].DependenciesInTree++;
                         Tree[j].DependentsInTree++;
                         DependencyFound = true;
-                        printf("tset\n");
                         break;
                     }
                 }
@@ -327,16 +324,13 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
                 DependencyFound = false;
                 IteratePointer++;
             }
-            printf("about to free\n");
-            // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
 
-            printf("Freed!\n");
+            // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
         }
         printf("\n\nFile has %i dependencies!\n\n", Tree[i].DependenciesInTree);
     }
 
     SortDependencyTree(Tree, ArrayLength);
-    Tree = realloc(Tree, (ArrayLength + 1) * sizeof(struct Node));
-    printf("Finished sorting dependency tree\n");
+    Tree = realloc(Tree, (ArrayLength + 1) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
     return Tree;
 }
