@@ -15,7 +15,7 @@ typedef struct Node Node;
 typedef struct Dependency // Wraps a regular Node struct and includes the start and end positions of where the node is referenced so it doesn't need to be worked out again
 {
     unsigned int StartRefPos, EndRefPos;
-    struct Node *Dependency;
+    char *DependencyPath;
 } Dependency;
 
 struct Node
