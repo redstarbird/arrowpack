@@ -6,6 +6,8 @@
 #include "StringRelatedFunctions.h"
 #include "ReadFile.h"
 #include "../DependencyTree/DependencyTree.h"
+#include "ProblemHandler.h"
+#include "ReadFile.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree);
 
