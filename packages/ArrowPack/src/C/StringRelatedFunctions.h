@@ -25,4 +25,8 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename);
 
 extern struct SettingsSingleton Settings;
 
+void ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString);
+
+char *EntryToExitPath(const char *path);
+
 #endif // !STRINGFUNCTIONS_H

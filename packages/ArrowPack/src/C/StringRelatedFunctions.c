@@ -104,7 +104,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             return entryPath;
         }
     }*/
-    printf("This makes no sense:  %s\n", BasePath);
     char *tempHolder; // Buffer to hold the absolute path
 
     if (path[0] == '/' || path[0] == '\\')
@@ -116,11 +115,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     }
     else
     {
-        printf("BasePath45: %s\n", BasePath);
 
         int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./"); // This is adding broken char to end of BasePath for some reason
-        printf("BasePath5435: %s\n", BasePath);
-        printf("MatchesNum: %i, path: %s\n", MatchesNum, path);
         if (MatchesNum > 0)
         { // Handles paths containing ../
             if (BasePath[0] == '\0')
@@ -184,18 +180,60 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     char *BasePath = (char *)malloc(LastPathChar * sizeof(char));
     for (unsigned int i = 0; i < LastPathChar; i++)
     {
-        printf("i: %i, c: %c\n", i, filename[i]);
         BasePath[i] = filename[i];
     }
     BasePath[LastPathChar] = '\0';
     return BasePath;
 }
 
-char *ReplaceSectionOfString(char *string, unsigned int start, unsigned int end, const char *ReplaceString)
+void ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString)
 {
-    char *StringCopy = getSubstring(string, 0, start - 1);
+    printf("\n\n");
+    int ShiftNum; /*
+     if (end - start > strlen(ReplaceString))
+     {
+         printf("option 1\n");
+         ShiftNum = strlen(ReplaceString) - (end - start);
+     }
+     else
+     {
+         printf("option 2\n");
+         ShiftNum = strlen(ReplaceString);
+     }*/
+    ShiftNum = strlen(ReplaceString) - (end - start);
+    printf("Shift num: %i, replace string: %s, string: %s, end: %i\n", ShiftNum, ReplaceString, string, end);
 
-    printf("Modified string: %s", StringCopy);
+    size_t stringlen = (ShiftNum + (int)strlen(string) + 1) * sizeof(char);
+    if (ShiftNum > 0)
+    {
+        string = (char *)realloc(string, stringlen);
+        string[stringlen - ShiftNum] = '\0';
+        for (unsigned int i = (int)stringlen - ShiftNum; i >= end; i--)
+        {                                     // Loops through all characters that need to be shifted to the right
+            string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
+        }
+        for (unsigned int i = start; i < strlen(ReplaceString); i++)
+        {
+            string[i] = ReplaceString[i - start];
+        }
+    }
+    else
+    {
+        for (unsigned int i = end; i < (int)stringlen - ShiftNum; i++) // part is not done yet
+        {                                                              // Loops through all characters that need to be shifted to the left
+            string[i + ShiftNum] = string[i];                          // Shift the character the correct amount to the left
+        }
+    }
+}
 
-    return StringCopy;
+char *EntryToExitPath(const char *path)
+{
+    char *PathCopy = strdup(path);
+    ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
+    return PathCopy;
+}
+
+void StringFormatInsert(char *string, const char *InsertString)
+{
+    // todo
 }
