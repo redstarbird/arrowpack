@@ -3,6 +3,8 @@
 
 #define PATH_SEPARATOR '/'
 
+#include <stdbool.h>
+
 typedef struct FileRule
 {
     char FileExtensions[4][32];
@@ -20,6 +22,7 @@ typedef struct Dependency // Wraps a regular Node struct and includes the start 
 
 struct Node
 { // structure for individual nodes (Modules/Files) in the tree
+    bool IsArrayEnd;
     char *path;
     struct Node *Dependents;
     struct Dependency *Dependencies;

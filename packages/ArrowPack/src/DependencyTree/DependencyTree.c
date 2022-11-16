@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <regex.h>
 #include <stdbool.h>
+#include "../C/TextColors.h"
 #include "DependencyTree.h"
 #include "../C/ReadFile.h"
 #include <emscripten.h>
@@ -16,30 +17,35 @@
 
 void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
 {
+    ColorGreen();
     printf("Sorting dependency tree...\n");
+    ColorNormal();
     struct Node tempHolder;
-    for (int i = 0; i < treeLength - 1; i++)
+    for (int i = 0; i < treeLength - 1; i++) // This basic bubble sort is probably quite slow and inefficient and can probably be optimized a lot
     {
-        if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
+        for (int i = 0; i < treeLength - 1; i++)
         {
-            tempHolder = tree[i]; // Basic code to swap array elements
-            tree[i] = tree[i + 1];
-            tree[i + 1] = tempHolder;
-        }
-        else if (tree[i].DependenciesInTree == tree[i + 1].DependenciesInTree)
-        {
-            if (tree[i].DependentsInTree < tree[i + 1].DependentsInTree)
+            if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
             {
-                tempHolder = tree[i];
+                tempHolder = tree[i]; // Basic code to swap array elements
                 tree[i] = tree[i + 1];
                 tree[i + 1] = tempHolder;
             }
+            else if (tree[i].DependenciesInTree == tree[i + 1].DependenciesInTree)
+            {
+                if (tree[i].DependentsInTree < tree[i + 1].DependentsInTree)
+                {
+                    tempHolder = tree[i];
+                    tree[i] = tree[i + 1];
+                    tree[i + 1] = tempHolder;
+                }
+            }
         }
-    }
-    if (tree[0].DependenciesInTree > 0)
-    {
-        printf("Error: Dependency loop found in file %s.\n", tree[0].path);
-        exit(1);
+        if (tree[0].DependenciesInTree > 0)
+        {
+            printf("Error: Dependency loop found in file %s.\n", tree[0].path);
+            exit(1);
+        }
     }
 }
 
@@ -284,35 +290,39 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
     {
         Tree[i].path = TurnToFullRelativePath(paths[i], "");
+        Tree[i].IsArrayEnd = false;
         // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
     }
-
+    ColorGreen();
     printf("Finding dependencies...\n\n\n");
+    ColorReset();
+
     bool DependencyFound = false;
 
-    for (int i = 0; i < ArrayLength; i++) // Gets dependencies for each file
+    for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
         struct RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
-        if (Dependencies != NULL)
+        if (Dependencies != NULL)                                    // Checks if dependencies have been found
         {
             struct RegexMatch *IteratePointer = &Dependencies[0];
-            while (strlen(IteratePointer->Text) > 0) // Loops through each dependency
+            while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
             {
-
+                printf("I is still %i\n", i);
                 for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
                 {
                     if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
                     {
-
+                        printf("Tree[%i].path == %s\n", j, IteratePointer->Text);
                         Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree); // Reallocates memory for dependencies list to add space for new dependency
                         Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);
-                        Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(Tree[j].path); // Adds Dependency to lists of dependencies
-                        Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
-                        Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
+                        Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(IteratePointer->Text); // Adds Dependency to lists of dependencies
+
+                        // Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
+                        // Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
                         Tree[i].DependenciesInTree++;
-                        Tree[j].DependentsInTree++;
+                        // Tree[j].DependentsInTree++;
                         DependencyFound = true;
                         break;
                     }
@@ -329,8 +339,12 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
         }
         printf("\n\nFile has %i dependencies!\n\n", Tree[i].DependenciesInTree);
     }
+    printf("\n\n");
 
     SortDependencyTree(Tree, ArrayLength);
+
     Tree = realloc(Tree, (ArrayLength + 1) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
+
+    Tree[ArrayLength + 1].IsArrayEnd = true;
     return Tree;
 }
