@@ -11,14 +11,15 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     char *TextStartPointer = &TextCopy[0]; //  points to start of string after match
 
     regmatch_t match[N_MATCHES]; // Contains all matches
-
+    printf("pattern: %s\n", Pattern);
     unsigned int matchesCompleted = 0;
-
+    printf("about to compile regex\n");
     if (regcomp(&regexp, Pattern, 0) != 0) // compiles regex
     {
         fprintf(stderr, "Could not compile regex");
         exit(1); // Exits if an error occured during regex compilation
     };
+    printf("Compiled regex\n");
     while (1)
     {
         int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
@@ -62,8 +63,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
             matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 1) * RegexMatchesSize);                                            // Reallocates memory for matches array
             matches[matchesCompleted].Text = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so + 1);                                        // Allocates memory for match
             matches[matchesCompleted].Text = strdup(getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos)); // Adds substring to matchs array
-            TextStartPointer += (int)match[0].rm_eo;                                                                                               // Uses pointer arithmetic to set textStartPointer to end of match
-            matchesCompleted++;                                                                                                                    // Increments count of matches
+            matches[matchesCompleted].IsArrayEnd = false;
+            TextStartPointer += (int)match[0].rm_eo; // Uses pointer arithmetic to set textStartPointer to end of match
+            matchesCompleted++;                      // Increments count of matches
         }
         else
         {
@@ -72,6 +74,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
     }
     regfree(&regexp);
     matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 1) * RegexMatchesSize);
+    matches[matchesCompleted].IsArrayEnd = true;
     if (matchesCompleted == 0)
     {
         return NULL;

@@ -12,6 +12,7 @@ typedef struct RegexMatch
 {
     char *Text;
     unsigned int StartIndex, EndIndex;
+    bool IsArrayEnd;
 } RegexMatch;
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern); // returns the number of regex matches
