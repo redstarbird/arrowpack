@@ -8,7 +8,8 @@
 #include "../DependencyTree/DependencyTree.h"
 #include "ProblemHandler.h"
 #include "ReadFile.h"
+#include "FileHandler.h"
 
-bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree);
+bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Node *DependencyTree);
 
 #endif // !BUNDLEFILES_H5
