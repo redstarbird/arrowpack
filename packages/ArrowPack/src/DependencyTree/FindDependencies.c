@@ -2,7 +2,6 @@
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
-    printf("filename: %s\n", filename);
     char *FileContents = ReadDataFromFile(filename);
     if (FileContents == NULL)
     {
@@ -17,10 +16,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
         return NULL;
     }
     struct RegexMatch *IteratePointer = &RegexMatches[0];
-    while (strlen(IteratePointer->Text) > 0)
+    while (IteratePointer->IsArrayEnd != true)
     {
-        IteratePointer->Text = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
-        printf("DIfferent loop technique: %s\n", IteratePointer->Text);
+        IteratePointer->Text = strdup(TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename)));
+
         IteratePointer++;
     }
     /*
