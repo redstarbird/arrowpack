@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "../Regex/RegexFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
+#include "TextColors.h"
 
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
 
@@ -26,6 +27,8 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename);
 extern struct SettingsSingleton Settings;
 
 void ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString);
+
+bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *substring);
 
 char *EntryToExitPath(const char *path);
 
