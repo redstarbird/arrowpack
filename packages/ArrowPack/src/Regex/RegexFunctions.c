@@ -45,6 +45,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
     regex_t regexp;
 
     char *TextStartPointer = Text; //  points to start of string after match
+    int AmountShifted = 0;
 
     regmatch_t match[N_MATCHES]; // Contains all matches
 
@@ -64,8 +65,12 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
             matches[matchesCompleted].Text = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so + 1);                                        // Allocates memory for match
             matches[matchesCompleted].Text = strdup(getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos)); // Adds substring to matchs array
             matches[matchesCompleted].IsArrayEnd = false;
+            matches[matchesCompleted].StartIndex = (unsigned int)match[0].rm_so + AmountShifted;
+            matches[matchesCompleted].EndIndex = (unsigned int)match[0].rm_eo + AmountShifted;
+            printf("regex substring %s\n", TextStartPointer);
             TextStartPointer += (int)match[0].rm_eo; // Uses pointer arithmetic to set textStartPointer to end of match
-            matchesCompleted++;                      // Increments count of matches
+            AmountShifted += (int)match[0].rm_eo;
+            matchesCompleted++; // Increments count of matches
         }
         else
         {
