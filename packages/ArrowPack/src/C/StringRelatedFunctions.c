@@ -109,7 +109,9 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     if (path[0] == '/' || path[0] == '\\')
     {
         // tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(Settings.entry)) + 1);
+
         strcpy(tempHolder, Settings.entry);
+        tempHolder[strlen(tempHolder) - 1] = '\0';
         strcat(tempHolder, path);
         return tempHolder;
     }
@@ -165,8 +167,9 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             {
                 return path;
             }
-
             char *TempPath = strdup(BasePath); // Very messy code
+            printf("TempPath: %s, path: %s\n", TempPath, path);
+            realloc(TempPath, (strlen(TempPath) + strlen(path) + 1) * sizeof(char));
             strcat(TempPath, path);
             return TempPath;
         }
@@ -188,42 +191,66 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 
 void ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString)
 {
-    printf("\n\n");
-    int ShiftNum; /*
-     if (end - start > strlen(ReplaceString))
-     {
-         printf("option 1\n");
-         ShiftNum = strlen(ReplaceString) - (end - start);
-     }
-     else
-     {
-         printf("option 2\n");
-         ShiftNum = strlen(ReplaceString);
-     }*/
-    ShiftNum = strlen(ReplaceString) - (end - start);
+    /*
+         if (end - start > strlen(ReplaceString))
+         {
+             printf("option 1\n");
+             ShiftNum = strlen(ReplaceString) - (end - start);
+         }
+         else
+         {
+             printf("option 2\n");
+             ShiftNum = strlen(ReplaceString);
+         }*/
+    ColorCyan();
+    printf("String replace debug start\n");
+    ColorNormal();
+    int ShiftNum = strlen(ReplaceString) - (end - start);
     printf("Shift num: %i, replace string: %s, string: %s, end: %i\n", ShiftNum, ReplaceString, string, end);
 
     size_t stringlen = (ShiftNum + (int)strlen(string) + 1) * sizeof(char);
     if (ShiftNum > 0)
     {
         string = (char *)realloc(string, stringlen);
-        string[stringlen - ShiftNum] = '\0';
-        for (unsigned int i = (int)stringlen - ShiftNum; i >= end; i--)
+        string[stringlen] = '\0';
+        for (unsigned int i = (int)stringlen - ShiftNum - 1; i >= end; i--)
         {                                     // Loops through all characters that need to be shifted to the right
             string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
         }
+        printf("Shifted string: %s\n", string);
         for (unsigned int i = start; i < strlen(ReplaceString); i++)
         {
             string[i] = ReplaceString[i - start];
         }
+        printf("Final string: %s\n", string);
     }
-    else
+    else if (ShiftNum < 0)
     {
-        for (unsigned int i = end; i < (int)stringlen - ShiftNum; i++) // part is not done yet
-        {                                                              // Loops through all characters that need to be shifted to the left
-            string[i + ShiftNum] = string[i];                          // Shift the character the correct amount to the left
+        printf("not implemented yet\n");
+        for (unsigned int i = end; i < strlen(string); i++) //
+        {                                                   // Loops through all characters that need to be shifted to the left
+            string[i + ShiftNum] = string[i];               // Shift the character the correct amount to the left
         }
+        printf("Shifted string: %s\n", string);
+        for (unsigned int i = 0; i < strlen(ReplaceString); i++)
+        {
+            string[start + i] = ReplaceString[i];
+        }
+        string[strlen(string) + ShiftNum] = '\0';
+        printf("Finished string: %s\n", string);
     }
+    ColorCyan();
+    printf("String replace debug end\n");
+    ColorNormal();
+}
+
+bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *substring)
+{
+    if (string[0] == '\0' || substring[0] == '\0')
+    {
+        return false;
+    }
+    return strncasecmp(substring, string, strlen(string)) == 0;
 }
 
 char *EntryToExitPath(const char *path)
