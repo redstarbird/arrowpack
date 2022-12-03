@@ -8,7 +8,7 @@
 
 #include "JSONParser.h"
 #include "./DependencyTree.h"
-#include "ReadFile.h"
+#include "FileHandler.h"
 #include <stdbool.h>
 
 char * ParseJSON(const char * json) {

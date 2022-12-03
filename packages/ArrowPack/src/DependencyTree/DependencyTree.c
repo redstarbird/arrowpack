@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include "../C/TextColors.h"
 #include "DependencyTree.h"
-#include "../C/ReadFile.h"
+#include "../C/FileHandler.h"
 #include <emscripten.h>
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 #include "../Regex/RegexFunctions.h"

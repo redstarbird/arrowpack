@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <emscripten.h>
-#include "../C/ReadFile.h"
+#include "../C/FileHandler.h"
 #include "../Regex/RegexFunctions.h"
 #include "../C/StringRelatedFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
