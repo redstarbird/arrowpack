@@ -32,6 +32,26 @@ class GoBuildFile:
         self.output = output
         self.filename = filename
 
+def CombineFiles(filepath = "./src/Main.c"):
+    # First, we will read the contents of the file at the given filepath
+    with open(filepath, 'r') as f:
+        contents = f.read()
+
+    # Next, we will use a regular expression to find any #include statements in the file
+    includes = re.findall(r'#include\s*["](.+?)["]', contents)
+
+    # Now we will loop through each of the dependencies and recursively combine them
+    for include in includes:
+        # Recursively combine the dependency
+        dependency_contents = CombineFiles(include)
+
+        # Replace the #include statement with the contents of the dependency
+        contents = contents.replace('#include "{}"'.format(include), dependency_contents)
+
+    # Finally, we will print the combined contents of the file and its dependencies
+    print(filepath)
+
+
 def BuildPCRE2(version="10.34"): # For building the pcre2 regex library (only needed to be used once to install pcre2 files to system)
     print(f"Building PCRE2 version: {version}")
     runCommand("mkdir -p pcre2tempbuild") # Makes temp install directory
@@ -72,7 +92,7 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse",),
         SourceFiles=("src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c",
         "./src/Regex/RegexFunctions.c", "./src/DependencyTree/FindDependencies.c","./src/SettingsSingleton/settingsSingleton.c", "./src/C/BundleFiles.c",
-         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c"),
+         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c"),
         Modularize=True,
         ExportedRuntimeMethods=("ccall",),
         ForceFS=True,
@@ -152,11 +172,15 @@ def Build():
                 raise Exception("Error: An internet connection is required")
 
     pcre2 = False
+    combineFiles = False
     if len(sys.argv) > 1:
         pcre2 = sys.argv[1].lower() == "pcre2"
+        combineFiles = sys.argv[1].lower() == "combine" # Combine files never really needs to be used
     print("PCRE2: " + str(pcre2))
     if pcre2 == True:
         BuildPCRE2()
+    elif combineFiles == True:
+        CombineFiles()
     else:
         if platform.system() == "Windows":
             if checkInstalled("wsl"): # checks if WSL is installed
