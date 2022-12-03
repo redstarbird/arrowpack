@@ -70,7 +70,7 @@ def Build():
         "Build/CFunctions.js",
         "src/Main.c",
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse",),
-        SourceFiles=("./src/C/ReadFile.c", "src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c",
+        SourceFiles=("src/C/cJSON/cJSON.c", "src/DependencyTree/DependencyTree.c", "./src/C/StringRelatedFunctions.c",
         "./src/Regex/RegexFunctions.c", "./src/DependencyTree/FindDependencies.c","./src/SettingsSingleton/settingsSingleton.c", "./src/C/BundleFiles.c",
          "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c"),
         Modularize=True,

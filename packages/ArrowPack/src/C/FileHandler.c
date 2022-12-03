@@ -1,6 +1,5 @@
 #include "FileHandler.h"
-#include "ReadFile.h"
-#include <emscripten.h> 
+#include <emscripten.h>
 
 void CreateFileWrite(char *path, char *text)
 {
