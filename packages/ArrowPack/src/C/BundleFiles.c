@@ -2,17 +2,30 @@
 
 void BundleHTMLFile(struct Node *TreeNode)
 {
-    printf("TreeNode: %p\n", TreeNode);
 
     char *FileContents = ReadDataFromFile(TreeNode->path);
-    printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
+    // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
     for (int i = 0; i < TreeNode->DependenciesInTree; i++)
     {
-        printf("i: %i, %s\n", i, TreeNode->Dependencies[i].DependencyPath);
+        printf("Settings exit: %s\n", Settings.exit);
+        ReplaceSectionOfString(TreeNode->Dependencies[i].DependencyPath, 0, strlen(Settings.entry), Settings.exit);
         char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
         printf("InsertText = %s\n", InsertText);
+        int InsertEnd = TreeNode->Dependencies[i].EndRefPos;
+        printf("Strlen(FileContents): %i, InsertEnd: %i\n", (int)strlen(FileContents), InsertEnd);
+        /*char *TempPointer = &FileContents[InsertEnd + 1];
+        printf("TempPointer = %s\n", TempPointer);
+         if (StringStartsWith(TempPointer, "</include>"))
+         {
+             InsertEnd += 10;
+             printf("String \"%s\" starts with \"%s\"\n", TempPointer, "</include>");
+         }*/
+        printf("String before replace: %s\n", FileContents);
+        ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos, InsertEnd + 1, InsertText);
+        printf("String after replace: %s\n", FileContents);
     }
     char *BundledFile;
+    printf("\n\n\n\n");
 }
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
@@ -36,14 +49,14 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
 
     while (IteratePointer->IsArrayEnd != true && IteratePointer->path && strlen(IteratePointer->path)) // Checks if it has reached the end of the array by checking if path is NULL
     {
-        printf("confused now: %i\n", IteratePointer->IsArrayEnd);
-        printf("Bundling file: %s, strlen(path) = %i\n", IteratePointer->path, strlen(IteratePointer->path));
+        ColorMagenta();
+        printf("\nBundling file: %s, strlen(path) = %i\n", IteratePointer->path, (int)strlen(IteratePointer->path));
+        ColorReset();
         char *fileType = GetFileExtension(IteratePointer->path); // Get file type of the Node
 
         if (strcmp(fileType, "html") == 0) // C doesn't support switch statements for strings
         {
 
-            printf("File is HTML\n");
             BundleHTMLFile(IteratePointer);
         }
         else
