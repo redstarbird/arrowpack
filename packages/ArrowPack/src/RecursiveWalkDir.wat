@@ -1,3 +1,4 @@
+;; This module doesn't currently work and needs fixing/debugging
 (module
   (import "env" "readdir" (func $readdir (param i32 i32) (result i32)))
   (import "env" "stat" (func $stat (param i32 i32) (result i32)))
