@@ -33,4 +33,6 @@ bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *subst
 
 char *EntryToExitPath(const char *path);
 
+void RemoveSubstring(char *string, const char *substring);
+
 #endif // !STRINGFUNCTIONS_H
