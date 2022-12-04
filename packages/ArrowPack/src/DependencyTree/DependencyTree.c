@@ -95,7 +95,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
             {
                 break;
             }
-            if (fileRules[i].FileExtensions[j] == extension)
+            if (strcasecmp(fileRules[i].FileExtensions[j], extension) == 0)
             {
                 return fileRules[i];
             }
