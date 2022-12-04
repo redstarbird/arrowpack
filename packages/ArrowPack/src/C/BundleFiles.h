@@ -7,6 +7,7 @@
 #include "../DependencyTree/DependencyTree.h"
 #include "ProblemHandler.h"
 #include "./FileHandler.h"
+#include "../Minifiers/HTMLMinifier.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Node *DependencyTree);
 
