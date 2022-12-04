@@ -14,18 +14,12 @@ void BundleHTMLFile(struct Node *TreeNode)
         printf("InsertText = %s\n", InsertText);
         int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
         printf("Strlen(FileContents): %i, InsertEnd: %i\n", (int)strlen(FileContents), InsertEnd);
-        /*char *TempPointer = &FileContents[InsertEnd + 1];
-        printf("TempPointer = %s\n", TempPointer);
-         if (StringStartsWith(TempPointer, "</include>"))
-         {
-             InsertEnd += 10;
-             printf("String \"%s\" starts with \"%s\"\n", TempPointer, "</include>");
-         }*/
         printf("String before replace: %s\n", FileContents);
         FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd + totalAmountShifted, InsertText);
         totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
         printf("String after replace: %s\n", FileContents);
     }
+    RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(TreeNode->path), FileContents);
     printf("\n\n\n\n");
 }
