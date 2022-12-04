@@ -189,7 +189,7 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     return BasePath;
 }
 
-void ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString)
+char *ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString)
 {
     /*
          if (end - start > strlen(ReplaceString))
@@ -280,7 +280,7 @@ void ReplaceSectionOfString(char *string, int start, int end, const char *Replac
     ColorNormal();
     if (string == NULL || ReplaceString == NULL)
     {
-        return;
+        return NULL;
     }
     printf("String: %s, start: %i, end: %i, ReplaceString: %s\n", string, start, end, ReplaceString);
     int stringLen = strlen(string);
@@ -288,36 +288,44 @@ void ReplaceSectionOfString(char *string, int start, int end, const char *Replac
     int shiftNum = replaceLen - (end - start);
     printf("Shiftnum: %i\n", shiftNum);
     // Reallocate memory for the string if necessary
+    char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 1));
     if (shiftNum != 0)
     {
-        char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 1));
         if (newString == NULL)
         {
-            return;
+            return NULL;
         }
-
+        // Adjust the length of the string if the replacement string is longer
+        if (shiftNum > 0)
+        {
+            stringLen += shiftNum;
+            string = realloc(string, stringLen + 1);
+            if (string == NULL)
+            {
+                return NULL;
+            }
+        }
         // Copy the original string up to the start index
         strncpy(newString, string, start);
         // Copy the replacement string
-        strncpy(newString + start, ReplaceString, (end - start) + 1);
-
+        strncpy(newString + start, ReplaceString, replaceLen);
         // Copy the rest of the original string after the end index
-        strcpy(newString + start + (end - start) + 1, string + end);
-
+        strcpy(newString + start + replaceLen, string + end);
         // Free the old string and update the pointer
         free(string);
-        string = newString;
     }
     else
     {
         // If the replacement string has the same length as the original
         // section, simply copy it into the string
         strncpy(string + start, ReplaceString, end - start);
+        return string;
     }
-    printf("String: %s\n", string);
+    printf("String: %s\n", newString);
     ColorCyan();
     printf("Replacement debug end\n");
     ColorNormal();
+    return newString;
 }
 
 bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *substring)
@@ -332,8 +340,8 @@ bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *subst
 char *EntryToExitPath(const char *path)
 {
     char *PathCopy = strdup(path);
-    ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
-    return PathCopy;
+
+    return ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
 }
 
 void StringFormatInsert(char *string, const char *InsertString)

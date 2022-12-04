@@ -3,6 +3,7 @@
 
 void CreateFileWrite(char *path, char *text)
 {
+    printf("Creating file %s, text: %s\n", path, text);
     FILE *FilePTR;
     FilePTR = fopen(path, "w");
     if (!FilePTR)
