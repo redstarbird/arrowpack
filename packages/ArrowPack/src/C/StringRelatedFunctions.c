@@ -201,7 +201,7 @@ void ReplaceSectionOfString(char *string, int start, int end, const char *Replac
          {
              printf("option 2\n");
              ShiftNum = strlen(ReplaceString);
-         }*/
+         }
     ColorCyan();
     printf("String replace debug start\n");
     ColorNormal();
@@ -211,12 +211,45 @@ void ReplaceSectionOfString(char *string, int start, int end, const char *Replac
     size_t stringlen = (ShiftNum + (int)strlen(string) + 1) * sizeof(char);
     if (ShiftNum > 0)
     {
+        const int OldStringLen = strlen(string);
         string = (char *)realloc(string, stringlen);
+        for (int i = OldStringLen + 1; i < stringlen; i++)
+        {
+            string[i] = 'w';
+        }
         string[stringlen] = '\0';
+
         for (unsigned int i = (int)stringlen - ShiftNum - 1; i >= end; i--)
         {                                     // Loops through all characters that need to be shifted to the right
             string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
         }
+        ColorGreen();
+        printf("OldStringLen: %i, NewStringLen: %i\n", OldStringLen, strlen(string));
+        ColorNormal();
+
+        int NumbersToShift = OldStringLen - end;
+        bool StopShift = false;
+        for (unsigned int i = 0; i < ShiftNum; i++)
+        {
+            if (i < NumbersToShift)
+            {
+                string[i + ShiftNum + OldStringLen] = string[OldStringLen - ShiftNum + i]; // Shift the character the correct amount to the right
+            }
+            else
+            {
+                StopShift = true;
+                break;
+            }
+        }
+        printf("test 2 %s", string);
+        if (!StopShift)
+        {
+            for (unsigned int i = end; i < OldStringLen - ShiftNum; i++)
+            {
+                string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
+            }
+        }
+
         printf("Shifted string: %s\n", string);
         for (unsigned int i = start; i < strlen(ReplaceString); i++)
         {
@@ -241,6 +274,49 @@ void ReplaceSectionOfString(char *string, int start, int end, const char *Replac
     }
     ColorCyan();
     printf("String replace debug end\n");
+    ColorNormal();*/
+    ColorCyan();
+    printf("Replacement debug start\n");
+    ColorNormal();
+    if (string == NULL || ReplaceString == NULL)
+    {
+        return;
+    }
+    printf("String: %s, start: %i, end: %i, ReplaceString: %s\n", string, start, end, ReplaceString);
+    int stringLen = strlen(string);
+    int replaceLen = strlen(ReplaceString);
+    int shiftNum = replaceLen - (end - start);
+    printf("Shiftnum: %i\n", shiftNum);
+    // Reallocate memory for the string if necessary
+    if (shiftNum != 0)
+    {
+        char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 1));
+        if (newString == NULL)
+        {
+            return;
+        }
+
+        // Copy the original string up to the start index
+        strncpy(newString, string, start);
+        // Copy the replacement string
+        strncpy(newString + start, ReplaceString, (end - start) + 1);
+
+        // Copy the rest of the original string after the end index
+        strcpy(newString + start + (end - start) + 1, string + end);
+
+        // Free the old string and update the pointer
+        free(string);
+        string = newString;
+    }
+    else
+    {
+        // If the replacement string has the same length as the original
+        // section, simply copy it into the string
+        strncpy(string + start, ReplaceString, end - start);
+    }
+    printf("String: %s\n", string);
+    ColorCyan();
+    printf("Replacement debug end\n");
     ColorNormal();
 }
 
