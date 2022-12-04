@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "../Regex/RegexFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
+#include "IntFunctions.h"
 #include "TextColors.h"
 
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
