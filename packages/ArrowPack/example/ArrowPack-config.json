@@ -1,5 +1,6 @@
 {
 	"entry": "example/src",
 	"exit": "example/dist",
-	"autoClear": false
+	"autoClear": false,
+	"largeProject": false
 }

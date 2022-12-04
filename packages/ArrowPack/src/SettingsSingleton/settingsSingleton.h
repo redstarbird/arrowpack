@@ -9,6 +9,7 @@ typedef struct SettingsSingleton
     char *entry;
     char *exit;
     bool autoClear;
+    bool largeProject;
 } SettingsSingleton; // need to implement
 
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);

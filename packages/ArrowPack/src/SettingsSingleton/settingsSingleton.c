@@ -1,6 +1,11 @@
 #include "settingsSingleton.h"
 
-struct SettingsSingleton Settings = {.entry = "src", .exit = "dist"}; // Initialises global settings structure
+struct SettingsSingleton Settings = {
+    .entry = "src",
+    .exit = "dist",
+    .autoClear = false,
+    .largeProject = false,
+}; // Initialises global settings structure
 
 static bool LastStringWasKey;
 static size_t LastKeyLength = 0;
@@ -20,6 +25,10 @@ static int SetSetting(char *key, char *value)
     else if (strcasecmp(key, "autoClear") == 0)
     {
         Settings.autoClear = StringToBool(value);
+    }
+    else if (strcasecmp(key, "largeProject") == 0)
+    {
+        Settings.largeProject = StringToBool(value);
     }
     else
     {
