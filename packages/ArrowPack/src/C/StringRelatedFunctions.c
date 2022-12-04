@@ -348,3 +348,48 @@ void StringFormatInsert(char *string, const char *InsertString)
 {
     // todo
 }
+
+void RemoveSubstring(char *string, const char *substring)
+{
+    // Check for NULL input
+    if (string == NULL || substring == NULL)
+    {
+        return;
+    }
+    // Get the lengths of the strings
+    int stringLen = strlen(string);
+    int substringLen = strlen(substring);
+    // Check if the substring is empty
+    if (substringLen == 0)
+    {
+        return;
+    }
+    // Allocate memory for the new string
+    char *newString = malloc(sizeof(char) * (stringLen + 1));
+    if (newString == NULL)
+    {
+        return;
+    }
+    // Initialize the new string
+    newString[0] = '\0';
+    // Loop through the original string
+    for (int i = 0; i < stringLen; i++)
+    {
+        // Check if the current substring matches the given substring
+        if (strncmp(string + i, substring, substringLen) == 0)
+        {
+            // If it does, skip the substring and continue
+            i += substringLen - 1;
+        }
+        else
+        {
+            // If it doesn't, append the current character to the new string
+            char currentChar[2] = {string[i], '\0'};
+            strcat(newString, currentChar);
+        }
+    }
+    // Copy the new string back into the original string
+    strcpy(string, newString);
+    // Free the memory allocated for the new string
+    free(newString);
+}
