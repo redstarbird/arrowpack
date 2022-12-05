@@ -169,8 +169,17 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             }
             char *TempPath = strdup(BasePath); // Very messy code
             printf("TempPath: %s, path: %s\n", TempPath, path);
+
             realloc(TempPath, (strlen(TempPath) + strlen(path) + 1) * sizeof(char));
-            strcat(TempPath, path);
+            char *TempPath2 = strdup(path);
+            if (TempPath2[0] == '.')
+            {
+                if (TempPath[1] == '/')
+                {
+                    TempPath2 += 2;
+                }
+            }
+            strcat(TempPath, TempPath2);
             return TempPath;
         }
     }
