@@ -10,6 +10,8 @@ const wasm_exec = require("./js/wasm_exec.js");
 const CFunctionFactory = require("../Build/CFunctions.js");
 const go = new Go();
 const Sleep = require("../src/js/Sleep");
+const { mkdirIfNotExists } = require("./js/DirFunctions");
+
 
 const argv = require("yargs/yargs")(process.argv.slice(2))
 	.option("c", {
@@ -29,16 +31,27 @@ if (argv.c) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME) } else { co
 
 var rawconfigData = null;
 if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = fs.readFileSync(CONFIG_FILE_NAME, "utf8"); }
-
+var temp;
 const Settings = new settingsSingleton(rawconfigData);
-let temp = DirFunctions.RecursiveWalkDir(Settings.getValue("entry")); // eventually add pluginAPI event here
+if (Settings.getValue("largeProject") === false) {
+	temp = DirFunctions.RecursiveWalkDir(Settings.getValue("entry")); // eventually add pluginAPI event here
+} else {
+	let RecursiveWalkDirWASM = fs.readFileSync("../Build/RecursiveWalkDir.wasm"); const { WebAssembly } = require("wasi");
+	let compiledWalkDirWASM = WebAssembly.compile(wasm);
+	let InstanceWalkDirWASM = WebAssembly.instantiate(compiledWalkDirWASM);
+	const { InstanceWalkDirWASMExports } = instance;
+	temp = InstanceWalkDirWASMExports.walk_dir(Settings.getValue("entry"));
+}
 
 var WalkedFiles = temp.Files;
 var WalkedDirs = temp.Directories;
 
 if (WalkedDirs) {
 	WalkedDirs.forEach(Dir => {
-
+		console.log(chalk.red(Dir));
+		var tempDir = Settings.getValue("exit") + Dir;
+		DirFunctions.mkdirIfNotExists(tempDir);
+		//DirFunctions.mkdirIfNotExists(Dir);
 	});
 }
 
@@ -83,6 +96,7 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 			["string", "number", "string"],
 			[WrappedWalkedFiles, WalkedFiles.length, Settings.getValue("entry")]
 		);
+
 		CFunctions.ccall(
 			"BundleFiles",
 			"number",

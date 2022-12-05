@@ -1,0 +1,12 @@
+{
+	"name": "root",
+	"private": true,
+	"homepage": "https://www.redstarbird.com/arrowstack/",
+	"workspaces": [
+		"packages/*"
+	],
+	"devDependencies": {
+		"@nrwl/nx-cloud": "^15.0.0",
+		"lerna": "^6.0.0"
+	}
+}
