@@ -4,6 +4,7 @@
 #define PATH_SEPARATOR '/'
 
 #include <stdbool.h>
+#include "../C/FileTypesHandler.h"
 
 typedef struct FileRule
 {
@@ -27,6 +28,7 @@ struct Node
     struct Node *Dependents;
     struct Dependency *Dependencies;
     unsigned int DependenciesInTree, DependentsInTree;
+    unsigned int FileType; // File type ID for file (File type IDs are define in FileTypesHandler.h)
 };
 
 struct Node *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath); // Creates dependency tree/graph/array
