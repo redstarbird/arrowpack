@@ -3,3 +3,39 @@ src/go
 *.c
 *.go
 *.py
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.o
+*.gch
+stack.yaml
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# node.js files
+node_modules
+
+#testing files
+testing/
+
+# code editor files
+.vs/
+.vscode/
+
+# other files
+*.ini
+lerna-debug.log
+npm-debug.log
+packages/*/lib
+.idea
+desktop.ini
+
+# PCRE2 temp build directory
+packages/ArrowPack/pcre2tempbuild
