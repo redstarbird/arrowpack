@@ -22,8 +22,7 @@
 	},
 	"scripts": {
 		"test": "node ./__tests__/ArrowPack.test.js",
-		"build": "python3 ./Build.py",
-		"prepack": "node ./Scripts/ExtendGitIgnore.js"
+		"build": "python3 ./Build.py"
 	},
 	"bin": {
 		"ArrowPack": "src/ArrowPack.js"
