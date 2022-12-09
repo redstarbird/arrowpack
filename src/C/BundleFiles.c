@@ -6,8 +6,10 @@ void BundleHTMLFile(struct Node *TreeNode)
     char *FileContents = ReadDataFromFile(TreeNode->path);
     // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
     int totalAmountShifted = 0;
+    printf("File %s has %i dependencies\n", TreeNode->path, TreeNode->DependenciesInTree);
     for (int i = 0; i < TreeNode->DependenciesInTree; i++)
     {
+        printf("Iterating!\n");
         printf("Settings exit: %s\n", Settings.exit);
         TreeNode->Dependencies[i].DependencyPath = EntryToExitPath(TreeNode->Dependencies[i].DependencyPath);
         char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
@@ -26,7 +28,7 @@ void BundleHTMLFile(struct Node *TreeNode)
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
 {
-    bool Success = false;
+    bool Success = true;
     struct Node *IteratePointer = &DependencyTree[0]; // Pointer used to iterate through dependency tree
 
     while (1)
@@ -48,10 +50,11 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
         }
     }
 
-    while (IteratePointer->IsArrayEnd != true && IteratePointer->path && strlen(IteratePointer->path)) // Checks if it has reached the end of the array by checking if path is NULL
+    while (IteratePointer->IsArrayEnd != true) // Checks if it has reached the end of the array by checking if path is NULL
     {
+
         ColorMagenta();
-        printf("\nBundling file: %s, strlen(path) = %i\n", IteratePointer->path, (int)strlen(IteratePointer->path));
+        printf("\nBundling file: %s\n", IteratePointer->path);
         ColorReset();
         char *fileType = GetFileExtension(IteratePointer->path); // Get file type of the Node
 
@@ -67,5 +70,5 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
         IteratePointer++;
     }
 
-    return Success;
+    return Success; // This is always true currently
 }

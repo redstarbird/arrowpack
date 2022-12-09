@@ -20,9 +20,11 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     ColorGreen();
     printf("Sorting dependency tree...\n");
     ColorNormal();
+    bool SwitchMade = false;
     struct Node tempHolder;
     for (int i = 0; i < treeLength - 1; i++) // This basic bubble sort is probably quite slow and inefficient and can probably be optimized a lot
     {
+        SwitchMade = false;
         for (int i = 0; i < treeLength - 1; i++)
         {
             if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
@@ -255,7 +257,7 @@ struct Dependency EMSCRIPTEN_KEEPALIVE *DependencyFromRegexMatch(struct RegexMat
     return dependency;
 }
 
-struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath) // Main function for creating dependency tree
+struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
 {
 
     printf("Started creating dependency tree\n");
@@ -263,9 +265,9 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     int lastNewElement = 0;
     int ElementsUnwrapped = 0;
 
-    char **paths = malloc((ArrayLength) * (sizeof(char *) + 1)); // Allocates memory for array of strings
+    char **paths = malloc((ArrayLength - 1) * (sizeof(char *) + 1)); // Allocates memory for array of strings
 
-    while (ElementsUnwrapped <= ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Paths are wrapped into one string because passing array of strings from JS to C is complicated
+    while (ElementsUnwrapped < ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Paths are wrapped into one string because passing array of strings from JS to C is complicated
     {
         if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
         {
@@ -343,8 +345,8 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     SortDependencyTree(Tree, ArrayLength);
 
-    Tree = realloc(Tree, (ArrayLength + 1) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
+    Tree = realloc(Tree, (ArrayLength) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
 
-    Tree[ArrayLength + 1].IsArrayEnd = true;
+    Tree[ArrayLength].IsArrayEnd = true;
     return Tree;
 }

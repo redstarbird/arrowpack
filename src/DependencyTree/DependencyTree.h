@@ -31,7 +31,7 @@ struct Node
     unsigned int FileType; // File type ID for file (File type IDs are define in FileTypesHandler.h)
 };
 
-struct Node *CreateTree(char *Wrapped_paths, int ArrayLength, char *TempEntryPath); // Creates dependency tree/graph/array
+struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
 
 char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
 
