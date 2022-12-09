@@ -291,11 +291,9 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
     {
         return NULL;
     }
-    printf("String: %s, start: %i, end: %i, ReplaceString: %s\n", string, start, end, ReplaceString);
     int stringLen = strlen(string);
     int replaceLen = strlen(ReplaceString);
     int shiftNum = replaceLen - (end - start);
-    printf("Shiftnum: %i\n", shiftNum);
     // Reallocate memory for the string if necessary
     char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 1));
     if (shiftNum != 0)
@@ -330,7 +328,6 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         strncpy(string + start, ReplaceString, end - start);
         return string;
     }
-    printf("String: %s\n", newString);
     ColorCyan();
     printf("Replacement debug end\n");
     ColorNormal();
