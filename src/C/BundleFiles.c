@@ -6,20 +6,13 @@ void BundleHTMLFile(struct Node *TreeNode)
     char *FileContents = ReadDataFromFile(TreeNode->path);
     // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
     int totalAmountShifted = 0;
-    printf("File %s has %i dependencies\n", TreeNode->path, TreeNode->DependenciesInTree);
     for (int i = 0; i < TreeNode->DependenciesInTree; i++)
     {
-        printf("Iterating!\n");
-        printf("Settings exit: %s\n", Settings.exit);
         TreeNode->Dependencies[i].DependencyPath = EntryToExitPath(TreeNode->Dependencies[i].DependencyPath);
         char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
-        printf("InsertText = %s\n", InsertText);
         int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
-        printf("Strlen(FileContents): %i, InsertEnd: %i\n", (int)strlen(FileContents), InsertEnd);
-        printf("String before replace: %s\n", FileContents);
         FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd + totalAmountShifted, InsertText);
         totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
-        printf("String after replace: %s\n", FileContents);
     }
     RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(TreeNode->path), FileContents);
@@ -35,11 +28,9 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
     {
         if (IteratePointer->DependenciesInTree == 0 && IteratePointer->IsArrayEnd != true)
         {
-            printf("creating file for %s, dependenciesnum: %i\n", IteratePointer->path, IteratePointer->DependenciesInTree);
+            printf("Duplicating file: %s to exit path\n", IteratePointer->path);
             char *ExitPath = strdup(IteratePointer->path);
-            printf("ExitPath: %s\n", ExitPath);
             ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
-            printf("ExitPath: %s\n", ExitPath);
             CreateFileWrite(ExitPath, ReadDataFromFile(IteratePointer->path));
             IteratePointer++;
             free(ExitPath);
