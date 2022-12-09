@@ -109,25 +109,26 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path)
 {
     char *FileExtension = GetFileExtension(Path);
     // Very unfortunate that C doesn't support switch statements for strings
-    if (strcmp(FileExtension, "html") == 0 || strcmp(FileExtension, "htm") == 0)
+    if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0)
     {
         printf("Returning HTML Dependencies\n");
         return FindHTMLDependencies(Path);
     }
-    else if (strcmp(FileExtension, "css") == 0)
+    else if (strcasecmp(FileExtension, "css") == 0)
     {
         printf("CSS not implemented yet");
     }
-    else if (strcmp(FileExtension, "js") == 0)
+    else if (strcasecmp(FileExtension, "js") == 0)
     {
         printf("JS not implemented yet");
     }
-    else if (strcmp(FileExtension, "scss") == 0)
+    else if (strcasecmp(FileExtension, "scss") == 0)
     {
         printf("SCSS not implemented yet");
     }
 
-    struct RegexMatch *temp = malloc(sizeof(RegexMatch) * 5); // just here temporarily so compiler doesnt throw an error
+    struct RegexMatch *temp = malloc(sizeof(RegexMatch)); // just here temporarily so compiler doesnt throw an error
+    temp->IsArrayEnd = true;
     return temp;
 }
 
@@ -303,18 +304,17 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
-        struct RegexMatch *Dependencies = GetDependencies(paths[i]); // Gets dependencies as strings
-        if (Dependencies != NULL)                                    // Checks if dependencies have been found
+        struct RegexMatch *Dependencies = GetDependencies(paths[i]);     // Gets dependencies as strings
+        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false) // Checks if dependencies have been found
         {
             struct RegexMatch *IteratePointer = &Dependencies[0];
             while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
             {
-                printf("I is still %i\n", i);
+
                 for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
                 {
                     if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
                     {
-                        printf("Tree[%i].path == %s\n", j, IteratePointer->Text);
                         Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree); // Reallocates memory for dependencies list to add space for new dependency
                         Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);
                         Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(IteratePointer->Text); // Adds Dependency to lists of dependencies
