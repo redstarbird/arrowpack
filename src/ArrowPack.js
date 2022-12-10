@@ -4,7 +4,6 @@
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const boxen = require("boxen");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
 const DirFunctions = require("./js/DirFunctions");
 const wasm_exec = require("../Build/wasm_exec.js");
