@@ -12,6 +12,7 @@ const go = new Go();
 const Sleep = require("../src/js/Sleep");
 const { mkdirIfNotExists } = require("./js/DirFunctions");
 
+var StartTime = performance.now();
 
 const argv = require("yargs/yargs")(process.argv.slice(2))
 	.option("c", {
@@ -66,6 +67,7 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 
 	CFunctionFactory().then((CFunctions) => {
 		CFunctions._CheckWasm();
+		CFunctions._InitFileTypes();
 		for (let k in Settings.settings) {
 			if (CFunctions.ccall(
 				"SendSettingsString",
@@ -88,23 +90,26 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 			console.log(chalk.bold.blue(Settings.settings[k]));
 			// Also gives time to apply settings
 		}
-
+		var Success;
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
 		StructsPointer = CFunctions.ccall(
 			"CreateTree",
 			"number",
-			["string", "number", "string"],
-			[WrappedWalkedFiles, WalkedFiles.length, Settings.getValue("entry")]
+			["string", "number"],
+			[WrappedWalkedFiles, WalkedFiles.length]
 		);
 
-		CFunctions.ccall(
+		Success = CFunctions.ccall(
 			"BundleFiles",
 			"number",
 			["number"],
 			[StructsPointer]
 		);
+		// CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
+
 	});
 
+	// console.log("\n\nBuild completed in" + (EndTime - StartTime) / 1000 + " seconds!\n\n\n"); // Need to get Wasm code to run this because Wasm code seems to be non-blocking
 	/*
 		WebAssembly.instantiateStreaming(DependencyTreeWasmBuffer, DependencyTreeMemory).then((instance) => {
 			StructsPointer = instance.ccall(
@@ -124,3 +129,6 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 			GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.getValue("entry"));
 		});*/
 }
+
+
+
