@@ -1,6 +1,6 @@
 {
 	"name": "arrowpack",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"description": "A unique web bundler that focuses on HTML files and website speed and simplicity",
 	"keywords": [
 		"web"
@@ -16,7 +16,8 @@
 	"files": [
 		"Build",
 		"*.js",
-		"src/js"
+		"src/js",
+		"src/SettingsSingleton/SettingsSingleton.js"
 	],
 	"repository": {
 		"type": "git",

@@ -9,8 +9,8 @@ const DirFunctions = require("./js/DirFunctions");
 const wasm_exec = require("../Build/wasm_exec.js");
 const CFunctionFactory = require("../Build/CFunctions.js");
 const go = new Go();
-const Sleep = require("../src/js/Sleep");
-const { mkdirIfNotExists } = require("./js/DirFunctions");
+// const Sleep = require("../src/js/Sleep");
+const { mkdirIfNotExists } = require("./js/DirFunctions.js");
 
 var StartTime = performance.now();
 
