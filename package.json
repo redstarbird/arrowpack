@@ -15,7 +15,8 @@
 	},
 	"files": [
 		"Build",
-		"*.js"
+		"*.js",
+		"src/js"
 	],
 	"repository": {
 		"type": "git",
@@ -23,7 +24,8 @@
 	},
 	"scripts": {
 		"test": "node ./__tests__/ArrowPack.test.js",
-		"build": "python3 ./Build.py"
+		"build": "python3 ./Build.py",
+		"prepublishOnly": "npm run build"
 	},
 	"bin": {
 		"ArrowPack": "src/ArrowPack.js"
