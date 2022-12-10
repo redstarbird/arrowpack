@@ -14,7 +14,7 @@
 		"test": "__tests__"
 	},
 	"files": [
-		"src",
+		"Build",
 		"*.js"
 	],
 	"repository": {
