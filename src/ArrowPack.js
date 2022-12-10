@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 // js wrapper for arrowpack for NPM
 const fs = require("fs");
@@ -46,11 +47,13 @@ if (Settings.getValue("largeProject") === false) {
 
 var WalkedFiles = temp.Files;
 var WalkedDirs = temp.Directories;
-
+console.log(WalkedDirs);
 if (WalkedDirs) {
 	WalkedDirs.forEach(Dir => {
 		console.log(chalk.red(Dir));
-		var tempDir = Settings.getValue("exit") + Dir;
+		var tempDir = Settings.getValue("exit") + Dir.substring(Settings.getValue("entry").length);
+
+		console.log(chalk.yellowBright(tempDir));
 		DirFunctions.mkdirIfNotExists(tempDir);
 		//DirFunctions.mkdirIfNotExists(Dir);
 	});

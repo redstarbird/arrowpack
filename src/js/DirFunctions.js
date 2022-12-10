@@ -8,20 +8,23 @@ function RecursiveWalkDir(FolderPath, Files, Directories) {
 	Directories = Directories || [];
 
 	InitialFiles.forEach(function (file) {
-		if (fs.statSync(path.join(FolderPath, file)).isDirectory()) {
-			Directories.push(file);
-			let temp = RecursiveWalkDir(path.join(FolderPath, file), Files, Directories);
+		let fullPath = path.join(FolderPath, file);
+		if (fs.statSync(fullPath).isDirectory()) {
+			// Push the full directory path to the Directories array
+			Directories.push(fullPath);
+			let temp = RecursiveWalkDir(fullPath, Files, Directories);
 			Files = temp.Files;              //  Destructuring was not working for some reason
 			Directories = temp.Directories;  //  :(
 
 		} else {
-			Files.push(path.join(FolderPath, file));
+			Files.push(fullPath);
 
 		}
 	});
 
 	return { Files, Directories };
 };
+
 
 function mkdirIfNotExists(dir) {
 	if (!fs.existsSync(dir)) {

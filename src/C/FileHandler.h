@@ -7,5 +7,6 @@
 
 void CreateFileWrite(char *path, char *text);
 char *ReadDataFromFile(char *path);
+void CopyFile(char* FileToCopy, char* FileToCopyTo);
 
 #endif // !FILEHANDLERH

@@ -306,6 +306,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
+        printf("Finding dependencies for file: %s\n", paths[i]);
         struct RegexMatch *Dependencies = GetDependencies(paths[i]);     // Gets dependencies as strings
         if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false) // Checks if dependencies have been found
         {

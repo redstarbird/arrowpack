@@ -284,9 +284,7 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
     ColorCyan();
     printf("String replace debug end\n");
     ColorNormal();*/
-    ColorCyan();
-    printf("Replacement debug start\n");
-    ColorNormal();
+
     if (string == NULL || ReplaceString == NULL)
     {
         return NULL;
@@ -328,9 +326,7 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         strncpy(string + start, ReplaceString, end - start);
         return string;
     }
-    ColorCyan();
-    printf("Replacement debug end\n");
-    ColorNormal();
+
     return newString;
 }
 

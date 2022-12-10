@@ -31,7 +31,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
             printf("Duplicating file: %s to exit path\n", IteratePointer->path);
             char *ExitPath = strdup(IteratePointer->path);
             ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
-            CreateFileWrite(ExitPath, ReadDataFromFile(IteratePointer->path));
+            CopyFile(IteratePointer->path, ExitPath);
             IteratePointer++;
             free(ExitPath);
         }

@@ -1,6 +1,6 @@
 {
 	"name": "arrowpack",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "A unique web bundler that focuses on HTML files and website speed and simplicity",
 	"keywords": [
 		"web"
@@ -28,7 +28,7 @@
 		"prepublishOnly": "npm run build"
 	},
 	"bin": {
-		"ArrowPack": "src/ArrowPack.js"
+		"arrowpack": "src/ArrowPack.js"
 	},
 	"dependencies": {
 		"boxen": ">=7.0",
