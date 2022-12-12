@@ -1,19 +1,5 @@
 #include "StringRelatedFunctions.h"
 
-int EMSCRIPTEN_KEEPALIVE GetLastFullstop(const char *text)
-{
-    int LastFullStop = -1;
-
-    for (unsigned int i = 0; i < strlen(text); i++)
-    {
-        if (text[i] == '.')
-        {
-            LastFullStop = i;
-        }
-    }
-    return LastFullStop;
-}
-
 int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character)
 {
     int LastOccurence = -1;
@@ -41,7 +27,7 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
 {
     unsigned int pathLen = strlen(path);
 
-    unsigned int lastFullStop = GetLastFullstop(path);
+    unsigned int lastFullStop = LastOccurenceOfChar(path, '.');
     if (lastFullStop == -1)
     {
         return NULL;
@@ -126,10 +112,27 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
                 printf("Error no base path specified");
                 exit(1);
             }
-            char *PathCopy;
-            strcpy(PathCopy, BasePath); // Create a copy of the path variable so it doesn't get overwritten by strtok()
-
-            char **SplitString = SplitStringByChar(PathCopy, '/');
+            printf("test324\n");
+            char *PathCopy = strdup(path);
+            char *BasePathCopy = strdup(BasePath);
+            // Create a copy of the path variable so it doesn't get overwritten by strtok()
+            printf("confused\n");
+            int occurenceNum = 0;
+            size_t bufferSize = 4;
+            int *charoccurenceLocations = malloc(sizeof(int) * bufferSize);
+            for (int i = 0; i < strlen(PathCopy); i++)
+            {
+                if (PathCopy[i] == '/')
+                {
+                    charoccurenceLocations[occurenceNum] = i;
+                    occurenceNum++;
+                }
+                if (occurenceNum >= bufferSize)
+                {
+                    bufferSize *= 2;
+                    charoccurenceLocations = realloc(charoccurenceLocations, bufferSize * sizeof(int));
+                }
+            }
 
             char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(Settings.entry) + 1)); // Probably very inefficient
             int ArrayIndex = 0;
@@ -155,10 +158,12 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
                 ArrayIndex++;
             }
             // FinalString[ArrayIndex] = '\0';
-            char *TempEntry;
-            strcpy(TempEntry, Settings.entry);
+            char *TempEntry = strdup(Settings.entry);
+
             strcat(TempEntry, FinalString);
             strcat(TempEntry, path);
+            printf("done\n");
+            printf("%s\n", TempEntry);
             return TempEntry;
         }
         else
