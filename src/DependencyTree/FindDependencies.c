@@ -13,41 +13,48 @@ unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
     printf("ArrayLength = %i\n", ArrayLength);
     return ArrayLength;
 }
-
 void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2)
 {
-
+    // Check if Array2 is empty
     if ((*Array2)[0].IsArrayEnd == false)
     {
+        // Check if Array1 is empty
         if ((*Array1)[0].IsArrayEnd == false)
         {
+            // Calculate the lengths of the arrays
             unsigned int Array1Length = RegexMatchArrayLength(*Array1);
-            printf("here?\n");
             unsigned int Array2Length = RegexMatchArrayLength(*Array2);
-            printf("realloc near\n");
-            *Array1 = realloc(*Array1, sizeof(struct RegexMatch) * (Array1Length + Array2Length + 2));
 
-            printf("realloc done\n");
+            // Allocate new memory for the combined array
+            struct RegexMatch *NewArray = malloc(sizeof(struct RegexMatch) * (Array1Length + Array2Length + 2));
+
+            // Copy the elements of Array1 into the new array
+            memcpy(NewArray, *Array1, sizeof(struct RegexMatch) * Array1Length);
+
+            // Copy the elements of Array2 into the new array
             for (unsigned int i = 0; i < Array2Length; i++)
             {
-                printf("0: %i, \n", (*Array1)[0].IsArrayEnd);
-                // memcpy(&Array1[i + Array1Length], &Array2[i], sizeof(struct RegexMatch));
-
-                (*Array1)[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
-                (*Array1)[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
-                (*Array1)[i + Array1Length].Text = strdup((*Array2)[i].Text);
-                (*Array1)[i + Array1Length].IsArrayEnd = false;
-                printf("00: %i\n", (*Array1)[0].IsArrayEnd);
-                printf("Array[%i + %i] = %s, Array2[%i] = %s, eoa: %i\n", i, Array1Length, (*Array1)[i + Array1Length].Text, i, (*Array2)[i].Text, (*Array2)->IsArrayEnd == true);
+                NewArray[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
+                NewArray[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
+                NewArray[i + Array1Length].Text = strdup((*Array2)[i].Text);
+                NewArray[i + Array1Length].IsArrayEnd = false;
             }
-            (*Array1)[Array1Length + Array2Length - 1].IsArrayEnd = true;
+
+            // Set the end-of-array flag for the last element of the new array
+            NewArray[Array1Length + Array2Length - 1].IsArrayEnd = true;
+
+            // Free the memory used by the original Array1
+            free(*Array1);
+
+            // Update Array1 to point to the new array
+            *Array1 = NewArray;
         }
         else
         {
+            // Array1 is empty, so just set it equal to Array2
             *Array1 = *Array2;
         }
     }
-    printf("is this 1: %i\n", (*Array1)[0].IsArrayEnd);
 }
 
 void MakeMatchesFullPath(struct RegexMatch *matches, char *BaseFilePath)
@@ -185,7 +192,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
         }
     }
     printf("Code reaches here\n");
-
+    return HTMLIncludeMatches;
     CombineRegexMatchArrays(&HTMLIncludeMatches, &CSSDependencies);
     printf("Code doesn't reach here\n");
     IteratePointer = &HTMLIncludeMatches[0];

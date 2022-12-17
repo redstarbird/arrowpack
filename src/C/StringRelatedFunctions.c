@@ -94,11 +94,12 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
 
     if (path[0] == '/' || path[0] == '\\')
     {
-        // tempHolder = malloc(sizeof(char *) * (strlen(path) + strlen(Settings.entry)) + 1);
-
+        tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
+        printf("starts with /\n");
         strcpy(tempHolder, Settings.entry);
-        tempHolder[strlen(tempHolder) - 1] = '\0';
-        strcat(tempHolder, path);
+        tempHolder[strlen(tempHolder)] = '\0';
+        strcat(tempHolder, path + 1);
+        printf("/ path: %s\n", tempHolder);
         return tempHolder;
     }
     else
@@ -112,28 +113,36 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
                 printf("Error no base path specified");
                 exit(1);
             }
-            printf("test324\n");
+            printf("Found ../ %i times!\n", MatchesNum);
             char *PathCopy = strdup(path);
             char *BasePathCopy = strdup(BasePath);
+            printf("BasePath: %s\n", BasePathCopy);
             // Create a copy of the path variable so it doesn't get overwritten by strtok()
             printf("confused\n");
-            int occurenceNum = 0;
-            size_t bufferSize = 4;
-            int *charoccurenceLocations = malloc(sizeof(int) * bufferSize);
-            for (int i = 0; i < strlen(PathCopy); i++)
+            int PathSeperatorsFound = 0;
+            int LocationFound = -1;
+            int BasePathLength = strlen(BasePathCopy);
+            if (BasePathCopy[BasePathLength - 1] == '/')
             {
-                if (PathCopy[i] == '/')
+                BasePathCopy[BasePathLength - 1] = '\0';
+                BasePathLength--;
+            }
+            for (int i = BasePathLength; i > 0; i--)
+            {
+                if (BasePathCopy[i] == '/')
                 {
-                    charoccurenceLocations[occurenceNum] = i;
-                    occurenceNum++;
-                }
-                if (occurenceNum >= bufferSize)
-                {
-                    bufferSize *= 2;
-                    charoccurenceLocations = realloc(charoccurenceLocations, bufferSize * sizeof(int));
+                    PathSeperatorsFound++;
+                    if (PathSeperatorsFound == MatchesNum)
+                    {
+                        LocationFound = i;
+                        break;
+                    }
                 }
             }
-
+            printf("BasePathCopy %s\n", BasePathCopy);
+            RemoveSubstring(PathCopy, "../");
+            BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), PathCopy);
+            /*
             char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(Settings.entry) + 1)); // Probably very inefficient
             int ArrayIndex = 0;
             for (int i = 0; i < (sizeof(SplitString) / sizeof(char *)) - MatchesNum; i++) // loops through array except for elements that need to be removed
@@ -163,28 +172,32 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             strcat(TempEntry, FinalString);
             strcat(TempEntry, path);
             printf("done\n");
-            printf("%s\n", TempEntry);
-            return TempEntry;
+            printf("%s\n", TempEntry);*/
+            printf("%s\n", BasePathCopy);
+            return BasePathCopy;
         }
         else
         {
+            printf("Very relative path\n");
             if (strstr(path, Settings.entry) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
             char *TempPath = strdup(BasePath); // Very messy code
             printf("TempPath: %s, path: %s\n", TempPath, path);
-
-            realloc(TempPath, (strlen(TempPath) + strlen(path) + 1) * sizeof(char));
+            int TempPathLength = strlen(TempPath);
+            realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
             char *TempPath2 = strdup(path);
             if (TempPath2[0] == '.')
             {
                 if (TempPath[1] == '/')
                 {
-                    TempPath2 += 2;
+
+                    TempPath2 += 1 + TempPath[TempPathLength] == '/'; // very unreadable
                 }
             }
             strcat(TempPath, TempPath2);
+            printf("Returning ful path: %s\n", TempPath);
             return TempPath;
         }
     }
@@ -200,6 +213,7 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
         BasePath[i] = filename[i];
     }
     BasePath[LastPathChar] = '\0';
+    printf("BasePath: %s\n", BasePath);
     return BasePath;
 }
 
@@ -310,6 +324,7 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         {
             stringLen += shiftNum;
             string = realloc(string, stringLen + 1);
+            printf("%s\n", string);
             if (string == NULL)
             {
                 return NULL;
@@ -317,12 +332,15 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         }
         // Copy the original string up to the start index
         strncpy(newString, string, start);
+
         // Copy the replacement string
         strncpy(newString + start, ReplaceString, replaceLen);
+
         // Copy the rest of the original string after the end index
         strcpy(newString + start + replaceLen, string + end);
         // Free the old string and update the pointer
         free(string);
+        newString[stringLen + 1] = '\0';
     }
     else
     {

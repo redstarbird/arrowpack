@@ -22,31 +22,47 @@ void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
     ColorNormal();
     bool SwitchMade = false;
     struct Node tempHolder;
-    for (int i = 0; i < treeLength - 1; i++) // This basic bubble sort is probably quite slow and inefficient and can probably be optimized a lot
+    for (int x = 0; x < FILETYPESIDNUM; x++) // Might be more sorts than needed
     {
-        SwitchMade = false;
-        for (int i = 0; i < treeLength - 1; i++)
+        for (int j = 0; j < treeLength - 1; j++) // This basic bubble sort is probably quite slow and inefficient and can probably be optimized a lot
         {
-            if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
+            SwitchMade = false;
+            for (int i = 0; i < treeLength - 1; i++)
             {
-                tempHolder = tree[i]; // Basic code to swap array elements
-                tree[i] = tree[i + 1];
-                tree[i + 1] = tempHolder;
-            }
-            else if (tree[i].DependenciesInTree == tree[i + 1].DependenciesInTree)
-            {
-                if (tree[i].DependentsInTree < tree[i + 1].DependentsInTree)
+                if (tree[i].FileType > tree[i + 1].FileType)
                 {
-                    tempHolder = tree[i];
+                    SwitchMade = true;
+                    tempHolder = tree[i]; // Basic code to swap array elements
                     tree[i] = tree[i + 1];
                     tree[i + 1] = tempHolder;
                 }
+                else if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
+                {
+                    SwitchMade = true;
+                    tempHolder = tree[i]; // Basic code to swap array elements
+                    tree[i] = tree[i + 1];
+                    tree[i + 1] = tempHolder;
+                }
+                else if (tree[i].DependenciesInTree == tree[i + 1].DependenciesInTree)
+                {
+                    if (tree[i].DependentsInTree < tree[i + 1].DependentsInTree)
+                    {
+                        SwitchMade = true;
+                        tempHolder = tree[i];
+                        tree[i] = tree[i + 1];
+                        tree[i + 1] = tempHolder;
+                    }
+                }
             }
-        }
-        if (tree[0].DependenciesInTree > 0)
-        {
-            printf("Error: Dependency loop found in file %s.\n", tree[0].path);
-            exit(1);
+            if (tree[0].DependenciesInTree > 0)
+            {
+                printf("Error: Dependency loop found in file %s.\n", tree[0].path);
+                exit(1);
+            }
+            if (!SwitchMade)
+            {
+                return;
+            }
         }
     }
 }
@@ -107,26 +123,27 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     exit(1);
 }
 
-RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path)
+RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
 {
     char *FileExtension = GetFileExtension(Path);
     // Very unfortunate that C doesn't support switch statements for strings
-    if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0)
+    switch (FileTypeID)
     {
+    case HTMLFILETYPE_ID:
         printf("Returning HTML Dependencies\n");
         return FindHTMLDependencies(Path);
-    }
-    else if (strcasecmp(FileExtension, "css") == 0)
-    {
+        break;
+    case CSSFILETYPE_ID:
         printf("CSS not implemented yet");
-    }
-    else if (strcasecmp(FileExtension, "js") == 0)
-    {
+        break;
+    case JSFILETYPE_ID:
         printf("JS not implemented yet");
-    }
-    else if (strcasecmp(FileExtension, "scss") == 0)
-    {
+        break;
+    case SCSSFILETYPE_ID:
         printf("SCSS not implemented yet");
+        break;
+    default:
+        break;
     }
 
     struct RegexMatch *temp = malloc(sizeof(RegexMatch)); // just here temporarily so compiler doesnt throw an error
@@ -275,7 +292,6 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
             for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
             {
-
                 paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
             }
             paths[ElementsUnwrapped][CurrentWrappedArrayIndex - lastNewElement] = '\0';
@@ -294,6 +310,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     {
         Tree[i].path = TurnToFullRelativePath(paths[i], "");
         Tree[i].IsArrayEnd = false;
+        Tree[i].FileType = GetFileTypeID(Tree[i].path);
         // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
@@ -307,8 +324,8 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
         printf("Finding dependencies for file: %s\n", paths[i]);
-        struct RegexMatch *Dependencies = GetDependencies(paths[i]);     // Gets dependencies as strings
-        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false) // Checks if dependencies have been found
+        struct RegexMatch *Dependencies = GetDependencies(paths[i], Tree[i].FileType); // Gets dependencies as strings
+        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)               // Checks if dependencies have been found
         {
             struct RegexMatch *IteratePointer = &Dependencies[0];
             while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
@@ -345,6 +362,11 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     printf("\n\n");
 
     SortDependencyTree(Tree, ArrayLength);
+
+    for (int i = 0; i < ArrayLength - 1; i++)
+    {
+        printf("Tree[%i] = %s, file type id: %i\n", i, Tree[i].path, Tree[i].FileType);
+    }
 
     Tree = realloc(Tree, (ArrayLength) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
 
