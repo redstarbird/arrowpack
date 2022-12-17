@@ -17,6 +17,24 @@ static void SetShortName(char *stringToSet, char *ReplaceString)
     SetString(stringToSet, ReplaceString, 10);
 }
 
+int GetFileTypeID(const char *path)
+{
+    char *FileExtension = GetFileExtension(path);
+    if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0 || strcasecmp(FileExtension, "htmla") == 0)
+    {
+        return HTMLFILETYPE_ID;
+    }
+    else if (strcasecmp(FileExtension, "css") == 0)
+    {
+        return CSSFILETYPE_ID;
+    }
+    else if (strcasecmp(FileExtension, "js") == 0)
+    {
+        return JSFILETYPE_ID;
+    }
+    return -1;
+}
+
 void InitFileTypes() // Probably a better way to do this
 {
     printf("Setting up file types struct\n");
