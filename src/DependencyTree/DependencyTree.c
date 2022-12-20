@@ -311,6 +311,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
         Tree[i].path = TurnToFullRelativePath(paths[i], "");
         Tree[i].IsArrayEnd = false;
         Tree[i].FileType = GetFileTypeID(Tree[i].path);
+        Tree[i].Dependencies = malloc(sizeof(struct Dependency));
         // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
         Tree[i].DependenciesInTree = 0;
         Tree[i].DependentsInTree = 0;
@@ -335,7 +336,7 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
                 {
                     if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
                     {
-                        Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * Tree[i].DependenciesInTree); // Reallocates memory for dependencies list to add space for new dependency
+                        Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * (Tree[i].DependenciesInTree + 1)); // Reallocates memory for dependencies list to add space for new dependency
                         Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);
                         Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(IteratePointer->Text); // Adds Dependency to lists of dependencies
 
