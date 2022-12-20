@@ -8,6 +8,9 @@ void BundleHTMLFile(struct Node *TreeNode)
     int totalAmountShifted = 0;
     for (int i = 0; i < TreeNode->DependenciesInTree; i++)
     {
+        ColorGreen();
+        printf("Building file: %s\n", TreeNode->Dependencies[i].DependencyPath);
+        ColorNormal();
         TreeNode->Dependencies[i].DependencyPath = EntryToExitPath(TreeNode->Dependencies[i].DependencyPath);
         char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
         int DependencyFileType = GetFileTypeID(TreeNode->Dependencies[i].DependencyPath);
@@ -34,8 +37,8 @@ void BundleHTMLFile(struct Node *TreeNode)
                     if (HeadTagResults[0].IsArrayEnd == false) // If <head> tag is found
                     {
 
-                        RemoveSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted - 2, TreeNode->Dependencies[i].EndRefPos + totalAmountShifted);
-                        totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos - 2);
+                        RemoveSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, TreeNode->Dependencies[i].EndRefPos + totalAmountShifted + 1);
+                        totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1);
                         FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
                         totalAmountShifted += strlen(InsertString);
                     }

@@ -195,9 +195,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
     }
     printf("Code reaches here\n");
     // return HTMLIncludeMatches;
-    CombineRegexMatchArrays(&HTMLIncludeMatches, &CSSDependencies);
+    CombineRegexMatchArrays(&CSSDependencies, &HTMLIncludeMatches);
     printf("Code doesn't reach here\n");
-    IteratePointer = &HTMLIncludeMatches[0];
+    IteratePointer = &CSSDependencies[0];
     while (IteratePointer->IsArrayEnd != true)
     {
         printf("Final Iterate pointer: %s\n", IteratePointer->Text);
@@ -205,7 +205,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
     }
 
     printf("finished printing\n");
-    return HTMLIncludeMatches;
+    return CSSDependencies;
 }
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)

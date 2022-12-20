@@ -66,7 +66,8 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
             matches[matchesCompleted].IsArrayEnd = false;
             matches[matchesCompleted].StartIndex = (unsigned int)match[0].rm_so + AmountShifted; // Saves start index so it doesn't need to be recalculated later
             matches[matchesCompleted].EndIndex = (unsigned int)match[0].rm_eo + AmountShifted;   // Does the same as above but for the end index
-            TextStartPointer += (int)match[0].rm_eo;                                             // Uses pointer arithmetic to set textStartPointer to end of match
+            printf("Adjusted regex substring: %s, so %i, eo %i\n", getSubstring(Text, matches[matchesCompleted].StartIndex, matches[matchesCompleted].EndIndex), matches[matchesCompleted].StartIndex, matches[matchesCompleted].EndIndex);
+            TextStartPointer += (int)match[0].rm_eo; // Uses pointer arithmetic to set textStartPointer to end of match
             AmountShifted += (int)match[0].rm_eo;
             matchesCompleted++; // Increments count of matches
         }

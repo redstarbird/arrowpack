@@ -118,7 +118,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
             char *BasePathCopy = strdup(BasePath);
             printf("BasePath: %s\n", BasePathCopy);
             // Create a copy of the path variable so it doesn't get overwritten by strtok()
-            printf("confused\n");
+
             int PathSeperatorsFound = 0;
             int LocationFound = -1;
             int BasePathLength = strlen(BasePathCopy);
@@ -139,7 +139,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
                     }
                 }
             }
-            printf("BasePathCopy %s\n", BasePathCopy);
+
             RemoveSubstring(PathCopy, "../");
             BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), PathCopy);
             /*
@@ -178,42 +178,37 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            printf("Very relative path\n");
             if (strstr(path, Settings.entry) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
             char *TempPath = strdup(BasePath); // Very messy code
-            printf("TempPath: %s, path: %s\n", TempPath, path);
             int TempPathLength = strlen(TempPath);
             realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
             char *TempPath2 = strdup(path);
-            if (TempPath2[0] == '.')
+            if (TempPath2[0] == '.' && TempPath2[1] == '/')
             {
-                if (TempPath[1] == '/')
-                {
-
-                    TempPath2 += 1 + TempPath[TempPathLength] == '/'; // very unreadable
-                }
+                strcat(TempPath, TempPath2 + 2);
             }
-            strcat(TempPath, TempPath2);
-            printf("Returning ful path: %s\n", TempPath);
+            else
+            {
+                strcat(TempPath, TempPath2);
+            }
             return TempPath;
         }
     }
-    return path; // Stops compiler from throwing exception on higher optimization levels
+    return path; // Stops compiler from throwing exception
 }
 
 char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 {
     int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
-    char *BasePath = (char *)malloc(LastPathChar * sizeof(char));
+    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char));
     for (unsigned int i = 0; i < LastPathChar; i++)
     {
         BasePath[i] = filename[i];
     }
     BasePath[LastPathChar] = '\0';
-    printf("BasePath: %s\n", BasePath);
     return BasePath;
 }
 
@@ -439,13 +434,14 @@ void RemoveSectionOfString(char *str, int start, int end)
 {
     int i;
     int str_len = strlen(str);
+    printf("Section being removed %s\n", getSubstring(str, start, end));
 
     /* Shift characters after the end of the section to the left */
-    for (i = start; i + end - start < str_len; i++)
+    for (i = end; i < str_len; i++)
     {
-        str[i] = str[i + end - start];
+        str[i - (end - start)] = str[i];
     }
 
     /* Add a null terminator to the shortened string */
-    str[i] = '\0';
+    str[i - (end - start)] = '\0';
 }
