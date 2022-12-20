@@ -10,9 +10,51 @@ void BundleHTMLFile(struct Node *TreeNode)
     {
         TreeNode->Dependencies[i].DependencyPath = EntryToExitPath(TreeNode->Dependencies[i].DependencyPath);
         char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
-        int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
-        FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd + totalAmountShifted, InsertText);
-        totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
+        int DependencyFileType = GetFileTypeID(TreeNode->Dependencies[i].DependencyPath);
+        switch (DependencyFileType)
+        {
+        case HTMLFILETYPE_ID:
+            int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
+            FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd + totalAmountShifted, InsertText);
+            totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
+            break;
+        case CSSFILETYPE_ID: // Bundle CSS into HTML file
+            if (Settings.bundleCSSInHTML == true)
+            {
+                char *InsertString;
+                struct RegexMatch *StyleResults = GetAllRegexMatches(FileContents, "<style[^>]*>", 0, 0);
+                if (StyleResults[0].IsArrayEnd)
+                {
+                    // Style tag doesn't already exist
+                    InsertString = malloc(strlen(InsertText) + 16); // allocates space for start and end of <style> tag
+                    strcpy(InsertString, "<style>");
+                    strcpy(InsertString + 7, InsertText);
+                    strcat(InsertString, InsertText);
+                    struct RegexMatch *HeadTagResults = GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);
+                    if (HeadTagResults[0].IsArrayEnd == false) // If <head> tag is found
+                    {
+                                        }
+                    else
+                    {
+
+                        ColorYellow();
+                        printf("No <head> tag found for file: %s, unable to bundle CSS into file, file will still work\n", TreeNode->path);
+                        ColorReset();
+                        continue; // might increase speed
+                    }
+                }
+                else
+                {
+                }
+            }
+            break;
+        default: // Will hopefully work for most custom dependencies
+            char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
+            int InsertEnd2 = TreeNode->Dependencies[i].EndRefPos + 1;
+            FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd2 + totalAmountShifted, InsertText);
+            totalAmountShifted += strlen(InsertText) - (InsertEnd2 - TreeNode->Dependencies[i].StartRefPos);
+            break;
+        }
     }
     RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(TreeNode->path), FileContents);
