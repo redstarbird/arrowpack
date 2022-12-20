@@ -37,17 +37,19 @@ void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, st
                 NewArray[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
                 NewArray[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
                 NewArray[i + Array1Length].Text = strdup((*Array2)[i].Text);
+                printf("new code: %s\n", NewArray[i + Array1Length].Text);
                 NewArray[i + Array1Length].IsArrayEnd = false;
             }
 
             // Set the end-of-array flag for the last element of the new array
-            NewArray[Array1Length + Array2Length - 1].IsArrayEnd = true;
+            NewArray[Array1Length + Array2Length].IsArrayEnd = true;
 
             // Free the memory used by the original Array1
             free(*Array1);
 
             // Update Array1 to point to the new array
             *Array1 = NewArray;
+            printf("is 2nd the start: %i\n", NewArray[1].IsArrayEnd);
         }
         else
         {
@@ -192,13 +194,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
         }
     }
     printf("Code reaches here\n");
-    return HTMLIncludeMatches;
+    // return HTMLIncludeMatches;
     CombineRegexMatchArrays(&HTMLIncludeMatches, &CSSDependencies);
     printf("Code doesn't reach here\n");
     IteratePointer = &HTMLIncludeMatches[0];
-    printf("hmm\n");
-    printf("HMM: %i\n", HTMLIncludeMatches[0].IsArrayEnd);
-    printf("hmm2\n");
     while (IteratePointer->IsArrayEnd != true)
     {
         printf("Final Iterate pointer: %s\n", IteratePointer->Text);

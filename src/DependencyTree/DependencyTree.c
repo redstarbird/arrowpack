@@ -350,7 +350,9 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
                 }
                 if (!DependencyFound)
                 {
+                    ColorYellow();
                     printf("Couldn't find dependency %s in tree. External dependancies are not yet supported :(\n", IteratePointer->Text);
+                    ColorNormal();
                 }
                 DependencyFound = false;
                 IteratePointer++;
