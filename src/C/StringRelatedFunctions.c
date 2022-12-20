@@ -353,6 +353,21 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
     return newString;
 }
 
+char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int position)
+{
+    if (OriginalString == NULL || ReplaceString == NULL)
+    {
+        return NULL;
+    }
+    unsigned int OriginalLen = strlen(OriginalString);
+    unsigned int ReplaceLen = strlen(ReplaceString);
+    char *NewString = malloc(OriginalLen + ReplaceLen + 1);
+    strncpy(NewString, OriginalString, position);
+    strcpy(NewString + position, ReplaceString);
+    strcpy(NewString + position + ReplaceLen, OriginalString + position);
+    return NewString;
+}
+
 bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *substring)
 {
     if (string[0] == '\0' || substring[0] == '\0')
@@ -417,4 +432,20 @@ void RemoveSubstring(char *string, const char *substring)
     strcpy(string, newString);
     // Free the memory allocated for the new string
     free(newString);
+}
+
+/* Function to remove a section of a string */
+void RemoveSectionOfString(char *str, int start, int end)
+{
+    int i;
+    int str_len = strlen(str);
+
+    /* Shift characters after the end of the section to the left */
+    for (i = start; i + end - start < str_len; i++)
+    {
+        str[i] = str[i + end - start];
+    }
+
+    /* Add a null terminator to the shortened string */
+    str[i] = '\0';
 }

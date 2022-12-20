@@ -35,4 +35,8 @@ char *EntryToExitPath(const char *path);
 
 void RemoveSubstring(char *string, const char *substring);
 
+char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int position);
+
+void RemoveSectionOfString(char *str, int start, int end);
+
 #endif // !STRINGFUNCTIONS_H
