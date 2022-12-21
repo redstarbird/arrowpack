@@ -1,11 +1,85 @@
 #include "BundleFiles.h"
 
+typedef struct ShiftLocation
+{
+    int location, ShiftNum;
+} ShiftLocation;
+static int ShiftLocationLength;
+
+static int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
+{
+    unsigned int i = 0;
+    unsigned int ShiftNum = 0;
+    while (ShiftLocations[i].location != -1)
+    {
+        if (ShiftLocations[i].location <= Location)
+        {
+            ShiftNum += ShiftLocations[i].ShiftNum;
+            i++;
+        }
+    }
+
+    return ShiftNum + Location;
+}
+
+static int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
+{
+    unsigned int i = 0;
+    unsigned int ShiftNum = 0;
+    while (ShiftLocations[i].location != -1 && ShiftLocations[i].location <= Location)
+    {
+        if (ShiftNum + ShiftLocations[i].ShiftNum > Location)
+        {
+            break;
+        }
+        else
+        {
+            ShiftNum += ShiftLocations[i].ShiftNum;
+        }
+    }
+    return Location - ShiftNum;
+}
+
+static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *needtoremovethis)
+{
+    ShiftLocationLength++;
+    *ShiftLocations = realloc(*ShiftLocations, ShiftLocationLength * sizeof(struct ShiftLocation));
+
+    unsigned int i = 0;
+    while (1)
+    {
+
+        if ((*ShiftLocations)[i].location >= Location)
+        {
+            for (int v = ShiftLocationLength; v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
+            {
+                (*ShiftLocations)[v] = (*ShiftLocations)[v - 1];
+            }
+            (*ShiftLocations)[i].location = Location;
+            (*ShiftLocations)[i].ShiftNum = ShiftNum;
+            (*ShiftLocations)[ShiftLocationLength].location = -1;
+            break;
+        }
+        else if ((*ShiftLocations)[i].location == -1)
+        {
+            (*ShiftLocations)[i].location = Location;
+            (*ShiftLocations)[i].ShiftNum = ShiftNum;
+            (*ShiftLocations)[i + 1].location = -1;
+            break;
+        }
+        i++;
+    }
+}
+
 void BundleHTMLFile(struct Node *TreeNode)
 {
+    ShiftLocationLength = 1; // Includes end element to signal the end of the array
+    struct ShiftLocation *ShiftLocations = malloc(sizeof(ShiftLocation));
+    ShiftLocations[0].location = -1; // Indicates end of array although probably not needed because the length of the array is being stored
 
     char *FileContents = ReadDataFromFile(TreeNode->path);
     // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
-    int totalAmountShifted = 0;
+
     for (int i = 0; i < TreeNode->DependenciesInTree; i++)
     {
         ColorGreen();
@@ -17,8 +91,12 @@ void BundleHTMLFile(struct Node *TreeNode)
         if (DependencyFileType == HTMLFILETYPE_ID)
         {
             int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
-            FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd + totalAmountShifted, InsertText);
-            totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
+            FileContents = ReplaceSectionOfString(
+                FileContents,
+                GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations),
+                GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos + 1, ShiftLocations), InsertText);
+            // totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
+            AddShiftNum(TreeNode->Dependencies[i].StartRefPos, strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos), &ShiftLocations, &ShiftLocationLength);
         }
         else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
         {
@@ -37,10 +115,15 @@ void BundleHTMLFile(struct Node *TreeNode)
                     if (HeadTagResults[0].IsArrayEnd == false) // If <head> tag is found
                     {
 
-                        RemoveSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, TreeNode->Dependencies[i].EndRefPos + totalAmountShifted + 1);
-                        totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1);
+                        RemoveSectionOfString(
+                            FileContents,
+                            GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations),
+                            GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos, ShiftLocations) + 1);
+                        // totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1);
+                        AddShiftNum(TreeNode->Dependencies[i].StartRefPos, (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationLength);
                         FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
-                        totalAmountShifted += strlen(InsertString);
+                        AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationLength);
+                        // totalAmountShifted += strlen(InsertString);
                     }
                     else
                     {
@@ -59,8 +142,9 @@ void BundleHTMLFile(struct Node *TreeNode)
         {
             char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
             int InsertEnd2 = TreeNode->Dependencies[i].EndRefPos + 1;
-            FileContents = ReplaceSectionOfString(FileContents, TreeNode->Dependencies[i].StartRefPos + totalAmountShifted, InsertEnd2 + totalAmountShifted, InsertText);
-            totalAmountShifted += strlen(InsertText) - (InsertEnd2 - TreeNode->Dependencies[i].StartRefPos);
+            FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations), GetShiftedAmount(InsertEnd2, ShiftLocations), InsertText);
+
+            AddShiftNum(TreeNode->Dependencies[i].StartRefPos, strlen(InsertText) - (InsertEnd2 - TreeNode->Dependencies[i].StartRefPos), &ShiftLocations, &ShiftLocationLength);
         }
     }
     RemoveSubstring(FileContents, "</include>");
