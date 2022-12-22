@@ -195,8 +195,69 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
     }
     printf("Code reaches here\n");
     // return HTMLIncludeMatches;
-    CombineRegexMatchArrays(&CSSDependencies, &HTMLIncludeMatches);
+
+    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*src[^>$]*", 0, 0);
+    if (JSDependencies != NULL)
+    {
+        IteratePointer = &JSDependencies[0];
+        while (IteratePointer->IsArrayEnd != true)
+        {
+            int srcLocation = -1;
+
+            int TextLength = strlen(IteratePointer->Text);
+            for (int i = 0; i < TextLength; i++)
+            {
+                if (strncasecmp(IteratePointer->Text + i, "src", 3) == 0)
+                {
+                    srcLocation = i + 3;
+                    break;
+                }
+            }
+            int StartLocation = -1;
+            int EndLocation = -1;
+            if (srcLocation != -1)
+            {
+                bool EqualsFound = false;
+                for (unsigned int i = srcLocation; i < TextLength; i++)
+                {
+                    if (!EqualsFound)
+                    {
+                        if (IteratePointer->Text[i] == '=')
+                        {
+                            EqualsFound = true;
+                        }
+                    }
+                    else
+                    {
+                        if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\"' && IteratePointer->Text[i] != '\'')
+                        {
+                            StartLocation = i;
+                            break;
+                        }
+                    }
+                }
+                EndLocation = TextLength;
+                if (StartLocation != -1)
+                {
+                    for (unsigned int i = StartLocation; i <= TextLength; i++)
+                    {
+                        if (IteratePointer->Text[i] == ' ' || IteratePointer->Text[i] == '\'' || IteratePointer->Text[i] == '\"' || IteratePointer->Text[i] == '>')
+                        {
+                            EndLocation = i;
+                            break;
+                        }
+                    }
+                }
+            }
+            IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
+            printf("JS: %s\n", IteratePointer->Text);
+            IteratePointer++;
+        }
+    }
     printf("Code doesn't reach here\n");
+    CombineRegexMatchArrays(&CSSDependencies, &JSDependencies);
+    CombineRegexMatchArrays(&CSSDependencies, &HTMLIncludeMatches);
+
     IteratePointer = &CSSDependencies[0];
     while (IteratePointer->IsArrayEnd != true)
     {

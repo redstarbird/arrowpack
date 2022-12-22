@@ -138,6 +138,50 @@ void BundleHTMLFile(struct Node *TreeNode)
                 }
             }
         }
+        else if (DependencyFileType == JSFILETYPE_ID)
+        {
+            printf("JS File\n");
+            int startlocation = -1;
+            int endlocation = -1;
+            int TempShiftedAmount = GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos, ShiftLocations);
+            printf("startrefpos: %i, shifted: %i\n", TreeNode->Dependencies[i].StartRefPos, GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations));
+            for (int v = GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations); v > 0; v--)
+            {
+                printf("JS loop\n");
+                printf("uh oh: %s\n", FileContents + v);
+                if (strncasecmp(FileContents + v, "src", 3) == 0)
+                {
+                    startlocation = v;
+                    break;
+                }
+            }
+            if (startlocation != -1)
+            {
+                printf("startlocation: %i\n", startlocation);
+                endlocation = TempShiftedAmount;
+                if (FileContents[TempShiftedAmount + 1] != ' ' && FileContents[TempShiftedAmount + 1] != '>')
+                {
+                    endlocation++;
+                }
+                RemoveSectionOfString(FileContents, startlocation, endlocation);
+                AddShiftNum(TreeNode->Dependencies[i].StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationLength);
+                int startrefdifference = TreeNode->Dependencies[i].StartRefPos - startlocation;
+                int insertLocation = startlocation;
+                int iterate = 0;
+                while (1)
+                {
+                    printf("looping here\n");
+                    if (FileContents[insertLocation + iterate] == '>' || FileContents[insertLocation + iterate] == '\0')
+                    {
+                        insertLocation += iterate;
+                        break;
+                    }
+                    iterate++;
+                }
+                InsertStringAtPosition(FileContents, InsertText, insertLocation);
+                AddShiftNum(TreeNode->Dependencies[i].EndRefPos + iterate, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
+            }
+        }
         else // Will hopefully work for most custom dependencies
         {
             char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
