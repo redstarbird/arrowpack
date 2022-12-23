@@ -17,6 +17,10 @@ static int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
             ShiftNum += ShiftLocations[i].ShiftNum;
             i++;
         }
+        else
+        {
+            break;
+        }
     }
 
     return ShiftNum + Location;
@@ -48,7 +52,6 @@ static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **Shift
     unsigned int i = 0;
     while (1)
     {
-
         if ((*ShiftLocations)[i].location >= Location)
         {
             for (int v = ShiftLocationLength; v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
@@ -140,15 +143,12 @@ void BundleHTMLFile(struct Node *TreeNode)
         }
         else if (DependencyFileType == JSFILETYPE_ID)
         {
-            printf("JS File\n");
             int startlocation = -1;
             int endlocation = -1;
             int TempShiftedAmount = GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos, ShiftLocations);
-            printf("startrefpos: %i, shifted: %i\n", TreeNode->Dependencies[i].StartRefPos, GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations));
-            for (int v = GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations); v > 0; v--)
+            for (int v = GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations); v < strlen(FileContents); v++)
             {
-                printf("JS loop\n");
-                printf("uh oh: %s\n", FileContents + v);
+
                 if (strncasecmp(FileContents + v, "src", 3) == 0)
                 {
                     startlocation = v;
@@ -157,29 +157,44 @@ void BundleHTMLFile(struct Node *TreeNode)
             }
             if (startlocation != -1)
             {
-                printf("startlocation: %i\n", startlocation);
-                endlocation = TempShiftedAmount;
-                if (FileContents[TempShiftedAmount + 1] != ' ' && FileContents[TempShiftedAmount + 1] != '>')
+
+                endlocation = startlocation;
+                bool pastEquals = false;
+                bool pastText = false;
+                for (int v = startlocation; v < strlen(FileContents); v++)
                 {
-                    endlocation++;
+                    if (!pastEquals)
+                    {
+                        if (FileContents[v] == '=')
+                        {
+                            pastEquals = true;
+                        }
+                    }
+                    else if (!pastText)
+                    {
+                        if (FileContents[v] != '\'' && FileContents[v] != '\"' && FileContents[v] != ' ')
+                        {
+                            pastText = true;
+                        }
+                    }
+                    else
+                    {
+                        if (FileContents[v] == '\'' || FileContents[v] == '\"' || FileContents[v] == ' ')
+                        {
+                            endlocation = v + 1;
+                            break;
+                        }
+                        else if (FileContents[v] == '>' || FileContents[v] == '\0')
+                        {
+                            endlocation = v - 1;
+                            break;
+                        }
+                    }
                 }
                 RemoveSectionOfString(FileContents, startlocation, endlocation);
                 AddShiftNum(TreeNode->Dependencies[i].StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationLength);
-                int startrefdifference = TreeNode->Dependencies[i].StartRefPos - startlocation;
-                int insertLocation = startlocation;
-                int iterate = 0;
-                while (1)
-                {
-                    printf("looping here\n");
-                    if (FileContents[insertLocation + iterate] == '>' || FileContents[insertLocation + iterate] == '\0')
-                    {
-                        insertLocation += iterate;
-                        break;
-                    }
-                    iterate++;
-                }
-                InsertStringAtPosition(FileContents, InsertText, insertLocation);
-                AddShiftNum(TreeNode->Dependencies[i].EndRefPos + iterate, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
+                FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos + 1, ShiftLocations));
+                AddShiftNum(TreeNode->Dependencies[i].EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
             }
         }
         else // Will hopefully work for most custom dependencies
