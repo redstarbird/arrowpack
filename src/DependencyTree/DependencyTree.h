@@ -27,12 +27,13 @@ struct Node
     unsigned int DependenciesInTree, DependentsInTree;
     struct Node *next;
     int FileType; // File type ID for file (File type IDs are define in FileTypesHandler.h)
+    struct Edge *edge;
 };
 
 typedef struct Graph
 {
-    int num_vertices; // Number of vertices in the graph
-    Node **adj_list;  // Array of pointers to the head of the linked lists for each vertex
+    int VerticesNum;    // Number of vertices in the graph
+    Node **Adjacencies; // Array of pointers to the head of the linked lists for each vertex
 } Graph;
 struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
 
