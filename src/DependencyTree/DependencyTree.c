@@ -274,6 +274,58 @@ struct Dependency EMSCRIPTEN_KEEPALIVE *DependencyFromRegexMatch(struct RegexMat
     return dependency;
 }
 
+struct Edge *create_edge(int startpos, int endpos)
+{
+    // Allocate memory for the edge structure
+    Edge *edge = malloc(sizeof(Edge));
+
+    // Set the startpos and endpos fields of the edge
+    edge->StartRefPos = startpos;
+    edge->EndRefPos = endpos;
+
+    return edge;
+}
+struct Node *create_vertex(char *path, int filetype, struct Edge *edge)
+{
+    struct Node *node = malloc(sizeof(struct Node));
+    node->path = path;
+    node->FileType = filetype;
+    node->next = NULL;
+}
+void add_edge(struct Graph *graph, int vertex, int neighbor, struct Edge *edge)
+{
+    // Create a new vertex with the given data value and edge
+    struct Node *new_vertex = create_vertex(graph->Adjacencies[neighbor]->path, graph->Adjacencies[neighbor]->FileType, edge);
+
+    // Add the vertex to the adjacency list of the given vertex
+    new_vertex->next = graph->Adjacencies[vertex];
+    graph->Adjacencies[vertex] = new_vertex;
+}
+
+void add_vertex(Graph *graph, char *path, int fileType, struct Edge *edge)
+{
+    // Create a new vertex
+    struct Node *node = create_vertex(path, fileType, edge);
+    // Add the vertex to the adjacency list of the graph
+    int index = hash(path, graph->VerticesNum);
+    node->next = graph->Adjacencies[index];
+    graph->Adjacencies[index] = node;
+}
+
+int count_edges(struct Node *vertex)
+{
+    int count = 0;
+
+    // Iterate through the edges connected to the vertex
+    while (vertex != NULL)
+    {
+        count++;
+        vertex = vertex->next;
+    }
+
+    return count;
+}
+
 struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
 {
 
@@ -304,17 +356,13 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     }
     size_t TreeSize = (int)sizeof(struct Node) * ArrayLength;
 
-    struct Node *Tree = (struct Node *)malloc(TreeSize);
+    struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
+    DependencyGraph->VerticesNum = ArrayLength;                   // Sets number of vertices in graph
 
+    DependencyGraph->Adjacencies = malloc(ArrayLength * sizeof(struct Node));
     for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
     {
-        Tree[i].path = TurnToFullRelativePath(paths[i], "");
-        Tree[i].IsArrayEnd = false;
-        Tree[i].FileType = GetFileTypeID(Tree[i].path);
-        Tree[i].Dependencies = malloc(sizeof(struct Dependency));
-        // strcpy(Tree[i].path, TurnToFullRelativePath(paths[i], ""));
-        Tree[i].DependenciesInTree = 0;
-        Tree[i].DependentsInTree = 0;
+        add_vertex(DependencyGraph, TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL);
     }
     ColorGreen();
     printf("Finding dependencies...\n\n\n");
@@ -325,25 +373,18 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
         printf("Finding dependencies for file: %s\n", paths[i]);
-        struct RegexMatch *Dependencies = GetDependencies(paths[i], Tree[i].FileType); // Gets dependencies as strings
-        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)               // Checks if dependencies have been found
+        struct RegexMatch *Dependencies = GetDependencies(paths[i], DependencyGraph->Adjacencies[i]->FileType); // Gets dependencies as strings
+        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                                        // Checks if dependencies have been found
         {
             struct RegexMatch *IteratePointer = &Dependencies[0];
             while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
             {
 
-                for (int j = 0; j < ArrayLength; j++) // Compares dependencies found to dependencies in tree
+                for (int j = 0; j < DependencyGraph->VerticesNum; j++) // Compares dependencies found to dependencies in tree
                 {
-                    if (strcasecmp(Tree[j].path, IteratePointer->Text) == 0)
+                    if (strcasecmp(DependencyGraph->Adjacencies[i]->path, IteratePointer->Text) == 0)
                     {
-                        Tree[i].Dependencies = realloc(Tree[i].Dependencies, sizeof(struct Dependency) * (Tree[i].DependenciesInTree + 1)); // Reallocates memory for dependencies list to add space for new dependency
-                        Tree[i].Dependencies[Tree[i].DependenciesInTree] = *DependencyFromRegexMatch(IteratePointer);
-                        Tree[i].Dependencies[Tree[i].DependenciesInTree].DependencyPath = strdup(IteratePointer->Text); // Adds Dependency to lists of dependencies
-
-                        // Tree[j].Dependents = realloc(Tree[j].Dependents, sizeof(struct Dependency) * Tree[j].DependentsInTree);
-                        // Tree[j].Dependents[Tree[j].DependentsInTree] = Tree[i];
-                        Tree[i].DependenciesInTree++;
-                        // Tree[j].DependentsInTree++;
+                        add_edge(DependencyGraph, i, j, create_edge(IteratePointer->StartIndex, IteratePointer->EndIndex));
                         DependencyFound = true;
                         break;
                     }
@@ -360,19 +401,18 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
             // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
         }
-        printf("\n\nFile has %i dependencies!\n\n", Tree[i].DependenciesInTree);
+        printf("\n\nFile has %i dependencies!\n\n", count_edges(DependencyGraph->Adjacencies[i]));
     }
     printf("\n\n");
 
-    SortDependencyTree(Tree, ArrayLength);
+    SortDependencyTree(DependencyGraph, ArrayLength);
 
-    for (int i = 0; i < ArrayLength - 1; i++)
+    for (int i = 0; i < ArrayLength; i++)
     {
         printf("Tree[%i] = %s, file type id: %i\n", i, Tree[i].path, Tree[i].FileType);
     }
 
-    Tree = realloc(Tree, (ArrayLength) * sizeof(struct Node)); // Allocates extra memory so that null will be at the end of the array so it can be iterated over
-
-    Tree[ArrayLength].IsArrayEnd = true;
+    printf("exiting\n");
+    exit(0);
     return Tree;
 }
