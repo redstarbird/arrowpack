@@ -15,56 +15,81 @@
 #include "./FindDependencies.h"
 #include "../SettingsSingleton/settingsSingleton.h"
 
-void EMSCRIPTEN_KEEPALIVE SortDependencyTree(struct Node *tree, int treeLength)
+// Function to order the nodes of a graph into a flat list for the module bundler
+struct Node **get_vertex_order(Graph *graph)
 {
-    ColorGreen();
-    printf("Sorting dependency tree...\n");
-    ColorNormal();
-    bool SwitchMade = false;
-    struct Node tempHolder;
-    for (int x = 0; x < FILETYPESIDNUM; x++) // Might be more sorts than needed
+    // Create an array to store the nodes in order
+    struct Node **vertex_order = malloc(sizeof(struct Node *) * graph->VerticesNum);
+    printf("vertexnum: %i\n", graph->VerticesNum);
+    // Initialize the array with NULL values
+    for (int i = 0; i < graph->VerticesNum; i++)
     {
-        for (int j = 0; j < treeLength - 1; j++) // This basic bubble sort is probably quite slow and inefficient and can probably be optimized a lot
+        vertex_order[i] = NULL;
+    }
+
+    // Set up a queue to store the nodes that still need to be processed
+    struct Node **queue = malloc(sizeof(struct Node *) * graph->VerticesNum);
+    int queue_size = 0;
+
+    // Add all nodes with no dependents to the queue
+    for (int i = 0; i < graph->VerticesNum; i++)
+    {
+        printf("Test: %s\n", graph->Vertexes[i]->path);
+        struct Node *node = graph->Vertexes[i];
+        if (node->HiddenEdge == NULL)
         {
-            SwitchMade = false;
-            for (int i = 0; i < treeLength - 1; i++)
-            {
-                if (tree[i].FileType > tree[i + 1].FileType)
-                {
-                    SwitchMade = true;
-                    tempHolder = tree[i]; // Basic code to swap array elements
-                    tree[i] = tree[i + 1];
-                    tree[i + 1] = tempHolder;
-                }
-                else if (tree[i].DependenciesInTree > tree[i + 1].DependenciesInTree)
-                {
-                    SwitchMade = true;
-                    tempHolder = tree[i]; // Basic code to swap array elements
-                    tree[i] = tree[i + 1];
-                    tree[i + 1] = tempHolder;
-                }
-                else if (tree[i].DependenciesInTree == tree[i + 1].DependenciesInTree)
-                {
-                    if (tree[i].DependentsInTree < tree[i + 1].DependentsInTree)
-                    {
-                        SwitchMade = true;
-                        tempHolder = tree[i];
-                        tree[i] = tree[i + 1];
-                        tree[i + 1] = tempHolder;
-                    }
-                }
-            }
-            if (tree[0].DependenciesInTree > 0)
-            {
-                printf("Error: Dependency loop found in file %s.\n", tree[0].path);
-                exit(1);
-            }
-            if (!SwitchMade)
-            {
-                return;
-            }
+            printf("%s has no dependecies\n", graph->Vertexes[i]->path);
+            queue[queue_size++] = node;
         }
     }
+    // Process the nodes in the queue
+    int pos = graph->VerticesNum;
+    while (queue_size > 0)
+    {
+        printf("queue_size:%i\n", queue_size);
+        // Get the next node from the queue
+        struct Node *node = queue[--queue_size];
+        printf("Processing node: %s\n", node->path);
+        // Set the pos field of the node
+
+        printf("Adding node %s at pos: %i\n", node->path, pos);
+        // Add the node to the order array
+        vertex_order[pos--] = node;
+        node->VertexPos = pos;
+        // Add all of the node's neighbors to the queue
+        struct Edge *edge = node->edge;
+        while (edge != NULL)
+        {
+            struct Node *neighbor = edge->vertex;
+            printf("Processing neighbor: %s\n", neighbor->path);
+            // Check if the neighbor has any remaining dependencies
+            bool has_dependencies = false;
+            struct Edge *e = neighbor->edge;
+            while (e != NULL)
+            {
+                struct Node *n = e->vertex;
+                if (vertex_order[n->VertexPos] == NULL) // Checks if dependency is not already in array
+                {
+                    has_dependencies = true;
+                    break;
+                }
+                e = e->next;
+            }
+
+            // If the neighbor has no remaining dependencies, add it to the queue
+            if (!has_dependencies)
+            {
+                queue[queue_size++] = neighbor;
+            }
+
+            edge = edge->next;
+        }
+    }
+
+    // Free the queue
+    free(queue);
+
+    return vertex_order;
 }
 
 char *entryPath; // global variable for entry (base) path
@@ -266,67 +291,86 @@ struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
     return fileRules;
 }
 
-struct Dependency EMSCRIPTEN_KEEPALIVE *DependencyFromRegexMatch(struct RegexMatch *match)
+// Function to create a new edge
+Edge *create_edge(struct Node *vertex, int StartRefPos, int EndRefPos)
 {
-    struct Dependency *dependency = malloc(sizeof(struct Dependency)); // Allocates memory for Dependency
-    dependency->StartRefPos = match->StartIndex;
-    dependency->EndRefPos = match->EndIndex;
-    return dependency;
-}
-
-struct Edge *create_edge(int startpos, int endpos)
-{
-    // Allocate memory for the edge structure
+    // Allocate memory for the edge
     Edge *edge = malloc(sizeof(Edge));
 
-    // Set the startpos and endpos fields of the edge
-    edge->StartRefPos = startpos;
-    edge->EndRefPos = endpos;
+    // Initialize the fields of the edge
+    edge->vertex = vertex;
+    edge->next = NULL;
+    edge->StartRefPos = StartRefPos;
+    edge->EndRefPos = EndRefPos;
 
     return edge;
 }
-struct Node *create_vertex(char *path, int filetype, struct Edge *edge)
-{
-    struct Node *node = malloc(sizeof(struct Node));
-    node->path = path;
-    node->FileType = filetype;
-    node->next = NULL;
-}
-void add_edge(struct Graph *graph, int vertex, int neighbor, struct Edge *edge)
-{
-    // Create a new vertex with the given data value and edge
-    struct Node *new_vertex = create_vertex(graph->Adjacencies[neighbor]->path, graph->Adjacencies[neighbor]->FileType, edge);
 
-    // Add the vertex to the adjacency list of the given vertex
-    new_vertex->next = graph->Adjacencies[vertex];
-    graph->Adjacencies[vertex] = new_vertex;
+struct HiddenEdge *CreateHiddenEdge(struct Edge *edge, struct Node *HiddenNode)
+{
+    struct HiddenEdge *hidden_edge = malloc(sizeof(struct HiddenEdge));
+    hidden_edge->edge = edge;
+    hidden_edge->next = NULL;
+    hidden_edge->ConnectedNode = HiddenNode;
+    return hidden_edge;
 }
 
-void add_vertex(Graph *graph, char *path, int fileType, struct Edge *edge)
+// Function to create a new vertex
+struct Node *create_vertex(char *path, int filetype, Edge *edge)
 {
-    // Create a new vertex
-    struct Node *node = create_vertex(path, fileType, edge);
-    // Add the vertex to the adjacency list of the graph
-    int index = hash(path, graph->VerticesNum);
-    node->next = graph->Adjacencies[index];
-    graph->Adjacencies[index] = node;
+    // Allocate memory for the vertex
+    struct Node *vertex = malloc(sizeof(struct Node));
+
+    // Initialize the fields of the vertex
+    vertex->path = path;
+    vertex->FileType = filetype;
+    vertex->edge = edge;
+    vertex->HiddenEdge = NULL;
+    vertex->VertexPos = -1;
+
+    return vertex;
+}
+
+// Function to add an edge to a vertex
+void add_edge(struct Node *vertex, struct Node *neighbor, int StartRefPos, int EndRefPos)
+{
+    // Create a new edge
+    Edge *edge = create_edge(neighbor, StartRefPos, EndRefPos);
+    struct HiddenEdge *hidden_edge = CreateHiddenEdge(edge, vertex);
+
+    // Add the edge to the front of the list of edges
+    edge->next = vertex->edge;
+    vertex->edge = edge;
+    hidden_edge->next = neighbor->HiddenEdge;
+    neighbor->HiddenEdge = hidden_edge;
+}
+
+// Function to add a vertex to a graph
+void add_vertex(Graph *graph, struct Node *vertex)
+{
+    // Increase the size of the vertexes array
+    graph->VerticesNum++;
+    graph->Vertexes = realloc(graph->Vertexes, sizeof(struct Node *) * graph->VerticesNum);
+
+    // Add the vertex to the end of the array
+    graph->Vertexes[graph->VerticesNum - 1] = vertex;
 }
 
 int count_edges(struct Node *vertex)
 {
     int count = 0;
-
+    struct Edge *edge = vertex->edge;
     // Iterate through the edges connected to the vertex
-    while (vertex != NULL)
+    while (edge != NULL)
     {
         count++;
-        vertex = vertex->next;
+        edge = edge->next;
     }
 
     return count;
 }
 
-struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
+struct Node EMSCRIPTEN_KEEPALIVE **CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
 {
 
     printf("Started creating dependency tree\n");
@@ -357,12 +401,13 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
     size_t TreeSize = (int)sizeof(struct Node) * ArrayLength;
 
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
-    DependencyGraph->VerticesNum = ArrayLength;                   // Sets number of vertices in graph
+    DependencyGraph->VerticesNum = 0;                             // Sets number of vertices in graph
 
-    DependencyGraph->Adjacencies = malloc(ArrayLength * sizeof(struct Node));
+    DependencyGraph->Vertexes = malloc(sizeof(struct Node));
     for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
     {
-        add_vertex(DependencyGraph, TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL);
+
+        add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL));
     }
     ColorGreen();
     printf("Finding dependencies...\n\n\n");
@@ -372,9 +417,10 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
+        printf("Graph processing: %s\n", DependencyGraph->Vertexes[i]->path);
         printf("Finding dependencies for file: %s\n", paths[i]);
-        struct RegexMatch *Dependencies = GetDependencies(paths[i], DependencyGraph->Adjacencies[i]->FileType); // Gets dependencies as strings
-        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                                        // Checks if dependencies have been found
+        struct RegexMatch *Dependencies = GetDependencies(paths[i], DependencyGraph->Vertexes[i]->FileType); // Gets dependencies as strings
+        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                                     // Checks if dependencies have been found
         {
             struct RegexMatch *IteratePointer = &Dependencies[0];
             while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
@@ -382,9 +428,9 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
                 for (int j = 0; j < DependencyGraph->VerticesNum; j++) // Compares dependencies found to dependencies in tree
                 {
-                    if (strcasecmp(DependencyGraph->Adjacencies[i]->path, IteratePointer->Text) == 0)
+                    if (strcasecmp(DependencyGraph->Vertexes[j]->path, IteratePointer->Text) == 0)
                     {
-                        add_edge(DependencyGraph, i, j, create_edge(IteratePointer->StartIndex, IteratePointer->EndIndex));
+                        add_edge(DependencyGraph->Vertexes[i], DependencyGraph->Vertexes[j], IteratePointer->StartIndex, IteratePointer->EndIndex);
                         DependencyFound = true;
                         break;
                     }
@@ -401,18 +447,19 @@ struct Node EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLengt
 
             // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
         }
-        printf("\n\nFile has %i dependencies!\n\n", count_edges(DependencyGraph->Adjacencies[i]));
+        printf("\n\nFile has %i dependencies!\n\n", count_edges(DependencyGraph->Vertexes[i]));
     }
     printf("\n\n");
 
-    SortDependencyTree(DependencyGraph, ArrayLength);
+    struct Node **StructArray = get_vertex_order(DependencyGraph);
 
-    for (int i = 0; i < ArrayLength; i++)
+    for (int i = 0; i < DependencyGraph->VerticesNum; i++)
     {
-        printf("Tree[%i] = %s, file type id: %i\n", i, Tree[i].path, Tree[i].FileType);
+        struct Node *node = StructArray[i];
+        printf("Ordered: %s\n", node->path);
     }
 
     printf("exiting\n");
     exit(0);
-    return Tree;
+    return StructArray;
 }

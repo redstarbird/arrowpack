@@ -13,29 +13,37 @@ typedef struct FileRule
     unsigned short int StartPos, EndPos; // endpos is pos from end of string
 } FileRule;
 
+typedef struct Node Node;
+
 typedef struct Edge // Wraps a regular Node struct and includes the start and end positions of where the node is referenced so it doesn't need to be worked out again
 {
+    struct Node *vertex; // Pointer to the vertex at the end of the edge
+    struct Edge *next;   // Pointer to the next edge in the list
     unsigned int StartRefPos, EndRefPos;
 } Edge;
 
-typedef struct Node Node;
-
-struct Node
-{ // structure for individual nodes (Modules/Files) in the tree
-    char *path;
-    bool visited;
-    unsigned int DependenciesInTree, DependentsInTree;
-    struct Node *next;
-    int FileType; // File type ID for file (File type IDs are define in FileTypesHandler.h)
+typedef struct HiddenEdge
+{
     struct Edge *edge;
+    struct Node *ConnectedNode;
+    struct HiddenEdge *next;
+} HiddenEdge;
+
+struct Node // structure for individual nodes (Modules/Files) in the tree
+{
+    char *path;        // Contains path to the file
+    int FileType;      // File type ID for file (File type IDs are define in FileTypesHandler.h)
+    struct Edge *edge; // Pointer to the first edge in the list of edges connected to the vertex
+    int VertexPos;     // Position of the vertex when it is ordered
+    struct HiddenEdge *HiddenEdge;
 };
 
 typedef struct Graph
 {
-    int VerticesNum;    // Number of vertices in the graph
-    Node **Adjacencies; // Array of pointers to the head of the linked lists for each vertex
+    int VerticesNum; // Number of vertices in the graph
+    Node **Vertexes; // Array of pointers to the head of the linked lists for each vertex
 } Graph;
-struct Node *CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
+struct Node **CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
 
 char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
 
