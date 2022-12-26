@@ -33,10 +33,10 @@ void topological_sort_dfs(struct Node *node, struct Stack *stack)
     Stackpush(stack, node);
 }
 
-struct Node **topological_sort(Graph *graph)
+void topological_sort(Graph *graph)
 {
-    struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX); // // Initialises a stack to store the sorted nodes
-    struct Node **SortedNodes = malloc(sizeof(struct Node *) * graph->VerticesNum);
+    struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX); // Initialises a stack to store the sorted nodes
+    graph->SortedArray = malloc(sizeof(struct Node *) * graph->VerticesNum);
 
     for (int i = 0; i < graph->VerticesNum; i++)
     {
@@ -48,10 +48,9 @@ struct Node **topological_sort(Graph *graph)
     int pos = graph->VerticesNum - 1;
     while (!StackIsEmpty(stack))
     {
-        SortedNodes[pos--] = stack->array.VertexArray[stack->top];
+        graph->SortedArray[pos--] = stack->array.VertexArray[stack->top];
         StackpopV(stack);
     }
-    return SortedNodes;
 }
 
 char *entryPath; // global variable for entry (base) path
@@ -334,7 +333,7 @@ int count_edges(struct Node *vertex)
     return count;
 }
 
-struct Node EMSCRIPTEN_KEEPALIVE **CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
+struct Graph EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
 {
 
     printf("Started creating dependency tree\n");
@@ -415,13 +414,13 @@ struct Node EMSCRIPTEN_KEEPALIVE **CreateTree(char *Wrapped_paths, int ArrayLeng
     }
     printf("\n\n");
 
-    struct Node **StructArray = topological_sort(DependencyGraph);
+    topological_sort(DependencyGraph);
 
     for (int i = 0; i < DependencyGraph->VerticesNum; i++)
     {
-        struct Node *node = StructArray[i];
+        struct Node *node = DependencyGraph->SortedArray[i];
         printf("Ordered: %s\n", node->path);
     }
 
-    return StructArray;
+    return DependencyGraph;
 }

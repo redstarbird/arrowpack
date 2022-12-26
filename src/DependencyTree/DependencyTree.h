@@ -38,6 +38,7 @@ struct Node // structure for individual nodes (Modules/Files) in the tree
     struct HiddenEdge *HiddenEdge;
     bool Bundled, visited;
 };
+int count_edges(struct Node *vertex);
 
 typedef struct Graph
 {
@@ -45,7 +46,7 @@ typedef struct Graph
     Node **Vertexes; // Array of pointers to the head of the linked lists for each vertex
     struct Node **SortedArray;
 } Graph;
-struct Node **CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
+struct Graph *CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
 
 char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
 
