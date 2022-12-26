@@ -12,4 +12,4 @@
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 
-#endif // !BUNDLEFILES_H5
+#endif // !BUNDLEFILES_H
