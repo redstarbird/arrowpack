@@ -14,82 +14,44 @@
 #include "../C/StringRelatedFunctions.h"
 #include "./FindDependencies.h"
 #include "../SettingsSingleton/settingsSingleton.h"
+#include "../C/Stack.h"
 
-// Function to order the nodes of a graph into a flat list for the module bundler
-struct Node **get_vertex_order(Graph *graph)
+void topological_sort_dfs(struct Node *node, struct Stack *stack)
 {
-    // Create an array to store the nodes in order
-    struct Node **vertex_order = malloc(sizeof(struct Node *) * graph->VerticesNum);
-    printf("vertexnum: %i\n", graph->VerticesNum);
-    // Initialize the array with NULL values
+    node->visited = true;
+
+    struct Edge *edge = node->edge;
+    while (edge != NULL)
+    {
+        struct Node *Vertex = edge->vertex;
+        if (!Vertex->visited)
+        {
+            topological_sort_dfs(Vertex, stack);
+        }
+        edge = edge->next;
+    }
+    Stackpush(stack, node);
+}
+
+struct Node **topological_sort(Graph *graph)
+{
+    struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX); // // Initialises a stack to store the sorted nodes
+    struct Node **SortedNodes = malloc(sizeof(struct Node *) * graph->VerticesNum);
+
     for (int i = 0; i < graph->VerticesNum; i++)
     {
-        vertex_order[i] = NULL;
-    }
-
-    // Set up a queue to store the nodes that still need to be processed
-    struct Node **queue = malloc(sizeof(struct Node *) * graph->VerticesNum);
-    int queue_size = 0;
-
-    // Add all nodes with no dependents to the queue
-    for (int i = 0; i < graph->VerticesNum; i++)
-    {
-        printf("Test: %s\n", graph->Vertexes[i]->path);
-        struct Node *node = graph->Vertexes[i];
-        if (node->HiddenEdge == NULL)
+        if (!graph->Vertexes[i]->visited)
         {
-            printf("%s has no dependecies\n", graph->Vertexes[i]->path);
-            queue[queue_size++] = node;
+            topological_sort_dfs(graph->Vertexes[i], stack);
         }
     }
-    // Process the nodes in the queue
-    int pos = graph->VerticesNum;
-    while (queue_size > 0)
+    int pos = graph->VerticesNum - 1;
+    while (!StackIsEmpty(stack))
     {
-        printf("queue_size:%i\n", queue_size);
-        // Get the next node from the queue
-        struct Node *node = queue[--queue_size];
-        printf("Processing node: %s\n", node->path);
-        // Set the pos field of the node
-
-        printf("Adding node %s at pos: %i\n", node->path, pos);
-        // Add the node to the order array
-        vertex_order[pos--] = node;
-        node->VertexPos = pos;
-        // Add all of the node's neighbors to the queue
-        struct Edge *edge = node->edge;
-        while (edge != NULL)
-        {
-            struct Node *neighbor = edge->vertex;
-            printf("Processing neighbor: %s\n", neighbor->path);
-            // Check if the neighbor has any remaining dependencies
-            bool has_dependencies = false;
-            struct Edge *e = neighbor->edge;
-            while (e != NULL)
-            {
-                struct Node *n = e->vertex;
-                if (vertex_order[n->VertexPos] == NULL) // Checks if dependency is not already in array
-                {
-                    has_dependencies = true;
-                    break;
-                }
-                e = e->next;
-            }
-
-            // If the neighbor has no remaining dependencies, add it to the queue
-            if (!has_dependencies)
-            {
-                queue[queue_size++] = neighbor;
-            }
-
-            edge = edge->next;
-        }
+        SortedNodes[pos--] = stack->array.VertexArray[stack->top];
+        StackpopV(stack);
     }
-
-    // Free the queue
-    free(queue);
-
-    return vertex_order;
+    return SortedNodes;
 }
 
 char *entryPath; // global variable for entry (base) path
@@ -327,6 +289,8 @@ struct Node *create_vertex(char *path, int filetype, Edge *edge)
     vertex->edge = edge;
     vertex->HiddenEdge = NULL;
     vertex->VertexPos = -1;
+    vertex->Bundled = false;
+    vertex->visited = false;
 
     return vertex;
 }
@@ -451,7 +415,7 @@ struct Node EMSCRIPTEN_KEEPALIVE **CreateTree(char *Wrapped_paths, int ArrayLeng
     }
     printf("\n\n");
 
-    struct Node **StructArray = get_vertex_order(DependencyGraph);
+    struct Node **StructArray = topological_sort(DependencyGraph);
 
     for (int i = 0; i < DependencyGraph->VerticesNum; i++)
     {
@@ -459,7 +423,5 @@ struct Node EMSCRIPTEN_KEEPALIVE **CreateTree(char *Wrapped_paths, int ArrayLeng
         printf("Ordered: %s\n", node->path);
     }
 
-    printf("exiting\n");
-    exit(0);
     return StructArray;
 }

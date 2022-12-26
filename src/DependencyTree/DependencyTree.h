@@ -36,12 +36,14 @@ struct Node // structure for individual nodes (Modules/Files) in the tree
     struct Edge *edge; // Pointer to the first edge in the list of edges connected to the vertex
     int VertexPos;     // Position of the vertex when it is ordered
     struct HiddenEdge *HiddenEdge;
+    bool Bundled, visited;
 };
 
 typedef struct Graph
 {
     int VerticesNum; // Number of vertices in the graph
     Node **Vertexes; // Array of pointers to the head of the linked lists for each vertex
+    struct Node **SortedArray;
 } Graph;
 struct Node **CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
 
