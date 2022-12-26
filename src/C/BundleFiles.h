@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "StringRelatedFunctions.h"
-#include "../DependencyTree/DependencyTree.h"
+#include "../DependencyGraph/DependencyGraph.h"
 #include "ProblemHandler.h"
 #include "./FileHandler.h"
 #include "../Minifiers/HTMLMinifier.h"

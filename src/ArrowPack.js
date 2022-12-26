@@ -95,7 +95,7 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 		var Success;
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
 		StructsPointer = CFunctions.ccall(
-			"CreateTree",
+			"CreateGraph",
 			"number",
 			["string", "number"],
 			[WrappedWalkedFiles, WalkedFiles.length]

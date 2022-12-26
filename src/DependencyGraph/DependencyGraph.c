@@ -5,7 +5,7 @@
 #include <regex.h>
 #include <stdbool.h>
 #include "../C/TextColors.h"
-#include "DependencyTree.h"
+#include "DependencyGraph.h"
 #include "../C/FileHandler.h"
 #include <emscripten.h>
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
@@ -333,10 +333,10 @@ int count_edges(struct Node *vertex)
     return count;
 }
 
-struct Graph EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency tree
+struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency Graph
 {
 
-    printf("Started creating dependency tree\n");
+    printf("Started creating dependency Graph\n");
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
     int ElementsUnwrapped = 0;
@@ -361,13 +361,13 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLeng
 
         CurrentWrappedArrayIndex++;
     }
-    size_t TreeSize = (int)sizeof(struct Node) * ArrayLength;
+    size_t GraphSize = (int)sizeof(struct Node) * ArrayLength;
 
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
     DependencyGraph->VerticesNum = 0;                             // Sets number of vertices in graph
 
     DependencyGraph->Vertexes = malloc(sizeof(struct Node));
-    for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the tree
+    for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the Graph
     {
 
         add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL));
@@ -389,7 +389,7 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLeng
             while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
             {
 
-                for (int j = 0; j < DependencyGraph->VerticesNum; j++) // Compares dependencies found to dependencies in tree
+                for (int j = 0; j < DependencyGraph->VerticesNum; j++) // Compares dependencies found to dependencies in Graph
                 {
                     if (strcasecmp(DependencyGraph->Vertexes[j]->path, IteratePointer->Text) == 0)
                     {
@@ -401,7 +401,7 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateTree(char *Wrapped_paths, int ArrayLeng
                 if (!DependencyFound)
                 {
                     ColorYellow();
-                    printf("Couldn't find dependency %s in tree. External dependancies are not yet supported :(\n", IteratePointer->Text);
+                    printf("Couldn't find dependency %s in Graph. External dependancies are not yet supported :(\n", IteratePointer->Text);
                     ColorNormal();
                 }
                 DependencyFound = false;

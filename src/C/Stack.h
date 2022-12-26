@@ -2,7 +2,7 @@
 #define STACK_H
 #include <stdio.h>
 #include <stdbool.h>
-#include "../DependencyTree/DependencyTree.h"
+#include "../DependencyGraph/DependencyGraph.h"
 // A structure to represent a stack
 struct Stack
 {

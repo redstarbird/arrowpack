@@ -76,16 +76,15 @@ static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **Shift
     }
 }
 
-void BundleHTMLFile(struct Node *TreeNode)
+void BundleHTMLFile(struct Node *GraphNode)
 {
     ShiftLocationLength = 1; // Includes end element to signal the end of the array
     struct ShiftLocation *ShiftLocations = malloc(sizeof(ShiftLocation));
     ShiftLocations[0].location = -1; // Indicates end of array although probably not needed because the length of the array is being stored
 
-    char *FileContents = ReadDataFromFile(TreeNode->path);
-    // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
+    char *FileContents = ReadDataFromFile(GraphNode->path);
 
-    struct Edge *CurrentEdge = TreeNode->edge;
+    struct Edge *CurrentEdge = GraphNode->edge;
     while (CurrentEdge != NULL)
     {
         struct Node *CurrentDependency = CurrentEdge->vertex;
@@ -102,7 +101,7 @@ void BundleHTMLFile(struct Node *TreeNode)
                 FileContents,
                 GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
                 GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
-            // totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
+            // totalAmountShifted += strlen(InsertText) - (InsertEnd - GraphNode->Dependencies[i].StartRefPos);
             AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
         }
         else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
@@ -126,7 +125,7 @@ void BundleHTMLFile(struct Node *TreeNode)
                             FileContents,
                             GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
                             GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1);
-                        // totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1);
+                        // totalAmountShifted -= (GraphNode->Dependencies[i].EndRefPos - GraphNode->Dependencies[i].StartRefPos + 1);
                         AddShiftNum(CurrentEdge->StartRefPos, (CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationLength);
                         FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
                         AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationLength);
@@ -135,7 +134,7 @@ void BundleHTMLFile(struct Node *TreeNode)
                     else
                     {
                         ColorYellow();
-                        printf("No <head> tag found for file: %s, unable to bundle CSS into file, file will still work\n", TreeNode->path);
+                        printf("No <head> tag found for file: %s, unable to bundle CSS into file, file will still work\n", GraphNode->path);
                         ColorReset();
                     }
                 }
@@ -214,7 +213,7 @@ void BundleHTMLFile(struct Node *TreeNode)
     free(ShiftLocations);
     ShiftLocations = NULL;
     RemoveSubstring(FileContents, "</include>");
-    CreateFileWrite(EntryToExitPath(TreeNode->path), FileContents);
+    CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents);
     printf("\n\n\n\n");
 }
 
