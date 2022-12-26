@@ -10,6 +10,6 @@
 #include "../Minifiers/HTMLMinifier.h"
 #include "FileTypesHandler.h"
 
-bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Node *DependencyTree);
+bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 
 #endif // !BUNDLEFILES_H5

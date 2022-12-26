@@ -47,8 +47,10 @@ static int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLoca
 static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *needtoremovethis)
 {
     ShiftLocationLength++;
-    *ShiftLocations = realloc(*ShiftLocations, ShiftLocationLength * sizeof(struct ShiftLocation));
-
+    struct ShiftLocation *NewShiftLocations = malloc(ShiftLocationLength * sizeof(struct ShiftLocation));
+    memcpy(NewShiftLocations, *ShiftLocations, ShiftLocationLength * sizeof(struct ShiftLocation));
+    free(*ShiftLocations);
+    *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {
@@ -83,23 +85,25 @@ void BundleHTMLFile(struct Node *TreeNode)
     char *FileContents = ReadDataFromFile(TreeNode->path);
     // printf("File contents: %s, DependenctNum: %i\n", FileContents, TreeNode->DependenciesInTree);
 
-    for (int i = 0; i < TreeNode->DependenciesInTree; i++)
+    struct Edge *CurrentEdge = TreeNode->edge;
+    while (CurrentEdge != NULL)
     {
+        struct Node *CurrentDependency = CurrentEdge->vertex;
         ColorGreen();
-        printf("Building file: %s\n", TreeNode->Dependencies[i].DependencyPath);
+        printf("Building file: %s\n", CurrentDependency->path);
         ColorNormal();
-        TreeNode->Dependencies[i].DependencyPath = EntryToExitPath(TreeNode->Dependencies[i].DependencyPath);
-        char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
-        int DependencyFileType = GetFileTypeID(TreeNode->Dependencies[i].DependencyPath);
+        char *DependencyExitPath = EntryToExitPath(CurrentDependency->path);
+        char *InsertText = ReadDataFromFile(DependencyExitPath);
+        int DependencyFileType = GetFileTypeID(DependencyExitPath);
         if (DependencyFileType == HTMLFILETYPE_ID)
         {
-            int InsertEnd = TreeNode->Dependencies[i].EndRefPos + 1;
+            int InsertEnd = CurrentEdge->EndRefPos + 1;
             FileContents = ReplaceSectionOfString(
                 FileContents,
-                GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations),
-                GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos + 1, ShiftLocations), InsertText);
+                GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
+                GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
             // totalAmountShifted += strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos);
-            AddShiftNum(TreeNode->Dependencies[i].StartRefPos, strlen(InsertText) - (InsertEnd - TreeNode->Dependencies[i].StartRefPos), &ShiftLocations, &ShiftLocationLength);
+            AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
         }
         else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
         {
@@ -120,10 +124,10 @@ void BundleHTMLFile(struct Node *TreeNode)
 
                         RemoveSectionOfString(
                             FileContents,
-                            GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations),
-                            GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos, ShiftLocations) + 1);
+                            GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
+                            GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1);
                         // totalAmountShifted -= (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1);
-                        AddShiftNum(TreeNode->Dependencies[i].StartRefPos, (TreeNode->Dependencies[i].EndRefPos - TreeNode->Dependencies[i].StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationLength);
+                        AddShiftNum(CurrentEdge->StartRefPos, (CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationLength);
                         FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
                         AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationLength);
                         // totalAmountShifted += strlen(InsertString);
@@ -145,8 +149,8 @@ void BundleHTMLFile(struct Node *TreeNode)
         {
             int startlocation = -1;
             int endlocation = -1;
-            int TempShiftedAmount = GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos, ShiftLocations);
-            for (int v = GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations); v < strlen(FileContents); v++)
+            int TempShiftedAmount = GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations);
+            for (int v = GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations); v < strlen(FileContents); v++)
             {
 
                 if (strncasecmp(FileContents + v, "src", 3) == 0)
@@ -192,65 +196,67 @@ void BundleHTMLFile(struct Node *TreeNode)
                     }
                 }
                 RemoveSectionOfString(FileContents, startlocation, endlocation);
-                AddShiftNum(TreeNode->Dependencies[i].StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationLength);
-                FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(TreeNode->Dependencies[i].EndRefPos + 1, ShiftLocations));
-                AddShiftNum(TreeNode->Dependencies[i].EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
+                AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationLength);
+                FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
+                AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
             }
         }
         else // Will hopefully work for most custom dependencies
         {
-            char *InsertText = ReadDataFromFile(TreeNode->Dependencies[i].DependencyPath);
-            int InsertEnd2 = TreeNode->Dependencies[i].EndRefPos + 1;
-            FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(TreeNode->Dependencies[i].StartRefPos, ShiftLocations), GetShiftedAmount(InsertEnd2, ShiftLocations), InsertText);
+            char *InsertText = ReadDataFromFile(DependencyExitPath);
+            int InsertEnd2 = CurrentEdge->EndRefPos + 1;
+            FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(InsertEnd2, ShiftLocations), InsertText);
 
-            AddShiftNum(TreeNode->Dependencies[i].StartRefPos, strlen(InsertText) - (InsertEnd2 - TreeNode->Dependencies[i].StartRefPos), &ShiftLocations, &ShiftLocationLength);
+            AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
         }
+        CurrentEdge = CurrentEdge->next;
     }
+    free(ShiftLocations);
+    ShiftLocations = NULL;
     RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(TreeNode->path), FileContents);
     printf("\n\n\n\n");
 }
 
-bool EMSCRIPTEN_KEEPALIVE BundleFiles(Node *DependencyTree)
+bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
 {
     bool Success = true;
-    struct Node *IteratePointer = &DependencyTree[0]; // Pointer used to iterate through dependency tree
+    int FilesBundled;
 
-    while (1)
+    for (FilesBundled = 0; FilesBundled < graph->VerticesNum; FilesBundled++)
     {
-        if (IteratePointer->DependenciesInTree == 0 && IteratePointer->IsArrayEnd != true)
+        struct Node *FileNode = graph->SortedArray[FilesBundled];
+        if (count_edges(FileNode) == 0)
         {
-            printf("Duplicating file: %s to exit path\n", IteratePointer->path);
-            char *ExitPath = strdup(IteratePointer->path);
+            char *ExitPath = strdup(FileNode->path);
             ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
-            CopyFile(IteratePointer->path, ExitPath);
-            IteratePointer++;
+            CopyFile(FileNode->path, ExitPath);
             free(ExitPath);
         }
         else
         {
+            FilesBundled--;
             break;
         }
     }
 
-    while (IteratePointer->IsArrayEnd != true) // Checks if it has reached the end of the array by checking if path is NULL
+    for (int i = FilesBundled; i < graph->VerticesNum; i++)
     {
-
+        struct Node *FileNode = graph->SortedArray[i];
         ColorMagenta();
-        printf("\nBundling file: %s\n", IteratePointer->path);
+        printf("\nBundling file: %s\n", FileNode->path);
         ColorReset();
-        char *fileType = GetFileExtension(IteratePointer->path); // Get file type of the Node
+        char *fileType = GetFileExtension(FileNode->path); // Get file type of the Node
 
         if (strcmp(fileType, "html") == 0) // C doesn't support switch statements for strings
         {
 
-            BundleHTMLFile(IteratePointer);
+            BundleHTMLFile(FileNode);
         }
         else
         {
             CreateWarning("File is not a supported file type");
         }
-        IteratePointer++;
     }
 
     return Success; // This is always true currently
