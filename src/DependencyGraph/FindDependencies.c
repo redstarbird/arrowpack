@@ -271,13 +271,31 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
 {
-    struct RegexMatch *Dependencies = BasicRegexDependencies(filename, "@import .*;", 9, 2);
-    for (int i = 0; i < sizeof(Dependencies) / sizeof(char *); i++)
+    struct RegexMatch *Dependencies = BasicRegexDependencies(filename, "@import [^;]*", 0, 0);
+    struct RegexMatch *IteratePointer = &Dependencies[0];
+    while (IteratePointer->IsArrayEnd != true)
     {
-        if (HasRegexMatch(Dependencies[i].Text, "rl\\(*.\"")) // Removes "url()" CSS function from string
+        int StartLocation = -1;
+        int EndLocation = -1;
+        for (int i = 0; i < strlen(IteratePointer->Text); i++)
         {
-            strcpy(Dependencies[i].Text, getSubstring(Dependencies[i].Text, 4, 1));
+            if (IteratePointer->Text[i] == 'u' && IteratePointer->Text[i + 1] == 'r' && IteratePointer->Text[i + 2] == 'l' && IteratePointer->Text[i + 3] == '(')
+            {
+                StartLocation = i + 5;
+                for (int v = i + 5; v < strlen(IteratePointer->Text); v++)
+                {
+                    if (IteratePointer->Text[v] == ')')
+                    {
+                        EndLocation = v - 2;
+                    }
+                }
+            }
         }
+
+        strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, StartLocation, EndLocation));
+        printf("CSS URL: %s", IteratePointer->Text);
+        IteratePointer++;
     }
+    MakeMatchesFullPath(Dependencies, GetBasePath(filename));
     return Dependencies;
 }

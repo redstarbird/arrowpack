@@ -120,7 +120,7 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
         return FindHTMLDependencies(Path);
         break;
     case CSSFILETYPE_ID:
-        printf("CSS not implemented yet");
+        return FindCSSDependencies(Path);
         break;
     case JSFILETYPE_ID:
         printf("JS not implemented yet");
