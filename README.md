@@ -9,7 +9,7 @@ A web bundling application that makes your website faster and easier to maintain
 | Feature | Implemented |
 | ------- | --------- |
 | HTML Includes | ✅ |
-| CSS Bundling  | ❌ |
+| CSS Bundling  | ✅ |
 | HTML/CSS Minifier | ❌|
 | Javascript AST parser | ❌ |
 | Javascript Module Bundler | ❌ |
