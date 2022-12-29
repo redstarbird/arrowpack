@@ -1,11 +1,13 @@
 #include "FileHandler.h"
 #include <emscripten.h>
 
-void CopyFile(char* FileToCopy, char* FileToCopyTo) {
+void CopyFile(char *FileToCopy, char *FileToCopyTo)
+{
     printf("Copying file: %s to location: %s\n", FileToCopy, FileToCopyTo);
     FILE *input = fopen(FileToCopy, "r");
     FILE *output = fopen(FileToCopyTo, "w");
-        if (!input || !output) {
+    if (!input || !output)
+    {
         printf("Error opening file\n");
         exit(1);
     }
@@ -16,14 +18,14 @@ void CopyFile(char* FileToCopy, char* FileToCopyTo) {
     // Read the data from the input file and write it to the output file
     // in chunks of BUFFER_SIZE bytes
     size_t bytesRead;
-    while ((bytesRead = fread(buffer, 1, 1024, input)) > 0) {
+    while ((bytesRead = fread(buffer, 1, 1024, input)) > 0)
+    {
         fwrite(buffer, 1, bytesRead, output);
     }
 
     // Close the input and output files
     fclose(input);
     fclose(output);
-
 }
 
 void CreateFileWrite(char *path, char *text)
@@ -111,4 +113,8 @@ char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
         } // close the file
         printf("what?!?!?!?!?");
         return buffer;*/
+}
+bool FileExists(char *FilePath)
+{
+    return access(FilePath, F_OK) == 0;
 }
