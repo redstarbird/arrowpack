@@ -445,3 +445,16 @@ void RemoveSectionOfString(char *str, int start, int end)
     /* Add a null terminator to the shortened string */
     str[i - (end - start)] = '\0';
 }
+
+bool StringEndsWith(char *str, char *substr)
+{
+    int str_len = strlen(str);
+    int substr_len = strlen(substr);
+
+    if (substr_len > str_len)
+    {
+        return false;
+    }
+
+    return (strcmp(str + str_len - substr_len, substr_len) == 0);
+}
