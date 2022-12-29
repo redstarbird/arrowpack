@@ -16,4 +16,6 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename);
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename);
 
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename);
+
 #endif // !FINDDEPENENCIESH

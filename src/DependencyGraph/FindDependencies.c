@@ -299,3 +299,111 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
     MakeMatchesFullPath(Dependencies, GetBasePath(filename));
     return Dependencies;
 }
+
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
+{
+    struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "(^|;)[^;]* require\\s*[^;]*", 0, 2);
+    struct RegexMatch *IteratePointer = &CJSDependencies[0];
+
+    while (IteratePointer->IsArrayEnd != true)
+    {
+        int startLocation = -1;
+        int endLocation = -1;
+        printf("matched %s\n", IteratePointer->Text);
+        int LastEqualsLocation = -1;
+        int requirelocation = -1;
+        int stringlength = strlen(IteratePointer->Text);
+        for (int i = 0; i < stringlength; i++)
+        {
+            if (IteratePointer->Text[i] == '=')
+            {
+                LastEqualsLocation = i;
+            }
+            else if (strncasecmp(IteratePointer->Text + i, "require", 7) == 0)
+            {
+                if (LastEqualsLocation != -1)
+                {
+                    requirelocation = i;
+                    break;
+                }
+            }
+        }
+        if (requirelocation != -1)
+        {
+            bool bracketFound = false;
+            bool QuotationMarkFound = false;
+            for (int i = requirelocation; i < stringlength; i++)
+            {
+                if (!bracketFound)
+                {
+                    if (IteratePointer->Text[i] == '(')
+                    {
+                        bracketFound = true;
+                    }
+                }
+                else if (!QuotationMarkFound)
+                {
+                    if (IteratePointer->Text[i] == '\"' || IteratePointer->Text[i] == '\'')
+                    {
+                        QuotationMarkFound = true;
+                    }
+                }
+                else
+                {
+                    if (startLocation == -1)
+                    {
+                        if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\'' && IteratePointer->Text[i] != '\"')
+                        {
+                            startLocation = i;
+                        }
+                    }
+                    else
+                    {
+                        endLocation = i;
+                        if (IteratePointer->Text[i] == ' ' || IteratePointer->Text[i] == '\'' || IteratePointer->Text[i] == '\"')
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (startLocation != -1 && endLocation != -1)
+            {
+                strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
+                printf("Yay: %s\n", IteratePointer->Text);
+            }
+        }
+        IteratePointer++;
+    }
+    exit(0);
+    struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*", 8, 0);
+    while (IteratePointer->IsArrayEnd != true)
+    {
+        int StartLocation = -1;
+        int EndLocation = -1;
+        for (int i = 0; i < strlen(IteratePointer->Text); i++)
+        {
+            if (strncasecmp(IteratePointer->Text + i, " from ", 6) == 0)
+            {
+                StartLocation = i + 5; // Doesn't break so that function won't be messed up if function name includes " from "
+            }
+        }
+        if (StartLocation == -1)
+        {
+            printf("Could not find JS dependency in import\n");
+        }
+        else
+        {
+            for (int i = StartLocation; i < strlen(IteratePointer->Text); i++)
+            {
+                if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\'' && IteratePointer->Text[i] != '\"')
+                {
+                    StartLocation = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    return CJSDependencies;
+}
