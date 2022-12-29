@@ -11,7 +11,6 @@ A web bundling application that makes your website faster and easier to maintain
 | HTML Includes | ✅ |
 | CSS Bundling  | ✅ |
 | HTML/CSS Minifier | ❌|
-| Javascript AST parser | ❌ |
 | Javascript Module Bundler | ❌ |
 | Node.JS modules on browser | ❌ |
 | Arrowpack website | ❌ |
