@@ -118,3 +118,9 @@ bool FileExists(char *FilePath)
 {
     return access(FilePath, F_OK) == 0;
 }
+
+bool DirectoryExists(const char *path)
+{
+    struct stat sb;
+    return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+}
