@@ -302,75 +302,116 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 {
-    struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "(^|;)[^;]* require\\s*[^;]*", 0, 2);
+    struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1);
     struct RegexMatch *IteratePointer = &CJSDependencies[0];
 
     while (IteratePointer->IsArrayEnd != true)
     {
         int startLocation = -1;
         int endLocation = -1;
-        printf("matched %s\n", IteratePointer->Text);
-        int LastEqualsLocation = -1;
-        int requirelocation = -1;
         int stringlength = strlen(IteratePointer->Text);
+        bool bracketFound = false;
+        bool QuotationMarkFound = false;
         for (int i = 0; i < stringlength; i++)
         {
-            if (IteratePointer->Text[i] == '=')
+            if (!bracketFound)
             {
-                LastEqualsLocation = i;
-            }
-            else if (strncasecmp(IteratePointer->Text + i, "require", 7) == 0)
-            {
-                if (LastEqualsLocation != -1)
+                if (IteratePointer->Text[i] == '(')
                 {
-                    requirelocation = i;
-                    break;
+                    bracketFound = true;
                 }
             }
-        }
-        if (requirelocation != -1)
-        {
-            bool bracketFound = false;
-            bool QuotationMarkFound = false;
-            for (int i = requirelocation; i < stringlength; i++)
+            else if (!QuotationMarkFound)
             {
-                if (!bracketFound)
+                if (IteratePointer->Text[i] == '\"' || IteratePointer->Text[i] == '\'')
                 {
-                    if (IteratePointer->Text[i] == '(')
-                    {
-                        bracketFound = true;
-                    }
+                    QuotationMarkFound = true;
                 }
-                else if (!QuotationMarkFound)
+            }
+            else
+            {
+                if (startLocation == -1)
                 {
-                    if (IteratePointer->Text[i] == '\"' || IteratePointer->Text[i] == '\'')
+                    if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\'' && IteratePointer->Text[i] != '\"')
                     {
-                        QuotationMarkFound = true;
+                        startLocation = i;
                     }
                 }
                 else
                 {
-                    if (startLocation == -1)
+                    endLocation = i;
+                    if (IteratePointer->Text[i] == ' ' || IteratePointer->Text[i] == '\'' || IteratePointer->Text[i] == '\"')
                     {
-                        if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\'' && IteratePointer->Text[i] != '\"')
-                        {
-                            startLocation = i;
-                        }
-                    }
-                    else
-                    {
-                        endLocation = i;
-                        if (IteratePointer->Text[i] == ' ' || IteratePointer->Text[i] == '\'' || IteratePointer->Text[i] == '\"')
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
             }
-            if (startLocation != -1 && endLocation != -1)
+        }
+        if (startLocation != -1 && endLocation != -1)
+        {
+            strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
+            printf("Yay: %s\n", IteratePointer->Text);
+            bool LocalFileFound = false;
+            if (!StringEndsWith(IteratePointer->Text, ".cjs") && !StringEndsWith(IteratePointer->Text, ".js"))
             {
-                strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
-                printf("Yay: %s\n", IteratePointer->Text);
+                char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(IteratePointer->Text));
+                int TempLength = strlen(TempCheckPath);
+                TempCheckPath = realloc(TempCheckPath, TempLength + 5);
+                strcat(TempCheckPath, ".js");
+                if (FileExists(TempCheckPath))
+                {
+                    LocalFileFound = true;
+                    free(IteratePointer->Text);
+                    IteratePointer->Text = TempCheckPath;
+                }
+                else
+                {
+                    TempCheckPath = ReplaceSectionOfString(TempCheckPath, TempLength, TempLength + 3, ".cjs\n");
+                    if (FileExists(TempCheckPath))
+                    {
+                        LocalFileFound = true;
+                        free(IteratePointer->Text);
+                        IteratePointer->Text = TempCheckPath;
+                    }
+                    else
+                    {
+                        printf("Package.json: %s\n", ReadDataFromFile("package.json"));
+                        if (DirectoryExists("node_modules"))
+                        {
+                            printf("Node modules exists\n");
+                            char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
+                            strcpy(NodeModulePath, "node_modules/");
+                            strcat(NodeModulePath, IteratePointer->Text);
+                            if (DirectoryExists(NodeModulePath))
+                            {
+                                char *PackageJSONPath = malloc(strlen(NodeModulePath) + 15);
+                                strcpy(PackageJSONPath, NodeModulePath);
+                                strcat(PackageJSONPath, "/package.json");
+                                if (FileExists(PackageJSONPath))
+                                {
+                                    char *PackageJSONContent = ReadDataFromFile(PackageJSONPath);
+                                    cJSON *PackageJSON = cJSON_Parse(PackageJSONContent);
+                                    if (PackageJSON == NULL)
+                                    {
+                                        printf("Error parsing package.json at %s\n", PackageJSONPath);
+                                        exit(1);
+                                    }
+                                    cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main");
+                                    NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 1);
+                                    strcat(NodeModulePath, "/");
+                                    strcat(NodeModulePath, main_field->valuestring);
+                                    free(PackageJSONContent);
+                                    free(PackageJSONPath);
+                                    free(IteratePointer->Text);
+                                    IteratePointer->Text = NodeModulePath;
+                                    LocalFileFound = true;
+                                    cJSON_Delete(PackageJSON);
+                                    printf("wow %s\n", IteratePointer->Text);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         IteratePointer++;
