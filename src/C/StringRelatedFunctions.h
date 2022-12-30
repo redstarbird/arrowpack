@@ -39,4 +39,6 @@ char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int posi
 
 void RemoveSectionOfString(char *str, int start, int end);
 
+bool StringEndsWith(char *str, char *substr);
+
 #endif // !STRINGFUNCTIONS_H

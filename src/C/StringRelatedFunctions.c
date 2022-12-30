@@ -456,5 +456,14 @@ bool StringEndsWith(char *str, char *substr)
         return false;
     }
 
-    return (strcmp(str + str_len - substr_len, substr_len) == 0);
+    return (strcmp(str + str_len - substr_len, substr) == 0);
+}
+
+bool IsURL(char *str)
+{
+    if (str == NULL)
+    {
+        return false;
+    }
+    return HasRegexMatch(str, "((http|https):\\\\/\\\\/)?[\\\\w\\\\-_]+(\\\\.[\\\\w\\\\-_]+)+([\\\\w\\\\-\\\\.,@?^=%&:/~\\\\+#]*[\\\\w\\\\-\\\\@?^=%&/~\\\\+#])?");
 }
