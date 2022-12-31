@@ -416,7 +416,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         IteratePointer++;
     }
-    exit(0);
     struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*", 8, 0);
     while (IteratePointer->IsArrayEnd != true)
     {

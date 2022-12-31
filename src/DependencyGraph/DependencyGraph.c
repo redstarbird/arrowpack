@@ -123,7 +123,7 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
         return FindCSSDependencies(Path);
         break;
     case JSFILETYPE_ID:
-        printf("JS not implemented yet");
+        return FindJSDependencies(Path);
         break;
     case SCSSFILETYPE_ID:
         printf("SCSS not implemented yet");
@@ -333,6 +333,45 @@ int count_edges(struct Node *vertex)
     return count;
 }
 
+void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
+{
+    bool DependencyFound = false;
+    printf("Finding dependencies for file: %s\n", vertex->path);
+    struct RegexMatch *Dependencies = GetDependencies(vertex->path, vertex->FileType); // Gets dependencies as strings
+    if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                   // Checks if dependencies have been found
+    {
+        struct RegexMatch *IteratePointer = &Dependencies[0];
+        while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
+        {
+
+            for (int j = 0; j < (*DependencyGraph)->VerticesNum; j++) // Compares dependencies found to dependencies in Graph
+            {
+                if (strcasecmp((*DependencyGraph)->Vertexes[j]->path, IteratePointer->Text) == 0)
+                {
+                    add_edge(vertex, (*DependencyGraph)->Vertexes[j], IteratePointer->StartIndex, IteratePointer->EndIndex);
+                    DependencyFound = true;
+                    break;
+                }
+            }
+            if (!DependencyFound)
+            {
+                ColorYellow();
+                printf("Creating new node: %s\n", IteratePointer->Text);
+                ColorNormal();
+                add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));
+                add_edge(vertex, (*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], IteratePointer->StartIndex, IteratePointer->EndIndex);
+                DependencyFound = true;
+                CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph);
+            }
+            DependencyFound = false;
+            IteratePointer++;
+        }
+
+        // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
+    }
+    printf("\n\nFile has %i dependencies!\n\n", count_edges(vertex));
+}
+
 struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency Graph
 {
 
@@ -376,41 +415,10 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
     printf("Finding dependencies...\n\n\n");
     ColorReset();
 
-    bool DependencyFound = false;
-
     for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
     {
         printf("Graph processing: %s\n", DependencyGraph->Vertexes[i]->path);
-        printf("Finding dependencies for file: %s\n", paths[i]);
-        struct RegexMatch *Dependencies = GetDependencies(paths[i], DependencyGraph->Vertexes[i]->FileType); // Gets dependencies as strings
-        if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                                     // Checks if dependencies have been found
-        {
-            struct RegexMatch *IteratePointer = &Dependencies[0];
-            while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
-            {
-
-                for (int j = 0; j < DependencyGraph->VerticesNum; j++) // Compares dependencies found to dependencies in Graph
-                {
-                    if (strcasecmp(DependencyGraph->Vertexes[j]->path, IteratePointer->Text) == 0)
-                    {
-                        add_edge(DependencyGraph->Vertexes[i], DependencyGraph->Vertexes[j], IteratePointer->StartIndex, IteratePointer->EndIndex);
-                        DependencyFound = true;
-                        break;
-                    }
-                }
-                if (!DependencyFound)
-                {
-                    ColorYellow();
-                    printf("Couldn't find dependency %s in Graph. External dependancies are not yet supported :(\n", IteratePointer->Text);
-                    ColorNormal();
-                }
-                DependencyFound = false;
-                IteratePointer++;
-            }
-
-            // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
-        }
-        printf("\n\nFile has %i dependencies!\n\n", count_edges(DependencyGraph->Vertexes[i]));
+        CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
     }
     printf("\n\n");
 
