@@ -140,8 +140,8 @@ def Build():
             if value.ForceFS == True:
                 ForceFS = "-s NODERAWFS=1"
 
-            #optimizations = "-Os "
-            optimizations = "" # Optimizations are currently making the FullRelativePath function not work properly which needs to be fixed before they can be re-enabled
+            optimizations = "-O3 -s ELIMINATE_DUPLICATE_FUNCTIONS=1 -s MINIFY_HTML=1 "
+            
             Dev = ""
             if options["dev"] == True:
                 Dev = "--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
