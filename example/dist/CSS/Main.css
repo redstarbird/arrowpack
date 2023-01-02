@@ -1,4 +1,7 @@
-@import url("./MoreCSS.css");
+p:first-of-type {
+	color: greenyellow;
+}
+
 h1 {
 	color: rgb(140, 199, 255);
 }

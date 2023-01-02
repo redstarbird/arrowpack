@@ -1,14 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<link rel="stylesheet" href="../CSS/Main.css" />
+	<head><style>p:first-of-type {
+	color: greenyellow;
+}
+
+h1 {
+	color: rgb(140, 199, 255);
+}
+</style>
+		
 	</head>
 	<body>
 		<nav><h2>Navbar is here!</h2><h1>Hello World!</h1>
 </nav>
 
+		<script >function HelloWorldIfy(str) {
+    return "Hello World " + str;
+}
+let helloworldify_ARROWPACK = {};helloworldify_ARROWPACK = HelloWorldIfy;function ThisIsAModuleTestFunction() {
+    console.log("CommonJS module!");
+}let MyModulecjs_ARROWPACK = {};MyModulecjs_ARROWPACK.CJSModuleFunction = ThisIsAModuleTestFunction;const HelloWorldify = helloworldify_ARROWPACK;
+const CJSModuleTest = MyModulecjs_ARROWPACK;
+
+CJSModuleTest.CJSModuleFunction();
+
+
+console.log(HelloWorldify("This is javascript!"));</script>
 		<!-- Include end tag is optional so it doesn't mess with IDE intellisense -->
 		<p>Example Blog Page!</p>
+		<script src="../JS/BlogComments.js" async></script>
 		<h1>Hello World!</h1>
 
 	</body>
