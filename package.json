@@ -33,7 +33,8 @@
 	},
 	"dependencies": {
 		"boxen": ">=7.0",
-		"chalk": "^5.2.0",
+		"chalk": "^4.1.2",
+		"helloworldify": "^1.0.0",
 		"jshint": "^2.13.5",
 		"yargs": "^17.6.2"
 	}
