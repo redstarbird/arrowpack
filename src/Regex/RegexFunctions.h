@@ -15,6 +15,8 @@ typedef struct RegexMatch
     bool IsArrayEnd;
 } RegexMatch;
 
+void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2);
+unsigned int RegexMatchArrayLength(struct RegexMatch *Array);
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern); // returns the number of regex matches
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos); // returns all regex matches as an array of strings

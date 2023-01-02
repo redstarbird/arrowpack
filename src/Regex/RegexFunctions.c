@@ -1,5 +1,64 @@
 #include "RegexFunctions.h"
 
+unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
+{
+    struct RegexMatch *IteratePointer = &Array[0];
+    unsigned int ArrayLength = 0;
+    while (IteratePointer->IsArrayEnd == false)
+    {
+        // printf("loop\n");
+        ArrayLength++;
+        IteratePointer++;
+    }
+    printf("ArrayLength = %i\n", ArrayLength);
+    return ArrayLength;
+}
+void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2)
+{
+    // Check if Array2 is empty
+    if ((*Array2)[0].IsArrayEnd == false)
+    {
+        // Check if Array1 is empty
+        if ((*Array1)[0].IsArrayEnd == false)
+        {
+            // Calculate the lengths of the arrays
+            unsigned int Array1Length = RegexMatchArrayLength(*Array1);
+            unsigned int Array2Length = RegexMatchArrayLength(*Array2);
+
+            // Allocate new memory for the combined array
+            struct RegexMatch *NewArray = malloc(sizeof(struct RegexMatch) * (Array1Length + Array2Length + 2));
+
+            // Copy the elements of Array1 into the new array
+            memcpy(NewArray, *Array1, sizeof(struct RegexMatch) * Array1Length);
+
+            // Copy the elements of Array2 into the new array
+            for (unsigned int i = 0; i < Array2Length; i++)
+            {
+                NewArray[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
+                NewArray[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
+                NewArray[i + Array1Length].Text = strdup((*Array2)[i].Text);
+                printf("new code: %s\n", NewArray[i + Array1Length].Text);
+                NewArray[i + Array1Length].IsArrayEnd = false;
+            }
+
+            // Set the end-of-array flag for the last element of the new array
+            NewArray[Array1Length + Array2Length].IsArrayEnd = true;
+
+            // Free the memory used by the original Array1
+            free(*Array1);
+
+            // Update Array1 to point to the new array
+            *Array1 = NewArray;
+            printf("is 2nd the start: %i\n", NewArray[1].IsArrayEnd);
+        }
+        else
+        {
+            // Array1 is empty, so just set it equal to Array2
+            *Array1 = *Array2;
+        }
+    }
+}
+
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
 {
     // printf("Getting num of regex matches for text %s\n", Text);
