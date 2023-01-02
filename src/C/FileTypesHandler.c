@@ -28,7 +28,7 @@ int GetFileTypeID(const char *path)
     {
         return CSSFILETYPE_ID;
     }
-    else if (strcasecmp(FileExtension, "js") == 0)
+    else if (strcasecmp(FileExtension, "js") == 0 || strcasecmp(FileExtension, "cjs") == 0)
     {
         return JSFILETYPE_ID;
     }
@@ -60,7 +60,8 @@ void InitFileTypes() // Probably a better way to do this
         ┃╰╯┃┃╰━╯┃
         ╰━━╯╰━━━╯*/
     SetFileExtension(FileTypes[1].FileExtensions[0], "js");
-    SetShortName(FileTypes[1].ShortName, "CSS");
+    SetFileExtension(FileTypes[1].FileExtensions[1], "cjs");
+    SetShortName(FileTypes[1].ShortName, "JS");
     FileTypes[1].id = JSFILETYPE_ID;
 
     /*
