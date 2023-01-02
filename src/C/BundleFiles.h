@@ -9,6 +9,8 @@
 #include "./FileHandler.h"
 #include "../Minifiers/HTMLMinifier.h"
 #include "FileTypesHandler.h"
+#include "ProgressBar.h"
+#include "../Regex/RegexFunctions.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 

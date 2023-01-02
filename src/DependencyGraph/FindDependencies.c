@@ -1,64 +1,5 @@
 #include "FindDependencies.h"
 
-unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
-{
-    struct RegexMatch *IteratePointer = &Array[0];
-    unsigned int ArrayLength = 0;
-    while (IteratePointer->IsArrayEnd == false)
-    {
-        // printf("loop\n");
-        ArrayLength++;
-        IteratePointer++;
-    }
-    printf("ArrayLength = %i\n", ArrayLength);
-    return ArrayLength;
-}
-void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2)
-{
-    // Check if Array2 is empty
-    if ((*Array2)[0].IsArrayEnd == false)
-    {
-        // Check if Array1 is empty
-        if ((*Array1)[0].IsArrayEnd == false)
-        {
-            // Calculate the lengths of the arrays
-            unsigned int Array1Length = RegexMatchArrayLength(*Array1);
-            unsigned int Array2Length = RegexMatchArrayLength(*Array2);
-
-            // Allocate new memory for the combined array
-            struct RegexMatch *NewArray = malloc(sizeof(struct RegexMatch) * (Array1Length + Array2Length + 2));
-
-            // Copy the elements of Array1 into the new array
-            memcpy(NewArray, *Array1, sizeof(struct RegexMatch) * Array1Length);
-
-            // Copy the elements of Array2 into the new array
-            for (unsigned int i = 0; i < Array2Length; i++)
-            {
-                NewArray[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
-                NewArray[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
-                NewArray[i + Array1Length].Text = strdup((*Array2)[i].Text);
-                printf("new code: %s\n", NewArray[i + Array1Length].Text);
-                NewArray[i + Array1Length].IsArrayEnd = false;
-            }
-
-            // Set the end-of-array flag for the last element of the new array
-            NewArray[Array1Length + Array2Length].IsArrayEnd = true;
-
-            // Free the memory used by the original Array1
-            free(*Array1);
-
-            // Update Array1 to point to the new array
-            *Array1 = NewArray;
-            printf("is 2nd the start: %i\n", NewArray[1].IsArrayEnd);
-        }
-        else
-        {
-            // Array1 is empty, so just set it equal to Array2
-            *Array1 = *Array2;
-        }
-    }
-}
-
 void MakeMatchesFullPath(struct RegexMatch *matches, char *BaseFilePath)
 {
     struct RegexMatch *IteratePointer = &matches[0];
@@ -113,6 +54,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
 {
+
     /*
         ╭╮ ╭╮╭━━━━╮╭━╮╭━╮╭╮
         ┃┃ ┃┃┃╭╮╭╮┃┃┃╰╯┃┃┃┃
@@ -352,6 +294,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
             strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
             printf("Yay: %s\n", IteratePointer->Text);
             bool LocalFileFound = false;
+
             if (!StringEndsWith(IteratePointer->Text, ".cjs") && !StringEndsWith(IteratePointer->Text, ".js"))
             {
                 char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(IteratePointer->Text));
@@ -362,55 +305,73 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 {
                     LocalFileFound = true;
                     free(IteratePointer->Text);
-                    IteratePointer->Text = TempCheckPath;
+                    IteratePointer->Text = TurnToFullRelativePath(TempCheckPath, GetBasePath(filename));
                 }
                 else
                 {
                     TempCheckPath = ReplaceSectionOfString(TempCheckPath, TempLength, TempLength + 3, ".cjs\n");
-                    if (FileExists(TempCheckPath))
+                    TempCheckPath[TempLength + 4] = '\0';
+                    printf("CJS path: %s\n", TurnToFullRelativePath(TempCheckPath, GetBasePath(filename)));
+                    if (FileExists(TurnToFullRelativePath(TempCheckPath, GetBasePath(filename))))
                     {
                         LocalFileFound = true;
                         free(IteratePointer->Text);
-                        IteratePointer->Text = TempCheckPath;
+                        IteratePointer->Text = TurnToFullRelativePath(TempCheckPath, GetBasePath(filename));
+                        printf("Relative CJS path: %s\n", IteratePointer->Text);
                     }
-                    else
+                }
+            }
+
+            else if (FileExists(TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename))))
+            {
+
+                LocalFileFound = true;
+
+                IteratePointer->Text = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
+                printf("Exiting %s\n", IteratePointer->Text);
+            }
+            if (!LocalFileFound)
+            {
+                if (DirectoryExists("node_modules"))
+                {
+                    printf("Node modules exists\n");
+                    char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
+                    strcpy(NodeModulePath, "node_modules/");
+                    strcat(NodeModulePath, IteratePointer->Text);
+                    if (DirectoryExists(NodeModulePath))
                     {
-                        printf("Package.json: %s\n", ReadDataFromFile("package.json"));
-                        if (DirectoryExists("node_modules"))
+                        char *PackageJSONPath = malloc(strlen(NodeModulePath) + 15);
+                        strcpy(PackageJSONPath, NodeModulePath);
+                        strcat(PackageJSONPath, "/package.json");
+                        if (FileExists(PackageJSONPath))
                         {
-                            printf("Node modules exists\n");
-                            char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
-                            strcpy(NodeModulePath, "node_modules/");
-                            strcat(NodeModulePath, IteratePointer->Text);
-                            if (DirectoryExists(NodeModulePath))
+                            char *PackageJSONContent = ReadDataFromFile(PackageJSONPath);
+                            cJSON *PackageJSON = cJSON_Parse(PackageJSONContent);
+                            if (PackageJSON == NULL)
                             {
-                                char *PackageJSONPath = malloc(strlen(NodeModulePath) + 15);
-                                strcpy(PackageJSONPath, NodeModulePath);
-                                strcat(PackageJSONPath, "/package.json");
-                                if (FileExists(PackageJSONPath))
-                                {
-                                    char *PackageJSONContent = ReadDataFromFile(PackageJSONPath);
-                                    cJSON *PackageJSON = cJSON_Parse(PackageJSONContent);
-                                    if (PackageJSON == NULL)
-                                    {
-                                        printf("Error parsing package.json at %s\n", PackageJSONPath);
-                                        exit(1);
-                                    }
-                                    cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main");
-                                    NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 1);
-                                    strcat(NodeModulePath, "/");
-                                    strcat(NodeModulePath, main_field->valuestring);
-                                    free(PackageJSONContent);
-                                    free(PackageJSONPath);
-                                    free(IteratePointer->Text);
-                                    IteratePointer->Text = NodeModulePath;
-                                    LocalFileFound = true;
-                                    cJSON_Delete(PackageJSON);
-                                    printf("wow %s\n", IteratePointer->Text);
-                                }
+                                printf("Error parsing package.json at %s\n", PackageJSONPath);
+                                exit(1);
                             }
+                            cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main");
+                            NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 1);
+                            strcat(NodeModulePath, "/");
+                            strcat(NodeModulePath, main_field->valuestring);
+                            free(PackageJSONContent);
+                            free(PackageJSONPath);
+                            free(IteratePointer->Text);
+                            IteratePointer->Text = NodeModulePath;
+                            LocalFileFound = true;
+                            cJSON_Delete(PackageJSON);
+                            printf("wow %s\n", IteratePointer->Text);
                         }
                     }
+                }
+                if (!LocalFileFound)
+                {
+                    ColorRed();
+                    printf("Fatal Error: Could not find module: %s\n", IteratePointer->Text);
+                    ColorReset();
+                    exit(1);
                 }
             }
         }

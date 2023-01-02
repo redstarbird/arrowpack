@@ -4,7 +4,6 @@ typedef struct ShiftLocation
 {
     int location, ShiftNum;
 } ShiftLocation;
-static int ShiftLocationLength;
 
 static int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
 {
@@ -44,25 +43,28 @@ static int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLoca
     return Location - ShiftNum;
 }
 
-static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *needtoremovethis)
+static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *ShiftLocationLength)
 {
-    ShiftLocationLength++;
-    struct ShiftLocation *NewShiftLocations = malloc(ShiftLocationLength * sizeof(struct ShiftLocation));
-    memcpy(NewShiftLocations, *ShiftLocations, ShiftLocationLength * sizeof(struct ShiftLocation));
+    (*ShiftLocationLength)++;
+    printf("shiftlocations:%i\n", *ShiftLocationLength);
+    struct ShiftLocation *NewShiftLocations = malloc(((*ShiftLocationLength) + 1) * sizeof(struct ShiftLocation));
+    memcpy(NewShiftLocations, *ShiftLocations, (*ShiftLocationLength) * sizeof(struct ShiftLocation));
+    printf("about to free\n");
     free(*ShiftLocations);
+    printf("freed\n");
     *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {
         if ((*ShiftLocations)[i].location >= Location)
         {
-            for (int v = ShiftLocationLength; v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
+            for (int v = (*ShiftLocationLength); v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
             {
                 (*ShiftLocations)[v] = (*ShiftLocations)[v - 1];
             }
             (*ShiftLocations)[i].location = Location;
             (*ShiftLocations)[i].ShiftNum = ShiftNum;
-            (*ShiftLocations)[ShiftLocationLength].location = -1;
+            (*ShiftLocations)[(*ShiftLocationLength)].location = -1;
             break;
         }
         else if ((*ShiftLocations)[i].location == -1)
@@ -74,11 +76,12 @@ static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **Shift
         }
         i++;
     }
+    printf("Reached end of function\n");
 }
 
 void BundleFile(struct Node *GraphNode)
 {
-    ShiftLocationLength = 1; // Includes end element to signal the end of the array
+    int ShiftLocationsLength = 1; // Includes end element to signal the end of the array
     struct ShiftLocation *ShiftLocations = malloc(sizeof(ShiftLocation));
     ShiftLocations[0].location = -1; // Indicates end of array although probably not needed because the length of the array is being stored
 
@@ -97,9 +100,8 @@ void BundleFile(struct Node *GraphNode)
         char *InsertText = ReadDataFromFile(DependencyExitPath);
         int DependencyFileType = GetFileTypeID(DependencyExitPath);
 
-        switch (FileTypeID)
+        if (FileTypeID == HTMLFILETYPE_ID)
         {
-        case HTMLFILETYPE_ID:
             if (DependencyFileType == HTMLFILETYPE_ID)
             {
                 int InsertEnd = CurrentEdge->EndRefPos + 1;
@@ -108,7 +110,7 @@ void BundleFile(struct Node *GraphNode)
                     GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
                     GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
                 // totalAmountShifted += strlen(InsertText) - (InsertEnd - GraphNode->Dependencies[i].StartRefPos);
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
             else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
             {
@@ -132,9 +134,9 @@ void BundleFile(struct Node *GraphNode)
                                 GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
                                 GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1);
                             // totalAmountShifted -= (GraphNode->Dependencies[i].EndRefPos - GraphNode->Dependencies[i].StartRefPos + 1);
-                            AddShiftNum(CurrentEdge->StartRefPos, (CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationLength);
+                            AddShiftNum(CurrentEdge->StartRefPos, (CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationsLength);
                             FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
-                            AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationLength);
+                            AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationsLength);
                             // totalAmountShifted += strlen(InsertString);
                         }
                         else
@@ -152,58 +154,62 @@ void BundleFile(struct Node *GraphNode)
             }
             else if (DependencyFileType == JSFILETYPE_ID)
             {
-                int startlocation = -1;
-                int endlocation = -1;
-                int TempShiftedAmount = GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations);
-                for (int v = GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations); v < strlen(FileContents); v++)
+                char *ReferencedString = getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
+                if (!StringContainsSubstring(ReferencedString, " defer") && !StringContainsSubstring(ReferencedString, "async"))
                 {
-
-                    if (strncasecmp(FileContents + v, "src", 3) == 0)
+                    int startlocation = -1;
+                    int endlocation = -1;
+                    int TempShiftedAmount = GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations);
+                    for (int v = GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations); v < strlen(FileContents); v++)
                     {
-                        startlocation = v;
-                        break;
-                    }
-                }
-                if (startlocation != -1)
-                {
 
-                    endlocation = startlocation;
-                    bool pastEquals = false;
-                    bool pastText = false;
-                    for (int v = startlocation; v < strlen(FileContents); v++)
-                    {
-                        if (!pastEquals)
+                        if (strncasecmp(FileContents + v, "src", 3) == 0)
                         {
-                            if (FileContents[v] == '=')
-                            {
-                                pastEquals = true;
-                            }
-                        }
-                        else if (!pastText)
-                        {
-                            if (FileContents[v] != '\'' && FileContents[v] != '\"' && FileContents[v] != ' ')
-                            {
-                                pastText = true;
-                            }
-                        }
-                        else
-                        {
-                            if (FileContents[v] == '\'' || FileContents[v] == '\"' || FileContents[v] == ' ')
-                            {
-                                endlocation = v + 1;
-                                break;
-                            }
-                            else if (FileContents[v] == '>' || FileContents[v] == '\0')
-                            {
-                                endlocation = v - 1;
-                                break;
-                            }
+                            startlocation = v;
+                            break;
                         }
                     }
-                    RemoveSectionOfString(FileContents, startlocation, endlocation);
-                    AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationLength);
-                    FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
-                    AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationLength);
+                    if (startlocation != -1)
+                    {
+
+                        endlocation = startlocation;
+                        bool pastEquals = false;
+                        bool pastText = false;
+                        for (int v = startlocation; v < strlen(FileContents); v++)
+                        {
+                            if (!pastEquals)
+                            {
+                                if (FileContents[v] == '=')
+                                {
+                                    pastEquals = true;
+                                }
+                            }
+                            else if (!pastText)
+                            {
+                                if (FileContents[v] != '\'' && FileContents[v] != '\"' && FileContents[v] != ' ')
+                                {
+                                    pastText = true;
+                                }
+                            }
+                            else
+                            {
+                                if (FileContents[v] == '\'' || FileContents[v] == '\"' || FileContents[v] == ' ')
+                                {
+                                    endlocation = v + 1;
+                                    break;
+                                }
+                                else if (FileContents[v] == '>' || FileContents[v] == '\0')
+                                {
+                                    endlocation = v - 1;
+                                    break;
+                                }
+                            }
+                        }
+                        RemoveSectionOfString(FileContents, startlocation, endlocation);
+                        AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
+                        FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
+                        AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+                    }
                 }
             }
             else // Will hopefully work for most custom dependencies
@@ -211,24 +217,108 @@ void BundleFile(struct Node *GraphNode)
                 char *InsertText = ReadDataFromFile(DependencyExitPath);
                 int InsertEnd2 = CurrentEdge->EndRefPos + 1;
                 FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(InsertEnd2, ShiftLocations), InsertText);
-
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
-            break;
-        case CSSFILETYPE_ID:
+        }
+        else if (FileTypeID == CSSFILETYPE_ID)
+        {
             if (DependencyFileType == CSSFILETYPE_ID)
             {
                 char *InsertText = ReadDataFromFile(DependencyExitPath);
                 int InsertEnd2 = CurrentEdge->EndRefPos + 1;
                 FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(InsertEnd2, ShiftLocations), InsertText);
 
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationLength);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
-            break;
-        default:
-            break;
         }
+        else if (FileTypeID == JSFILETYPE_ID)
+        {
+            if (DependencyFileType == JSFILETYPE_ID)
+            {
+                char *InsertText = ReadDataFromFile(DependencyExitPath);
+                struct RegexMatch *FullExportMatches = GetAllRegexMatches(InsertText, "module\\.exports\\s*=\\s*[^;]*", 0, 0);
+                int FullExportsArrayLength = RegexMatchArrayLength(FullExportMatches);
 
+                struct RegexMatch *FinalElement;
+
+                if (FullExportsArrayLength != 0)
+                {
+                    FinalElement = &FullExportMatches[FullExportsArrayLength - 1];
+                    printf("Final element num: %i, path: %s\n", FullExportsArrayLength - 1, FinalElement->Text);
+                }
+                printf("here\n");
+                struct RegexMatch *ExtraExportMatches = GetAllRegexMatches(InsertText, "[^.]exports.[^;]*", 0, 0);
+                struct RegexMatch *UsableExtraImports = &ExtraExportMatches[0];
+                if (FullExportsArrayLength > 0)
+                {
+                    while (UsableExtraImports->IsArrayEnd != true)
+                    {
+                        if (UsableExtraImports->StartIndex < FinalElement->EndIndex)
+                        {
+                            UsableExtraImports++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                char *NewModuleExportsName = malloc(CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 11);
+                strcpy(NewModuleExportsName, getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos + 9, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos - 2, ShiftLocations)));
+                strcat(NewModuleExportsName, "_ARROWPACK");
+
+                RemoveCharFromString(NewModuleExportsName, '.');
+                struct ShiftLocation *JSFileShiftLocations = malloc(sizeof(ShiftLocation));
+                JSFileShiftLocations[0].location = -1;
+                int JSShiftLocationsLength = 1;
+                struct RegexMatch *IteratePointer = &ExtraExportMatches[0];
+                printf("Insert text:%s\n", InsertText);
+                while (IteratePointer != UsableExtraImports && IteratePointer->IsArrayEnd == false)
+                {
+                    printf("test\n");
+                    RemoveSectionOfString(InsertText, IteratePointer->StartIndex, IteratePointer->EndIndex);
+                    AddShiftNum(IteratePointer->StartIndex, (IteratePointer->EndIndex - IteratePointer->StartIndex) * -1, &JSFileShiftLocations, &JSShiftLocationsLength);
+                    IteratePointer++;
+                }
+                printf("\n\nInsert text:%s\n\n\n\n", InsertText);
+                char *ModuleObjectDefinition = malloc(strlen(NewModuleExportsName) + 13);
+                strcpy(ModuleObjectDefinition, "let ");
+                strcat(ModuleObjectDefinition, NewModuleExportsName);
+                strcat(ModuleObjectDefinition, " = {};");
+                printf("Module definition %s\n", ModuleObjectDefinition);
+                if (FullExportsArrayLength > 0)
+                {
+                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, FinalElement->StartIndex);
+                    AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
+                    InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
+                    AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
+                    printf("is this coorrect int: %i, Not shifted: %i\n", GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), FinalElement->StartIndex);
+                }
+                else
+                {
+                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, UsableExtraImports->StartIndex);
+                    AddShiftNum(UsableExtraImports->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
+                }
+
+                printf("\n\ntest:%s\n\n\n\n", InsertText);
+                while (!UsableExtraImports->IsArrayEnd)
+                {
+                    InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(UsableExtraImports->StartIndex, JSFileShiftLocations), GetShiftedAmount(UsableExtraImports->StartIndex + 8, JSFileShiftLocations), NewModuleExportsName);
+                    AddShiftNum(UsableExtraImports->StartIndex, strlen(NewModuleExportsName) - 8, &JSFileShiftLocations, &JSShiftLocationsLength);
+                    UsableExtraImports++;
+                }
+                printf("\n\nInsert text:%s\n\n\n\n", InsertText);
+                FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1, NewModuleExportsName);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(NewModuleExportsName) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+                FileContents = InsertStringAtPosition(FileContents, InsertText, 0);
+                printf("is this working: %s\n", FileContents);
+                AddShiftNum(0, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+                printf("Edited:%s\n", FileContents);
+                /*free(JSFileShiftLocations);
+                JSFileShiftLocations = NULL;*/
+            }
+        }
         CurrentEdge = CurrentEdge->next;
     }
     free(ShiftLocations);
@@ -249,7 +339,16 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         if (count_edges(FileNode) == 0)
         {
             char *ExitPath = strdup(FileNode->path);
-            ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
+            if (strncasecmp(ExitPath, "node_modules/", 13) == 0)
+            {
+                ExitPath = ReplaceSectionOfString(ExitPath, 0, 13, Settings.exit);
+                printf("node\n");
+            }
+            else
+            {
+                ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
+            }
+
             CopyFile(FileNode->path, ExitPath);
             free(ExitPath);
         }
@@ -266,6 +365,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         ColorMagenta();
         printf("\nBundling file: %s\n", FileNode->path);
         ColorReset();
+        print_progress_bar(i, graph->VerticesNum);
         BundleFile(FileNode);
     }
 

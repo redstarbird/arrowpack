@@ -10,6 +10,7 @@
 #include "../C/StringRelatedFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
+#include "../C/ProblemHandler.h"
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
 
