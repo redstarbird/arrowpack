@@ -325,6 +325,7 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
                 return NULL;
             }
         }
+
         // Copy the original string up to the start index
         strncpy(newString, string, start);
 
@@ -352,6 +353,7 @@ char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int posi
 {
     if (OriginalString == NULL || ReplaceString == NULL)
     {
+        printf("Returning null\n");
         return NULL;
     }
     unsigned int OriginalLen = strlen(OriginalString);
@@ -375,8 +377,14 @@ bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *subst
 char *EntryToExitPath(const char *path)
 {
     char *PathCopy = strdup(path);
-
-    return ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
+    if (strncasecmp(PathCopy, "node_modules/", 13) == 0)
+    {
+        return ReplaceSectionOfString(PathCopy, 0, 13, Settings.exit);
+    }
+    else
+    {
+        return ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
+    }
 }
 
 void StringFormatInsert(char *string, const char *InsertString)
@@ -466,4 +474,33 @@ bool IsURL(char *str)
         return false;
     }
     return HasRegexMatch(str, "((http|https):\\\\/\\\\/)?[\\\\w\\\\-_]+(\\\\.[\\\\w\\\\-_]+)+([\\\\w\\\\-\\\\.,@?^=%&:/~\\\\+#]*[\\\\w\\\\-\\\\@?^=%&/~\\\\+#])?");
+}
+void RemoveCharFromString(char *str, char c)
+{
+    int i, j;
+    for (i = j = 0; str[i] != '\0'; i++)
+    {
+        if (str[i] != c)
+        {
+            str[j++] = str[i];
+        }
+    }
+    str[j] = '\0';
+}
+bool StringContainsSubstring(const char *string, const char *substring)
+{
+    // Check if the string or the substring is NULL
+    if (string == NULL || substring == NULL)
+    {
+        return false;
+    }
+
+    // Check if the substring is an empty string
+    if (strlen(substring) == 0)
+    {
+        return false;
+    }
+
+    // Check if the string contains the substring using strstr
+    return strstr(string, substring) != NULL;
 }

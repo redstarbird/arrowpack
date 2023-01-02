@@ -41,4 +41,8 @@ void RemoveSectionOfString(char *str, int start, int end);
 
 bool StringEndsWith(char *str, char *substr);
 
+void RemoveCharFromString(char *str, char c);
+
+bool StringContainsSubstring(const char *string, const char *substring);
+
 #endif // !STRINGFUNCTIONS_H
