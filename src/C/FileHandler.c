@@ -30,6 +30,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
 
 void CreateFileWrite(char *path, char *text)
 {
+    EnsureDirectory(GetBasePath(path));
     printf("Creating file %s, text: %s\n", path, text);
     FILE *FilePTR;
     FilePTR = fopen(path, "w");
@@ -123,4 +124,25 @@ bool DirectoryExists(const char *path)
 {
     struct stat sb;
     return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+}
+
+void EnsureDirectory(const char *DirectoryPath)
+{
+    struct stat st;
+    if (stat(DirectoryPath, &st) != 0)
+    {
+        // directory does not exist, create it
+        if (mkdir(DirectoryPath, 0700) != 0)
+        {
+            perror("Error creating directory");
+        }
+    }
+    else
+    {
+        // directory exists, check if it is actually a directory
+        if (!S_ISDIR(st.st_mode))
+        {
+            fprintf(stderr, "%s is not a directory\n", DirectoryPath);
+        }
+    }
 }
