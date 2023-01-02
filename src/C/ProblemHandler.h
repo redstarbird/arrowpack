@@ -3,9 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include "TextColors.h"
 
-void ThrowFatalError(const char *message);
-void CreateWarning(const char *message);
+void ThrowFatalError(char *message, ...);
+void CreateWarning(char *message, ...);
 
 #endif // !PROBLEMHANDLERH
