@@ -19,9 +19,13 @@ void ThrowFatalError(char *message, ...)
 
 void CreateWarning(char *message, ...)
 {
-    char *ErrorMessage = malloc(strlen(message) + 14);
+    va_list args;
+
+    va_start(args, message);
 
     ColorYellow();
-    printf("Warning: %s\n", message);
+    printf("Warning: ");
+    vprintf(message, args);
     ColorNormal();
+    va_end(args);
 }
