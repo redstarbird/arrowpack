@@ -25,6 +25,19 @@ function RecursiveWalkDir(FolderPath, Files, Directories) {
 	return { Files, Directories };
 };
 
+function DeleteDirectory(path) {
+	if (fs.existsSync(path)) {
+		fs.readdirSync(path).forEach((file) => {
+			const curPath = "${path}/${file}";
+			if (fs.lstatSync(curPath).isDirectory()) {
+				DeleteDirectory(curPath);
+			} else {
+				fs.unlinkSync(curPath);
+			}
+		});
+		fs.rmdirSync(path);
+	}
+}
 
 function mkdirIfNotExists(dir) {
 	if (!fs.existsSync(dir)) {
@@ -34,5 +47,6 @@ function mkdirIfNotExists(dir) {
 
 module.exports = {
 	RecursiveWalkDir: RecursiveWalkDir,
-	mkdirIfNotExists: mkdirIfNotExists
+	mkdirIfNotExists: mkdirIfNotExists,
+	DeleteDirectory: DeleteDirectory
 }

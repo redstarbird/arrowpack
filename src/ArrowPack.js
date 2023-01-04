@@ -57,7 +57,7 @@ if (WalkedDirs) {
 		//DirFunctions.mkdirIfNotExists(Dir);
 	});
 }
-
+DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
 var AbsoluteFilesCharLength = 0;
 var WrappedWalkedFiles = "";
 if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one string because passing array of strings from JS to C is complicated
@@ -108,7 +108,9 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 			[StructsPointer]
 		);
 		// CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
-
+		if (Success === 1 || Success === 0) {
+			DirFunctions.DeleteDirectory("ARROWPACK_TEMP_PREPROCESS_DIR");
+		}
 	});
 
 	// console.log("\n\nBuild completed in" + (EndTime - StartTime) / 1000 + " seconds!\n\n\n"); // Need to get Wasm code to run this because Wasm code seems to be non-blocking

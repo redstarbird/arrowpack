@@ -381,6 +381,10 @@ char *EntryToExitPath(const char *path)
     {
         return ReplaceSectionOfString(PathCopy, 0, 13, Settings.exit);
     }
+    if (strncasecmp(PathCopy, PREPROCESS_DIR, 29) == 0)
+    {
+        return ReplaceSectionOfString(PathCopy, 0, 29, Settings.exit);
+    }
     else
     {
         return ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
