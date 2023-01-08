@@ -328,6 +328,40 @@ void BundleFile(struct Node *GraphNode)
     printf("\n\n\n\n");
 }
 
+void PostProcessFile(struct Node *node, struct Graph *graph)
+{
+    struct ShiftLocation *shiftLocations = malloc(sizeof(struct ShiftLocation));
+    int ShiftlocationLength = 0;
+    char *ExitPath = EntryToExitPath(node->path);
+    if (node->FileType == JSFILETYPE_ID)
+    {
+        char *FileContents = ReadDataFromFile(ExitPath);
+        struct RegexMatch *FullExportMatches = GetAllRegexMatches(FileContents, "module\\.exports\\s*=\\s*[^;]*", 0, 0);
+        struct RegexMatch *IteratePointer = &FullExportMatches[0];
+        while (IteratePointer->IsArrayEnd == false)
+        {
+            RemoveSectionOfString(FileContents, GetShiftedAmount(IteratePointer->StartIndex, shiftLocations), GetShiftedAmount(IteratePointer->EndIndex, shiftLocations) + 1);
+            AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
+            IteratePointer++;
+        }
+        struct RegexMatch *SmallExportMatches = GetAllRegexMatches(FileContents, "[^.]exports.[^;]*", 0, 0);
+        IteratePointer = &SmallExportMatches[0];
+        while (IteratePointer->IsArrayEnd == false)
+        {
+            printf("This file uses small exports\n");
+            RemoveSectionOfString(FileContents, GetShiftedAmount(IteratePointer->StartIndex, shiftLocations), GetShiftedAmount(IteratePointer->EndIndex, shiftLocations) + 1);
+            AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
+            IteratePointer++;
+        }
+        ColorGreen();
+        printf("Post processed: %s\n\n\n\n\n", FileContents);
+        ColorReset();
+        CreateFileWrite(ExitPath, FileContents);
+    }
+    free(shiftLocations);
+    shiftLocations = NULL;
+}
+
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
 {
     bool Success = true;
@@ -367,6 +401,12 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         ColorReset();
         print_progress_bar(i, graph->VerticesNum);
         BundleFile(FileNode);
+    }
+
+    // PostProcess functions that run after main bundling process
+    for (int i = 0; i < graph->VerticesNum; i++)
+    {
+        PostProcessFile(graph->SortedArray[i], graph);
     }
 
     return Success; // This is always true currently
