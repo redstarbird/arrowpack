@@ -105,6 +105,8 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
         }
     }
     ThrowFatalError("Could not find rule for processing file %s\n", path);
+    struct FileRule rule;
+    return rule;
 }
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)

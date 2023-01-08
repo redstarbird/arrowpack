@@ -170,6 +170,7 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
         regfree(&regexp);
         ThrowFatalError("Error when running regex on %s with pattern of %s\n", text, pattern);
     }
+    return false;
 }
 
 void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start, unsigned int end)
