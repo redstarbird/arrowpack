@@ -110,8 +110,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         { // Handles paths containing ../
             if (BasePath[0] == '\0')
             { // BasePath is only needed for paths with ../
-                printf("Error no base path specified");
-                exit(1);
+                ThrowFatalError("Error no base path specified");
             }
             printf("Found ../ %i times!\n", MatchesNum);
             char *PathCopy = strdup(path);

@@ -74,8 +74,7 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     unsigned int matchesCompleted = 0;
     if (regcomp(&regexp, Pattern, 0) != 0) // compiles regex
     {
-        fprintf(stderr, "Could not compile regex");
-        exit(1); // Exits if an error occured during regex compilation
+        ThrowFatalError("Could not compile regex pattern: %s", Pattern); // Exits if an error occured during regex compilation
     };
     while (1)
     {
@@ -110,8 +109,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
     int flags = REG_EXTENDED | REG_ICASE;
     if (regcomp(&regexp, Pattern, flags) != 0) // compiles regex
     {
-        fprintf(stderr, "Could not compile regex");
-        exit(1); // Exits if an error occured during regex compilation
+        ThrowFatalError("Could not compile regex pattern: %s", Pattern); // Exits if an error occured during regex compilation
     };
     while (1)
     {
@@ -152,8 +150,7 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
     if (Error != 0) // Throws an error if regex doesn't compile
     {
         regfree(&regexp);
-        printf("Error compiling regex: %s\n", pattern);
-        exit(1);
+        ThrowFatalError("Could not compile regex pattern: %s", pattern); // Exits if an error occured during regex compilation
     }
 
     Error = regexec(&regexp, text, 0, NULL, 0);
@@ -171,8 +168,7 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
     else
     {
         regfree(&regexp);
-        printf("Error when running regex on %s with pattern of %s\n", text, pattern);
-        exit(1);
+        ThrowFatalError("Error when running regex on %s with pattern of %s\n", text, pattern);
     }
 }
 

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include "StringRelatedFunctions.h"
+#include "ProblemHandler.h"
 
 void CreateFileWrite(char *path, char *text);
 char *ReadDataFromFile(char *path);

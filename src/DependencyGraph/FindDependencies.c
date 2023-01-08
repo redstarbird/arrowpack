@@ -349,9 +349,8 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                             cJSON *PackageJSON = cJSON_Parse(PackageJSONContent);
                             if (PackageJSON == NULL)
                             {
-                                printf("Error parsing package.json at %s\n", PackageJSONPath);
-                                exit(1);
-                            }
+                                ThrowFatalError("Error parsing package.json at %s\n", PackageJSONPath);
+                                                        }
                             cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main");
                             NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 1);
                             strcat(NodeModulePath, "/");
@@ -368,10 +367,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 }
                 if (!LocalFileFound)
                 {
-                    ColorRed();
-                    printf("Fatal Error: Could not find module: %s\n", IteratePointer->Text);
-                    ColorReset();
-                    exit(1);
+                    ThrowFatalError("Could not find module: %s\n", IteratePointer->Text);
                 }
             }
         }

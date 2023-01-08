@@ -78,8 +78,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     }
     if (lastFullStop == 0)
     {
-        printf("Error: could not file character \".\" in path %s", path);
-        exit(1);
+        ThrowFatalError("Error: could not file character \".\" in path %s", path);
     }
 
     lastFullStop++;
@@ -105,8 +104,7 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
             }
         }
     }
-    printf("Could not find rule for processing file %s\n", path);
-    exit(1);
+    ThrowFatalError("Could not find rule for processing file %s\n", path);
 }
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
@@ -139,8 +137,7 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
 
 void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
 { // Throws a fatal error with the given filename
-    printf("Fatal error: %s is invalid\n", filename);
-    exit(1);
+    ThrowFatalError("Fatal error: %s is invalid\n", filename);
 }
 
 struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file

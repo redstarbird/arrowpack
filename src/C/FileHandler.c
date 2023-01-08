@@ -8,8 +8,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     FILE *output = fopen(FileToCopyTo, "w");
     if (!input || !output)
     {
-        printf("Error opening file\n");
-        exit(1);
+        ThrowFatalError("Error opening file %s or %s\n", FileToCopy, FileToCopyTo);
     }
 
     // Create a buffer to hold the data from the input file
@@ -36,8 +35,7 @@ void CreateFileWrite(char *path, char *text)
     FilePTR = fopen(path, "w");
     if (!FilePTR)
     {
-        printf("Error opening file %s\n", path);
-        exit(1);
+        ThrowFatalError("Error opening file %s\n", path);
     }
     if (strlen(text) > 0)
     {
