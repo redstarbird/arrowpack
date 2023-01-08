@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <regex.h>
 #include "../C/StringRelatedFunctions.h"
-#include "ProblemHandler.h"
+#include "../C/ProblemHandler.h"
 
 typedef struct RegexMatch
 {
