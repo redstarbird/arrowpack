@@ -172,11 +172,3 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
     }
     return false;
 }
-
-void ReplaceStrBetweenIndexes(char *str, char *InsertString, unsigned int start, unsigned int end)
-{
-}
-
-void EMSCRIPTEN_KEEPALIVE regextest(char *Text, const char *Pattern)
-{
-}
