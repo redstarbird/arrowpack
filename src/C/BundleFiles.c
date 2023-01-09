@@ -148,7 +148,7 @@ void BundleFile(struct Node *GraphNode)
                     }
                     else
                     {
-                        FileContents = InsertStringAtPosition(FileContents, InsertString, StyleResults[0].EndIndex);
+                        FileContents = InsertStringAtPosition(FileContents, InsertText, StyleResults[0].EndIndex);
                     }
                 }
             }
