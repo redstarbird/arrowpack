@@ -1,5 +1,7 @@
 #include "StringRelatedFunctions.h"
 
+static int LASTUNUSEDNAMENUM = 0;
+
 int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character)
 {
     int LastOccurence = -1;
@@ -78,7 +80,7 @@ char **SplitStringByChar(char *str, const char delimiter)
     return Result;
 }
 
-char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
+char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePath)
 { // Turns a relative path into absolute path
     /*if (!containsCharacter(path, ':')) {
         if (PATH_SEPARATOR) {}
@@ -91,7 +93,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
     }*/
     char *tempHolder; // Buffer to hold the absolute path
-
+    char *path = strdup(PATH);
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
@@ -108,7 +110,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./"); // This is adding broken char to end of BasePath for some reason
         if (MatchesNum > 0)
         { // Handles paths containing ../
-            if (BasePath[0] == '\0')
+            if (BasePath[0] == '\0' || BasePath == NULL)
             { // BasePath is only needed for paths with ../
                 ThrowFatalError("Error no base path specified");
             }
@@ -177,10 +179,11 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
         }
         else
         {
-            if (strstr(path, Settings.entry) != NULL) // path is already full path (might accidentally include paths with entry name in folder path)path o
+            if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
+
             char *TempPath = strdup(BasePath); // Very messy code
             int TempPathLength = strlen(TempPath);
             realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
@@ -199,15 +202,51 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath)
     return path; // Stops compiler from throwing exception
 }
 
+bool IsPreprocessDir(const char *path)
+{
+    printf("checking %s\n", path);
+    if (strlen(path) < 29)
+    {
+        return false;
+    }
+    return strncmp(path, PREPROCESS_DIR, 29) == 0;
+}
+
+char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename)
+{
+    printf("Getting basepath: %s\n", filename);
+    int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
+    if (LastPathChar == 0)
+    {
+        return "";
+    }
+    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(Settings.entry));
+
+    memcpy(BasePath, filename, LastPathChar);
+
+    BasePath[LastPathChar] = '\0';
+    printf("Returning BasePath: %s\n", BasePath);
+    return BasePath;
+}
+
 char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 {
+    printf("Getting basepath: %s\n", filename);
     int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
-    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char));
-    for (unsigned int i = 0; i < LastPathChar; i++)
+    if (LastPathChar == 0)
     {
-        BasePath[i] = filename[i];
+        return "";
     }
+    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(Settings.entry));
+
+    memcpy(BasePath, filename, LastPathChar);
+
     BasePath[LastPathChar] = '\0';
+    if (IsPreprocessDir(filename))
+    {
+        BasePath = ReplaceSectionOfString(BasePath, 0, 29, Settings.entry);
+    }
+    printf("Returning BasePath: %s\n", BasePath);
     return BasePath;
 }
 
@@ -352,7 +391,8 @@ char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int posi
 {
     if (OriginalString == NULL || ReplaceString == NULL)
     {
-        printf("Returning null\n");
+        printf("Returning null from insert string\n");
+
         return NULL;
     }
     unsigned int OriginalLen = strlen(OriginalString);
@@ -382,7 +422,7 @@ char *EntryToExitPath(const char *path)
     }
     if (strncasecmp(PathCopy, PREPROCESS_DIR, 29) == 0)
     {
-        return ReplaceSectionOfString(PathCopy, 0, 29, Settings.exit);
+        return ReplaceSectionOfString(PathCopy, 0, 30, Settings.exit);
     }
     else
     {
@@ -390,6 +430,10 @@ char *EntryToExitPath(const char *path)
     }
 }
 
+char *EntryToPreprocessPath(char *path)
+{
+    return ReplaceSectionOfString(path, 0, strlen(Settings.entry) - 1, PREPROCESS_DIR);
+}
 void StringFormatInsert(char *string, const char *InsertString)
 {
     // todo
@@ -506,4 +550,59 @@ bool StringContainsSubstring(const char *string, const char *substring)
 
     // Check if the string contains the substring using strstr
     return strstr(string, substring) != NULL;
+}
+
+char *IntToString(int Integer)
+{
+    if (Integer == 0)
+    {
+        return "0";
+    }
+    int IntStringLength = 1;
+    int Temp2 = 1;
+
+    while (Temp2 <= Integer)
+    {
+        IntStringLength++;
+        Temp2 *= 10;
+    }
+    char *String = malloc(sizeof(char) * (IntStringLength + 1));
+    char *ptr = &String[0];
+    int count = 0, temp;
+    if (Integer < 0)
+    {
+        Integer *= (-1);
+        *ptr++ = '-';
+        count++;
+    }
+    for (temp = Integer; temp > 0; temp /= 10, ptr++)
+        ;
+    *ptr = '\0';
+    for (temp = Integer; temp > 0; temp /= 10)
+    {
+        *--ptr = temp % 10 + '0';
+        count++;
+    }
+    return String;
+}
+
+char *CreateUnusedName()
+{
+    LASTUNUSEDNAMENUM++;
+    char *Num = IntToString(LASTUNUSEDNAMENUM);
+    char *Name = malloc(strlen(Num) + 2);
+    strcpy(Name, "A");
+    strcat(Name, Num);
+    return Name;
+}
+
+char *AddPreprocessDIR(char *Path)
+{
+    char *NewString = malloc(strlen(Path) + 31);
+    strcpy(NewString, PREPROCESS_DIR);
+    NewString[29] = '/';
+    NewString[30] = '\0';
+    strcat(NewString, Path);
+    free(Path);
+    return NewString;
 }

@@ -11,10 +11,11 @@
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 #include "../C/ProblemHandler.h"
+#include "DependencyGraph.h"
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos);
 
-RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename);
+RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex, struct Graph **DependencyGraph);
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename);
 

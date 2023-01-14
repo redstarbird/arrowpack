@@ -14,6 +14,16 @@ void MakeMatchesFullPath(struct RegexMatch *matches, char *BaseFilePath)
     }
 }
 
+void ShiftRegexMatches(struct RegexMatch **matches, int Location, int Amount)
+{
+    struct RegexMatch *IteratePointer = &(*matches)[0];
+    while (!(IteratePointer++)->IsArrayEnd)
+    {
+        IteratePointer->EndIndex += Amount * IteratePointer->EndIndex >= Location;
+        IteratePointer->StartIndex += Amount * IteratePointer->StartIndex >= Location;
+    }
+}
+
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
     char *FileContents = ReadDataFromFile(filename);
@@ -52,9 +62,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
     return RegexMatches;
 }
 
-struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex, struct Graph **DependencyGraph)
 {
-
+    char *filename = vertex->path;
     /*
         ╭╮ ╭╮╭━━━━╮╭━╮╭━╮╭╮
         ┃┃ ┃┃┃╭╮╭╮┃┃┃╰╯┃┃┃┃
@@ -138,16 +148,19 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
     printf("Code reaches here\n");
     // return HTMLIncludeMatches;
 
-    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*src[^>$]*", 0, 0);
+    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0);
     if (JSDependencies != NULL)
     {
         IteratePointer = &JSDependencies[0];
         while (IteratePointer->IsArrayEnd != true)
         {
+            ColorYellow();
+            printf("it i s this %s\n", IteratePointer->Text);
+            ColorNormal();
             int srcLocation = -1;
 
             int TextLength = strlen(IteratePointer->Text);
-            for (int i = 0; i < TextLength; i++)
+            for (int i = 0; i < TextLength - 2; i++)
             {
                 if (strncasecmp(IteratePointer->Text + i, "src", 3) == 0)
                 {
@@ -189,9 +202,84 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(char *filename)
                             break;
                         }
                     }
+                    printf("start location: %i, end location: %i, substring %s\n", StartLocation, EndLocation, getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1));
+                    IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
                 }
             }
-            IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
+            else
+            {
+                int StartLocation = -1;
+                int EndLocation = -1;
+                char *TempFileContents = ReadDataFromFile(filename);
+                int textLength = strlen(TempFileContents);
+                for (int i = IteratePointer->StartIndex; i < textLength; i++)
+                {
+                    if (TempFileContents[i] == '>')
+                    {
+                        StartLocation = i;
+                        break;
+                    }
+                }
+                if (StartLocation != -1)
+                {
+
+                    for (int i = StartLocation; i < strlen(TempFileContents); i++)
+                    {
+                        if (TempFileContents[i] == '<')
+                        {
+                            EndLocation = i;
+                            break;
+                        }
+                    }
+                    if (EndLocation != -1)
+                    {
+                        printf("Success\n");
+                        char *NewJSContents = getSubstring(TempFileContents, StartLocation + 1, EndLocation - 2);
+                        printf("New JS Contents:%s\n", NewJSContents);
+
+                        char *NewJSName = TurnToFullRelativePath(CreateUnusedName(), GetBasePath(filename));
+                        printf("New name2: %s\n", NewJSName);
+                        NewJSName = EntryToPreprocessPath(NewJSName);
+                        printf("New name: %s\n", NewJSName);
+                        NewJSName = realloc(NewJSName, strlen(NewJSName) + 3);
+                        strcat(NewJSName, ".js");
+
+                        printf("New name: %s\n", NewJSName);
+
+                        CreateFileWrite(NewJSName, NewJSContents);
+
+                        RemoveSectionOfString(TempFileContents, StartLocation + 1, EndLocation - 1);
+                        char *NewSRCAttr = malloc(9 + strlen(NewJSName));
+                        strcpy(NewSRCAttr, " src=\"");
+                        strcat(NewSRCAttr, NewJSName);
+                        strcat(NewSRCAttr, "\" ");
+                        printf("New src %s\n", NewSRCAttr);
+
+                        TempFileContents = InsertStringAtPosition(TempFileContents, NewSRCAttr, StartLocation);
+                        printf("\n\n%s\n", TempFileContents);
+
+                        filename = EntryToPreprocessPath(filename);
+                        vertex->path = filename;
+                        printf("vertex %s\n", vertex->path);
+
+                        CreateFileWrite(filename, TempFileContents);
+
+                        ShiftRegexMatches(&JSDependencies, StartLocation - 1, strlen(NewSRCAttr));
+                        ShiftRegexMatches(&HTMLIncludeMatches, StartLocation - 1, strlen(NewSRCAttr));
+                        ShiftRegexMatches(&CSSDependencies, StartLocation - 1, strlen(NewSRCAttr));
+
+                        ShiftRegexMatches(&JSDependencies, StartLocation + 1, -1 * (EndLocation - StartLocation));
+                        ShiftRegexMatches(&CSSDependencies, StartLocation + 1, -1 * (EndLocation - StartLocation));
+                        ShiftRegexMatches(&HTMLIncludeMatches, StartLocation + 1, -1 * (EndLocation - StartLocation));
+
+                        add_vertex(*DependencyGraph, create_vertex(NewJSName, JSFILETYPE_ID, NULL));
+                        // CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph);
+                        IteratePointer->Text = NewJSName;
+                        IteratePointer->StartIndex = StartLocation - 1;
+                        IteratePointer->EndIndex = StartLocation + 8 + strlen(NewJSName);
+                    }
+                }
+            }
             printf("JS: %s\n", IteratePointer->Text);
             IteratePointer++;
         }
@@ -297,6 +385,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 
             if (!StringEndsWith(IteratePointer->Text, ".cjs") && !StringEndsWith(IteratePointer->Text, ".js"))
             {
+
                 char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(IteratePointer->Text));
                 int TempLength = strlen(TempCheckPath);
                 TempCheckPath = realloc(TempCheckPath, TempLength + 5);
@@ -338,6 +427,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                     char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
                     strcpy(NodeModulePath, "node_modules/");
                     strcat(NodeModulePath, IteratePointer->Text);
+                    printf("Node modules path: %s\n", NodeModulePath);
                     if (DirectoryExists(NodeModulePath))
                     {
                         char *PackageJSONPath = malloc(strlen(NodeModulePath) + 15);
@@ -350,7 +440,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                             if (PackageJSON == NULL)
                             {
                                 ThrowFatalError("Error parsing package.json at %s\n", PackageJSONPath);
-                                                        }
+                            }
                             cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main");
                             NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 1);
                             strcat(NodeModulePath, "/");

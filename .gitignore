@@ -34,3 +34,6 @@ desktop.ini
 
 # PCRE2 temp build directory
 packages/ArrowPack/pcre2tempbuild
+
+# Temp preprocess directory
+ARROWPACK_TEMP_PREPROCESS_DIR/

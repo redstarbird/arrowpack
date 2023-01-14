@@ -109,15 +109,15 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     return rule;
 }
 
-RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(char *Path, int FileTypeID)
+RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTypeID, struct Graph **DependencyGraph)
 {
+    char *Path = vertex->path;
     char *FileExtension = GetFileExtension(Path);
-    // Very unfortunate that C doesn't support switch statements for strings
     switch (FileTypeID)
     {
     case HTMLFILETYPE_ID:
         printf("Returning HTML Dependencies\n");
-        return FindHTMLDependencies(Path);
+        return FindHTMLDependencies(vertex, DependencyGraph);
         break;
     case CSSFILETYPE_ID:
         return FindCSSDependencies(Path);
@@ -336,8 +336,8 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 {
     bool DependencyFound = false;
     printf("Finding dependencies for file: %s\n", vertex->path);
-    struct RegexMatch *Dependencies = GetDependencies(vertex->path, vertex->FileType); // Gets dependencies as strings
-    if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                   // Checks if dependencies have been found
+    struct RegexMatch *Dependencies = GetDependencies(vertex, vertex->FileType, DependencyGraph); // Gets dependencies as strings
+    if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                              // Checks if dependencies have been found
     {
         struct RegexMatch *IteratePointer = &Dependencies[0];
         while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
@@ -413,12 +413,14 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
     ColorGreen();
     printf("Finding dependencies...\n\n\n");
     ColorReset();
-
-    for (int i = 0; i < ArrayLength; i++) // Loops through each node and finds dependencies
+    int TempNum = 0;
+    while (TempNum < DependencyGraph->VerticesNum) // Loops through each node and finds dependencies
     {
-        printf("Graph processing: %s\n", DependencyGraph->Vertexes[i]->path);
-        CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
+        printf("Graph processing: %s\n", DependencyGraph->Vertexes[TempNum]->path);
+        CreateDependencyEdges(DependencyGraph->Vertexes[TempNum], &DependencyGraph);
+        TempNum++;
     }
+
     printf("\n\n");
 
     topological_sort(DependencyGraph);

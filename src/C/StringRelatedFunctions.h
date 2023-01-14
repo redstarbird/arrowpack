@@ -21,7 +21,7 @@ char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex
 
 char **SplitStringByChar(char *str, const char delimiter);
 
-char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(char *path, char *BasePath);
+char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePath);
 
 bool StringToBool(const char *str);
 
@@ -46,5 +46,13 @@ bool StringEndsWith(char *str, char *substr);
 void RemoveCharFromString(char *str, char c);
 
 bool StringContainsSubstring(const char *string, const char *substring);
+
+char *EntryToPreprocessPath(char *path);
+
+char *CreateUnusedName();
+
+char *AddPreprocessDIR(char *Path);
+
+char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename);
 
 #endif // !STRINGFUNCTIONS_H

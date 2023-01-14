@@ -266,6 +266,7 @@ void BundleFile(struct Node *GraphNode)
 
                 char *NewModuleExportsName = malloc(CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 11);
                 strcpy(NewModuleExportsName, getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos + 9, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos - 2, ShiftLocations)));
+                RemoveCharFromString(NewModuleExportsName, '/');
                 strcat(NewModuleExportsName, "_ARROWPACK");
 
                 RemoveCharFromString(NewModuleExportsName, '.');
@@ -326,6 +327,9 @@ void BundleFile(struct Node *GraphNode)
     RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents);
     printf("\n\n\n\n");
+    ColorGreen();
+    printf("Finished bundling file:%s\n", GraphNode->path);
+    ColorNormal();
 }
 
 void PostProcessFile(struct Node *node, struct Graph *graph)

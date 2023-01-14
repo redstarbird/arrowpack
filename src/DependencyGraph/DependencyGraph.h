@@ -47,7 +47,16 @@ typedef struct Graph
     struct Node **SortedArray;
 } Graph;
 struct Graph *CreateTree(char *Wrapped_paths, int ArrayLength); // Creates dependency tree/graph/array
+// Function to create a new edge
+Edge *create_edge(struct Node *vertex, int StartRefPos, int EndRefPos);
+
+// Function to add an edge to a vertex
+void add_edge(struct Node *vertex, struct Node *neighbor, int StartRefPos, int EndRefPos);
 
 char **FindDependencies(char *Path); // function that returns an array of strings representing dependencies for the given file
+
+void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph);
+struct Node *create_vertex(char *path, int filetype, Edge *edge);
+void add_vertex(Graph *graph, struct Node *vertex);
 
 #endif

@@ -93,6 +93,13 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     return matchesCompleted;
 }
 
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch()
+{
+    struct RegexMatch *match = malloc(sizeof(struct RegexMatch));
+    regex_t regexp;
+    return match;
+}
+
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
 {
     const int N_MATCHES = 512;

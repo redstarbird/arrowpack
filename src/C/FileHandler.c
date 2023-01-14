@@ -29,7 +29,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
 
 void CreateFileWrite(char *path, char *text)
 {
-    EnsureDirectory(GetBasePath(path));
+    EnsureDirectory(GetTrueBasePath(path));
     printf("Creating file %s, text: %s\n", path, text);
     FILE *FilePTR;
     FilePTR = fopen(path, "w");

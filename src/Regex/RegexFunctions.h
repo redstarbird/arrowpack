@@ -8,6 +8,7 @@
 #include <regex.h>
 #include "../C/StringRelatedFunctions.h"
 #include "../C/ProblemHandler.h"
+#include "../Regex/RegexFunctions.h"
 
 typedef struct RegexMatch
 {
