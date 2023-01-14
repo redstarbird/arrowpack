@@ -123,10 +123,29 @@ bool DirectoryExists(const char *path)
     struct stat sb;
     return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
 }
-
 void EnsureDirectory(const char *DirectoryPath)
 {
+    char *Temp = strdup(DirectoryPath);
     struct stat st;
+    char *ParentDir = strdup(DirectoryPath);
+    int i;
+    for (i = strlen(ParentDir) - 1; i >= 0; i--)
+    {
+        if (ParentDir[i] == '/')
+        {
+            ParentDir[i] = '\0';
+            break;
+        }
+    }
+    if (i < 0)
+    {
+        ParentDir = ".";
+    }
+    if (stat(ParentDir, &st) != 0)
+    {
+        // parent directory does not exist, create it recursively
+        EnsureDirectory(ParentDir);
+    }
     if (stat(DirectoryPath, &st) != 0)
     {
         // directory does not exist, create it
@@ -143,4 +162,6 @@ void EnsureDirectory(const char *DirectoryPath)
             fprintf(stderr, "%s is not a directory\n", DirectoryPath);
         }
     }
+    free(Temp);
+    free(ParentDir);
 }
