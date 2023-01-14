@@ -109,7 +109,7 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 		);
 
 		if (Success === 1 || Success === 0) {
-			DirFunctions.DeleteDirectory("ARROWPACK_TEMP_PREPROCESS_DIR"); //CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
+			// DirFunctions.DeleteDirectory("ARROWPACK_TEMP_PREPROCESS_DIR"); //CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
 			console.log("Bundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds");
 		}
 	});
