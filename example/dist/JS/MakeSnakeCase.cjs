@@ -9,4 +9,3 @@ function MakeSnakeCase(str) {
     return str;
 
 }
-module.exports = { SnakeCase: MakeSnakeCase };

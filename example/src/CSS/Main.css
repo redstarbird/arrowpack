@@ -1,4 +1,5 @@
 @import url("./MoreCSS.css");
 h1 {
 	color: rgb(140, 199, 255);
+	text-align: center;
 }

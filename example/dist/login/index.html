@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Login Page Example</title>
+		<link rel="stylesheet" href="../CSS/Main.css" />
+
+		<style>p:first-of-type {
+	color: greenyellow;
+}
+
+h1 {
+	color: rgb(140, 199, 255);
+	text-align: center;
+}
+
+			h1 {
+				color: rgb(46, 34, 45);
+			}
+		</style>
+	</head>
+	<body>
+		<nav><h2>Navbar is here!</h2><h1>Hello World!</h1>
+</nav>
+
+		<script >console.log("Logging user in...");</script>
+		<script  >function MakeSnakeCase(str) {
+    str = str.replace(/ /g, '_');
+
+    // Replace uppercase characters with lowercase versions preceded by an underscore
+    str = str.replace(/[A-Z]/g, function (char) {
+        return '_' + char.toLowerCase();
+    });
+
+    return str;
+
+}
+let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };
+			const SnakeCaseModule = JSMakeSnakeCase_ARROWPACK;
+
+			function UpdateH1() {
+				var H1Element = document.getElementById("main-title");
+				H1Element.textContent = SnakeCaseModule.SnakeCase(H1Element.textContent);
+			}
+		</script>
+		<h1 id="main-title" onclick="UpdateH1()">Login to this example login page!</h1>
+	</body>
+</html>
