@@ -24,6 +24,27 @@ void ShiftRegexMatches(struct RegexMatch **matches, int Location, int Amount)
     }
 }
 
+void RemoveRegexMatch(struct RegexMatch *match)
+{
+    struct RegexMatch *LastMatch = match;
+    while (1)
+    {
+        match++;
+        if (match->IsArrayEnd == true)
+        {
+            LastMatch->IsArrayEnd = true;
+            break;
+        }
+        else
+        {
+            LastMatch->Text = match->Text;
+            LastMatch->EndIndex = match->EndIndex;
+            LastMatch->StartIndex = match->StartIndex;
+            LastMatch++;
+        }
+    }
+}
+
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
     char *FileContents = ReadDataFromFile(filename);
@@ -38,6 +59,17 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
     {
         printf("No dependencies found for file: %s with pattern: %s\n", filename, pattern);
         return NULL;
+    }
+    struct RegexMatch *IteratePointer = &RegexMatches[0];
+    while (IteratePointer->IsArrayEnd != true)
+    {
+        printf("\n\nWow: %s\n\n\n", IteratePointer->Text);
+        if (StringContainsSubstring(IteratePointer->Text, "https://") || StringContainsSubstring(IteratePointer->Text, "http://"))
+        {
+            printf("Found URL: %s\n", IteratePointer->Text);
+            RemoveRegexMatch(IteratePointer);
+        }
+        IteratePointer++;
     }
 
     /*
