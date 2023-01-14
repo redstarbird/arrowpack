@@ -47,6 +47,7 @@ void RemoveRegexMatch(struct RegexMatch *match)
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
 { // Allows any function that only needs basic regex to easily be run
+
     char *FileContents = ReadDataFromFile(filename);
     if (FileContents == NULL)
     {
@@ -186,9 +187,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         IteratePointer = &JSDependencies[0];
         while (IteratePointer->IsArrayEnd != true)
         {
-            ColorYellow();
-            printf("it i s this %s\n", IteratePointer->Text);
-            ColorNormal();
             int srcLocation = -1;
 
             int TextLength = strlen(IteratePointer->Text);
@@ -270,13 +268,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                         printf("New JS Contents:%s\n", NewJSContents);
 
                         char *NewJSName = TurnToFullRelativePath(CreateUnusedName(), GetBasePath(filename));
-                        printf("New name2: %s\n", NewJSName);
-                        NewJSName = EntryToPreprocessPath(NewJSName);
-                        printf("New name: %s\n", NewJSName);
-                        NewJSName = realloc(NewJSName, strlen(NewJSName) + 3);
+                        NewJSName = strdup(EntryToPreprocessPath(NewJSName));
+                        NewJSName = realloc(NewJSName, (strlen(NewJSName) + 5) * sizeof(char));
                         strcat(NewJSName, ".js");
-
-                        printf("New name: %s\n", NewJSName);
 
                         CreateFileWrite(NewJSName, NewJSContents);
 
@@ -365,6 +359,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 {
     struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1);
+    if (CJSDependencies == NULL)
+    {
+        return NULL;
+    }
     struct RegexMatch *IteratePointer = &CJSDependencies[0];
 
     while (IteratePointer->IsArrayEnd != true)

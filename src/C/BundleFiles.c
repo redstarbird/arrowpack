@@ -88,7 +88,10 @@ void BundleFile(struct Node *GraphNode)
     int FileTypeID = GetFileTypeID(GraphNode->path);
 
     char *FileContents = ReadDataFromFile(GraphNode->path);
-
+    if (FileContents == NULL)
+    {
+        return;
+    }
     struct Edge *CurrentEdge = GraphNode->edge;
     while (CurrentEdge != NULL)
     {
@@ -334,12 +337,20 @@ void BundleFile(struct Node *GraphNode)
 
 void PostProcessFile(struct Node *node, struct Graph *graph)
 {
+    if (node->path == NULL)
+    {
+        return;
+    }
     struct ShiftLocation *shiftLocations = malloc(sizeof(struct ShiftLocation));
     int ShiftlocationLength = 0;
     char *ExitPath = EntryToExitPath(node->path);
     if (node->FileType == JSFILETYPE_ID)
     {
         char *FileContents = ReadDataFromFile(ExitPath);
+        if (FileContents == NULL)
+        {
+            return;
+        }
         struct RegexMatch *FullExportMatches = GetAllRegexMatches(FileContents, "module\\.exports\\s*=\\s*[^;]*", 0, 0);
         struct RegexMatch *IteratePointer = &FullExportMatches[0];
         while (IteratePointer->IsArrayEnd == false)
@@ -377,15 +388,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         if (count_edges(FileNode) == 0)
         {
             char *ExitPath = strdup(FileNode->path);
-            if (strncasecmp(ExitPath, "node_modules/", 13) == 0)
-            {
-                ExitPath = ReplaceSectionOfString(ExitPath, 0, 13, Settings.exit);
-                printf("node\n");
-            }
-            else
-            {
-                ExitPath = ReplaceSectionOfString(ExitPath, 0, strlen(Settings.entry), Settings.exit);
-            }
+            ExitPath = EntryToExitPath(ExitPath);
 
             CopyFile(FileNode->path, ExitPath);
             free(ExitPath);

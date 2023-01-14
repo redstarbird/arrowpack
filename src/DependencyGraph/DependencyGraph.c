@@ -337,8 +337,14 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
     bool DependencyFound = false;
     printf("Finding dependencies for file: %s\n", vertex->path);
     struct RegexMatch *Dependencies = GetDependencies(vertex, vertex->FileType, DependencyGraph); // Gets dependencies as strings
-    if (Dependencies != NULL && Dependencies[0].IsArrayEnd == false)                              // Checks if dependencies have been found
+    if (Dependencies[0].IsArrayEnd == false)                                                      // Checks if dependencies have been found
     {
+        if (Dependencies == NULL)
+
+        {
+            (*DependencyGraph)->VerticesNum--;
+            return;
+        }
         struct RegexMatch *IteratePointer = &Dependencies[0];
         while (IteratePointer->IsArrayEnd != true) // Loops through each dependency
         {
@@ -354,13 +360,20 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
             }
             if (!DependencyFound)
             {
-                ColorYellow();
-                printf("Creating new node: %s\n", IteratePointer->Text);
-                ColorNormal();
-                add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));
-                add_edge(vertex, (*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], IteratePointer->StartIndex, IteratePointer->EndIndex);
-                DependencyFound = true;
-                CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph);
+                if (!StringStartsWith(IteratePointer->Text, Settings.entry))
+                {
+                    ColorYellow();
+                    printf("Creating new node: %s\n", IteratePointer->Text);
+                    ColorNormal();
+                    add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));
+                    add_edge(vertex, (*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], IteratePointer->StartIndex, IteratePointer->EndIndex);
+                    DependencyFound = true;
+                    CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph);
+                }
+                else
+                {
+                    printf("Could not find dependency file %s\n", IteratePointer->Text);
+                }
             }
             DependencyFound = false;
             IteratePointer++;

@@ -47,8 +47,10 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
 
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
 {
-    const int substringLength = EndIndex - StartIndex + 1;    // Gets the length of the substring
+    const int substringLength = EndIndex - StartIndex + 1; // Gets the length of the substring
+    printf("Substring length: %i\n", substringLength);
     char *substring = malloc(sizeof(char) * substringLength); // Allocates memory for substring
+    printf("allocated\n");
     for (int i = 0; i < substringLength; i++)
     {
         substring[i] = Text[StartIndex + i];
@@ -179,6 +181,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
         }
         else
         {
+            printf("Very relative path\n");
             if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
@@ -186,7 +189,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
 
             char *TempPath = strdup(BasePath); // Very messy code
             int TempPathLength = strlen(TempPath);
-            realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
+            TempPath = realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
             char *TempPath2 = strdup(path);
             if (TempPath2[0] == '.' && TempPath2[1] == '/')
             {
@@ -196,6 +199,9 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             {
                 strcat(TempPath, TempPath2);
             }
+            ColorCyan();
+            printf("Returning %s\n", TempPath);
+            ColorNormal();
             return TempPath;
         }
     }
@@ -244,6 +250,7 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     BasePath[LastPathChar] = '\0';
     if (IsPreprocessDir(filename))
     {
+        printf("is preprocess dir: %s\n", filename);
         BasePath = ReplaceSectionOfString(BasePath, 0, 29, Settings.entry);
     }
     printf("Returning BasePath: %s\n", BasePath);
@@ -408,9 +415,10 @@ bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *subst
 {
     if (string[0] == '\0' || substring[0] == '\0')
     {
+        printf("Returning false\n");
         return false;
     }
-    return strncasecmp(substring, string, strlen(string)) == 0;
+    return strncasecmp(substring, string, strlen(substring)) == 0;
 }
 
 char *EntryToExitPath(const char *path)
