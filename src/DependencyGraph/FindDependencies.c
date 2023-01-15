@@ -45,7 +45,7 @@ void RemoveRegexMatch(struct RegexMatch *match)
     }
 }
 
-struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos)
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos, struct RegexMatch *CommentLocations)
 { // Allows any function that only needs basic regex to easily be run
 
     char *FileContents = ReadDataFromFile(filename);
@@ -69,6 +69,21 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
         {
             printf("Found URL: %s\n", IteratePointer->Text);
             RemoveRegexMatch(IteratePointer);
+        }
+
+        if (CommentLocations == NULL)
+        {
+            if (CommentLocations[0].IsArrayEnd != true)
+            {
+                struct RegexMatch *CurrentComment = &CommentLocations[0];
+                while (IteratePointer->StartIndex < CurrentComment->EndIndex)
+                {
+                    if (IteratePointer->StartIndex > CurrentComment->StartIndex && IteratePointer->StartIndex < CurrentComment->EndIndex)
+                    {
+                        RemoveRegexMatch(IteratePointer);
+                    }
+                }
+            }
         }
         IteratePointer++;
     }
@@ -97,6 +112,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex, struct Graph **DependencyGraph)
 {
+
     char *filename = vertex->path;
     /*
         ╭╮ ╭╮╭━━━━╮╭━╮╭━╮╭╮
@@ -105,7 +121,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         ┃╭━╮┃  ┃┃  ┃┃┃┃┃┃┃┃ ╭╮
         ┃┃ ┃┃  ┃┃  ┃┃┃┃┃┃┃╰━╯┃
         ╰╯ ╰╯  ╰╯  ╰╯╰╯╰╯╰━━━╯*/
-    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2);
+    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, NULL);
 
     MakeMatchesFullPath(HTMLIncludeMatches, filename);
 
@@ -119,7 +135,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         ┃╰━╯┃┃╰━╯┃┃╰━╯┃
         ╰━━━╯╰━━━╯╰━━━╯*/
     // struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link\\s+rel\\s*=\\s*(\"')?stylesheet(\"')?\\s*(type\\s*=\\s*(\"')?text/css(\"')?)?\\s+href\\s*=\\s*(\"')?(.*?)(\"')?\\s*\\/>", 5, 0);
-    struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link[^>$]*stylesheet[^>$]*", 0, 0);
+    struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link[^>$]*stylesheet[^>$]*", 0, 0, NULL);
     if (CSSDependencies != NULL)
     {
         IteratePointer = &CSSDependencies[0];
@@ -181,7 +197,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
     printf("Code reaches here\n");
     // return HTMLIncludeMatches;
 
-    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0);
+    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0, NULL);
     if (JSDependencies != NULL)
     {
         IteratePointer = &JSDependencies[0];
@@ -327,7 +343,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
 {
-    struct RegexMatch *Dependencies = BasicRegexDependencies(filename, "@import [^;]*", 0, 0);
+    char *FileContents = ReadDataFromFile(filename);
+    struct RegexMatch *CommentLocations = GetAllRegexMatches(FileContents, "/\\*.*\\*/", 0, 0);
+    struct RegexMatch *Dependencies = BasicRegexDependencies(filename, "@import [^;]*", 0, 0, CommentLocations);
     struct RegexMatch *IteratePointer = &Dependencies[0];
     while (IteratePointer->IsArrayEnd != true)
     {
@@ -353,12 +371,19 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
         IteratePointer++;
     }
     MakeMatchesFullPath(Dependencies, GetBasePath(filename));
+    free(CommentLocations);
     return Dependencies;
 }
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 {
-    struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1);
+    char *FileContents = ReadDataFromFile(filename);
+    struct RegexMatch *CommentLocations = GetAllRegexMatches(FileContents, "/\\*.*\\*/", 0, 0);
+    struct RegexMatch *CommentLocations2 = GetAllRegexMatches(FileContents, "//.*\n", 0, 1);
+    CombineRegexMatchArrays(&CommentLocations, &CommentLocations2);
+    free(CommentLocations2);
+    CommentLocations2 = NULL;
+    struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1, CommentLocations);
     if (CJSDependencies == NULL)
     {
         return NULL;
@@ -493,7 +518,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         IteratePointer++;
     }
-    struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*", 8, 0);
+    struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*", 8, 0, CommentLocations);
     while (IteratePointer->IsArrayEnd != true)
     {
         int StartLocation = -1;
