@@ -39,6 +39,7 @@ static int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLoca
         {
             ShiftNum += ShiftLocations[i].ShiftNum;
         }
+        i++;
     }
     return Location - ShiftNum;
 }
@@ -47,15 +48,16 @@ static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **Shift
 {
     (*ShiftLocationLength)++;
     printf("shiftlocations:%i\n", *ShiftLocationLength);
-    struct ShiftLocation *NewShiftLocations = malloc(((*ShiftLocationLength) + 1) * sizeof(struct ShiftLocation));
+    struct ShiftLocation *NewShiftLocations = malloc(((*ShiftLocationLength) + 2) * sizeof(struct ShiftLocation));
     memcpy(NewShiftLocations, *ShiftLocations, (*ShiftLocationLength) * sizeof(struct ShiftLocation));
     printf("about to free\n");
-    free(*ShiftLocations);
+    free(*ShiftLocations); // Need to find why this was causing problems
     printf("freed\n");
     *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {
+        printf("Stuck here?\n");
         if ((*ShiftLocations)[i].location >= Location)
         {
             for (int v = (*ShiftLocationLength); v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
@@ -273,10 +275,120 @@ void BundleFile(struct Node *GraphNode)
                 strcat(NewModuleExportsName, "_ARROWPACK");
 
                 RemoveCharFromString(NewModuleExportsName, '.');
+                while (StringContainsSubstring(InsertText, NewModuleExportsName) || StringContainsSubstring(FileContents, NewModuleExportsName))
+                {
+                    char *NewUniqueName = CreateUnusedName();
+                    NewModuleExportsName = realloc(NewModuleExportsName, (strlen(NewUniqueName) + strlen(NewModuleExportsName) + 1) * sizeof(char));
+                    strcat(NewModuleExportsName, NewUniqueName);
+                }
                 struct ShiftLocation *JSFileShiftLocations = malloc(sizeof(ShiftLocation));
                 JSFileShiftLocations[0].location = -1;
                 int JSShiftLocationsLength = 1;
-                struct RegexMatch *IteratePointer = &ExtraExportMatches[0];
+
+                struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
+                struct RegexMatch *IteratePointer = &FunctionNames[0];
+                struct ShiftLocation *FunctionNameShiftNums = malloc(sizeof(struct ShiftLocation));
+                int FunctionNameShiftNumsLength = 1;
+                while (IteratePointer->IsArrayEnd != true)
+                {
+                    printf("Iterating\n");
+                    if (strlen(IteratePointer->Text) > 1) // Ignores unamed functions
+                    {
+
+                        printf("Function name: %s\n", IteratePointer->Text);
+                        bool InString, StringStartDoubleQuotes, FunctionDuplicateFound = false;
+                        for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text); i++)
+                        {
+                            printf("Indtring:%i, Filecontent: %s\n", InString, FileContents + i);
+                            if (FileContents[i] == '\'' || FileContents[i] == '\"')
+                            {
+                                if (InString)
+                                {
+                                    if (StringStartDoubleQuotes)
+                                    {
+                                        if (FileContents[i] == '\"')
+                                        {
+                                            InString = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (FileContents[i] == '\'')
+                                        {
+                                            InString = false;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    InString = true;
+                                    StringStartDoubleQuotes = FileContents[i] == '\"';
+                                }
+                            }
+                            else if (strncmp(FileContents + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
+                            {
+                                printf("Found name collision: %s\n", FileContents + i);
+                                FunctionDuplicateFound = true;
+                                break;
+                            }
+                        }
+                        if (FunctionDuplicateFound)
+                        {
+                            printf("FunctionDuplicateFound\n");
+                            char *NewUnusedName = CreateUnusedName();
+                            InString = false;
+                            StringStartDoubleQuotes = false;
+                            FunctionDuplicateFound = false;
+                            int LoopLength = strlen(InsertText) - strlen(IteratePointer->Text) + 2;
+                            for (int i = 0; i < LoopLength; i++)
+                            {
+                                printf("I:%i\n", i);
+                                if (InsertText[i] == '\'' || InsertText[i] == '\"')
+                                {
+                                    if (InString)
+                                    {
+                                        if (StringStartDoubleQuotes)
+                                        {
+                                            if (InsertText[i] == '\"')
+                                            {
+                                                InString = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (InsertText[i] == '\'')
+                                            {
+                                                InString = false;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        InString = true;
+                                        StringStartDoubleQuotes = InsertText[i] == '\"';
+                                    }
+                                }
+                                else if (strncmp(InsertText + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
+                                {
+                                    printf("Inserting\n");
+                                    InsertText = InsertStringAtPosition(InsertText, NewUnusedName, i + strlen(IteratePointer->Text));
+                                    printf("Shifting\n");
+                                    int InverseShiftAmount = GetInverseShiftedAmount(i + strlen(IteratePointer->Text), JSFileShiftLocations);
+                                    AddShiftNum(InverseShiftAmount, strlen(NewUnusedName), &JSFileShiftLocations, &JSShiftLocationsLength);
+                                    printf("Done inserting\n");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        printf("Empty\n");
+                    }
+                    IteratePointer++;
+                }
+                printf("Name collision free text: %s\n", InsertText);
+
+                IteratePointer = &ExtraExportMatches[0];
                 printf("Insert text:%s\n", InsertText);
                 while (IteratePointer != UsableExtraImports && IteratePointer->IsArrayEnd == false)
                 {
@@ -293,7 +405,7 @@ void BundleFile(struct Node *GraphNode)
                 printf("Module definition %s\n", ModuleObjectDefinition);
                 if (FullExportsArrayLength > 0)
                 {
-                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, FinalElement->StartIndex);
+                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
                     AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
                     InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
                     AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
