@@ -71,7 +71,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
             RemoveRegexMatch(IteratePointer);
         }
 
-        if (CommentLocations == NULL)
+        if (CommentLocations != NULL)
         {
             if (CommentLocations[0].IsArrayEnd != true)
             {
