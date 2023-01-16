@@ -47,17 +47,13 @@ static int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLoca
 static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *ShiftLocationLength)
 {
     (*ShiftLocationLength)++;
-    printf("shiftlocations:%i\n", *ShiftLocationLength);
     struct ShiftLocation *NewShiftLocations = malloc(((*ShiftLocationLength) + 2) * sizeof(struct ShiftLocation));
     memcpy(NewShiftLocations, *ShiftLocations, (*ShiftLocationLength) * sizeof(struct ShiftLocation));
-    printf("about to free\n");
     free(*ShiftLocations); // Need to find why this was causing problems
-    printf("freed\n");
     *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {
-        printf("Stuck here?\n");
         if ((*ShiftLocations)[i].location >= Location)
         {
             for (int v = (*ShiftLocationLength); v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
@@ -78,7 +74,6 @@ static void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **Shift
         }
         i++;
     }
-    printf("Reached end of function\n");
 }
 
 void BundleFile(struct Node *GraphNode)
@@ -249,9 +244,7 @@ void BundleFile(struct Node *GraphNode)
                 if (FullExportsArrayLength != 0)
                 {
                     FinalElement = &FullExportMatches[FullExportsArrayLength - 1];
-                    printf("Final element num: %i, path: %s\n", FullExportsArrayLength - 1, FinalElement->Text);
                 }
-                printf("here\n");
                 struct RegexMatch *ExtraExportMatches = GetAllRegexMatches(InsertText, "[^.]exports.[^;]*", 0, 0);
                 struct RegexMatch *UsableExtraImports = &ExtraExportMatches[0];
                 if (FullExportsArrayLength > 0)
@@ -291,15 +284,12 @@ void BundleFile(struct Node *GraphNode)
                 int FunctionNameShiftNumsLength = 1;
                 while (IteratePointer->IsArrayEnd != true)
                 {
-                    printf("Iterating\n");
                     if (strlen(IteratePointer->Text) > 1) // Ignores unamed functions
                     {
 
-                        printf("Function name: %s\n", IteratePointer->Text);
                         bool InString, StringStartDoubleQuotes, FunctionDuplicateFound = false;
                         for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text); i++)
                         {
-                            printf("Indtring:%i, Filecontent: %s\n", InString, FileContents + i);
                             if (FileContents[i] == '\'' || FileContents[i] == '\"')
                             {
                                 if (InString)
@@ -327,14 +317,15 @@ void BundleFile(struct Node *GraphNode)
                             }
                             else if (strncmp(FileContents + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
                             {
-                                printf("Found name collision: %s\n", FileContents + i);
+                                ColorGreen();
+                                printf("Resolving name collision: %s\n", FileContents + i);
+                                ColorNormal();
                                 FunctionDuplicateFound = true;
                                 break;
                             }
                         }
                         if (FunctionDuplicateFound)
                         {
-                            printf("FunctionDuplicateFound\n");
                             char *NewUnusedName = CreateUnusedName();
                             InString = false;
                             StringStartDoubleQuotes = false;
@@ -342,7 +333,6 @@ void BundleFile(struct Node *GraphNode)
                             int LoopLength = strlen(InsertText) - strlen(IteratePointer->Text) + 2;
                             for (int i = 0; i < LoopLength; i++)
                             {
-                                printf("I:%i\n", i);
                                 if (InsertText[i] == '\'' || InsertText[i] == '\"')
                                 {
                                     if (InString)
@@ -370,46 +360,34 @@ void BundleFile(struct Node *GraphNode)
                                 }
                                 else if (strncmp(InsertText + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
                                 {
-                                    printf("Inserting\n");
                                     InsertText = InsertStringAtPosition(InsertText, NewUnusedName, i + strlen(IteratePointer->Text));
-                                    printf("Shifting\n");
                                     int InverseShiftAmount = GetInverseShiftedAmount(i + strlen(IteratePointer->Text), JSFileShiftLocations);
                                     AddShiftNum(InverseShiftAmount, strlen(NewUnusedName), &JSFileShiftLocations, &JSShiftLocationsLength);
-                                    printf("Done inserting\n");
                                 }
                             }
                         }
                     }
-                    else
-                    {
-                        printf("Empty\n");
-                    }
                     IteratePointer++;
                 }
-                printf("Name collision free text: %s\n", InsertText);
 
                 IteratePointer = &ExtraExportMatches[0];
-                printf("Insert text:%s\n", InsertText);
                 while (IteratePointer != UsableExtraImports && IteratePointer->IsArrayEnd == false)
                 {
-                    printf("test\n");
                     RemoveSectionOfString(InsertText, IteratePointer->StartIndex, IteratePointer->EndIndex);
                     AddShiftNum(IteratePointer->StartIndex, (IteratePointer->EndIndex - IteratePointer->StartIndex) * -1, &JSFileShiftLocations, &JSShiftLocationsLength);
                     IteratePointer++;
                 }
-                printf("\n\nInsert text:%s\n\n\n\n", InsertText);
+
                 char *ModuleObjectDefinition = malloc(strlen(NewModuleExportsName) + 13);
                 strcpy(ModuleObjectDefinition, "let ");
                 strcat(ModuleObjectDefinition, NewModuleExportsName);
                 strcat(ModuleObjectDefinition, " = {};");
-                printf("Module definition %s\n", ModuleObjectDefinition);
                 if (FullExportsArrayLength > 0)
                 {
                     InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
                     AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
                     InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
                     AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
-                    printf("is this coorrect int: %i, Not shifted: %i\n", GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), FinalElement->StartIndex);
                 }
                 else
                 {
@@ -417,20 +395,16 @@ void BundleFile(struct Node *GraphNode)
                     AddShiftNum(UsableExtraImports->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
                 }
 
-                printf("\n\ntest:%s\n\n\n\n", InsertText);
                 while (!UsableExtraImports->IsArrayEnd)
                 {
                     InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(UsableExtraImports->StartIndex, JSFileShiftLocations), GetShiftedAmount(UsableExtraImports->StartIndex + 8, JSFileShiftLocations), NewModuleExportsName);
                     AddShiftNum(UsableExtraImports->StartIndex, strlen(NewModuleExportsName) - 8, &JSFileShiftLocations, &JSShiftLocationsLength);
                     UsableExtraImports++;
                 }
-                printf("\n\nInsert text:%s\n\n\n\n", InsertText);
                 FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1, NewModuleExportsName);
                 AddShiftNum(CurrentEdge->StartRefPos, strlen(NewModuleExportsName) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
                 FileContents = InsertStringAtPosition(FileContents, InsertText, 0);
-                printf("is this working: %s\n", FileContents);
                 AddShiftNum(0, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
-                printf("Edited:%s\n", FileContents);
                 /*free(JSFileShiftLocations);
                 JSFileShiftLocations = NULL;*/
             }
@@ -441,7 +415,6 @@ void BundleFile(struct Node *GraphNode)
     ShiftLocations = NULL;
     RemoveSubstring(FileContents, "</include>");
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents);
-    printf("\n\n\n\n");
     ColorGreen();
     printf("Finished bundling file:%s\n", GraphNode->path);
     ColorNormal();
@@ -475,14 +448,13 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
         IteratePointer = &SmallExportMatches[0];
         while (IteratePointer->IsArrayEnd == false)
         {
-            printf("This file uses small exports\n");
             RemoveSectionOfString(FileContents, GetShiftedAmount(IteratePointer->StartIndex, shiftLocations), GetShiftedAmount(IteratePointer->EndIndex, shiftLocations) + 1);
             AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
             IteratePointer++;
         }
         ColorGreen();
-        printf("Post processed: %s\n\n\n\n\n", FileContents);
-        ColorReset();
+        printf("Post processed: %s", FileContents);
+        ColorNormal();
         CreateFileWrite(ExitPath, FileContents);
     }
     free(shiftLocations);
@@ -518,7 +490,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         ColorMagenta();
         printf("\nBundling file: %s\n", FileNode->path);
         ColorReset();
-        print_progress_bar(i, graph->VerticesNum);
+        // print_progress_bar(i, graph->VerticesNum);
         BundleFile(FileNode);
     }
 
@@ -527,6 +499,6 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
     {
         PostProcessFile(graph->SortedArray[i], graph);
     }
-
+    ColorNormal();  // Need to find out where everything is being turned green
     return Success; // This is always true currently
 }

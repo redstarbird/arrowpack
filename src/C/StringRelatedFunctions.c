@@ -47,10 +47,8 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
 
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
 {
-    const int substringLength = EndIndex - StartIndex + 1; // Gets the length of the substring
-    printf("Substring length: %i\n", substringLength);
+    const int substringLength = EndIndex - StartIndex + 1;    // Gets the length of the substring
     char *substring = malloc(sizeof(char) * substringLength); // Allocates memory for substring
-    printf("allocated\n");
     for (int i = 0; i < substringLength; i++)
     {
         substring[i] = Text[StartIndex + i];
@@ -99,11 +97,9 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
-        printf("starts with /\n");
         strcpy(tempHolder, Settings.entry);
         tempHolder[strlen(tempHolder)] = '\0';
         strcat(tempHolder, path + 1);
-        printf("/ path: %s\n", tempHolder);
         return tempHolder;
     }
     else
@@ -116,10 +112,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             { // BasePath is only needed for paths with ../
                 ThrowFatalError("Error no base path specified");
             }
-            printf("Found ../ %i times!\n", MatchesNum);
             char *PathCopy = strdup(path);
             char *BasePathCopy = strdup(BasePath);
-            printf("BasePath: %s\n", BasePathCopy);
             // Create a copy of the path variable so it doesn't get overwritten by strtok()
 
             int PathSeperatorsFound = 0;
@@ -145,43 +139,10 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
 
             RemoveSubstring(PathCopy, "../");
             BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), PathCopy);
-            /*
-            char *FinalString = malloc(sizeof(char) * (strlen(path) + strlen(BasePath) + strlen(Settings.entry) + 1)); // Probably very inefficient
-            int ArrayIndex = 0;
-            for (int i = 0; i < (sizeof(SplitString) / sizeof(char *)) - MatchesNum; i++) // loops through array except for elements that need to be removed
-            {
-                for (int j = 0; j < sizeof(*SplitString[i]); j++) // Need to implement better way to do this
-                {
-                    if (!SplitString[i][j])
-                    {
-                        break;
-                    }
-                    if (SplitString[i][j] == '\0')
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        FinalString[ArrayIndex] = SplitString[i][j];
-                    }
-                    ArrayIndex++;
-                }
-                FinalString[ArrayIndex] = '/';
-                ArrayIndex++;
-            }
-            // FinalString[ArrayIndex] = '\0';
-            char *TempEntry = strdup(Settings.entry);
-
-            strcat(TempEntry, FinalString);
-            strcat(TempEntry, path);
-            printf("done\n");
-            printf("%s\n", TempEntry);*/
-            printf("%s\n", BasePathCopy);
             return BasePathCopy;
         }
         else
         {
-            printf("Very relative path\n");
             if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
@@ -200,7 +161,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
                 strcat(TempPath, TempPath2);
             }
             ColorCyan();
-            printf("Returning %s\n", TempPath);
             ColorNormal();
             return TempPath;
         }
@@ -210,7 +170,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
 
 bool IsPreprocessDir(const char *path)
 {
-    printf("checking %s\n", path);
     if (strlen(path) < 29)
     {
         return false;
@@ -220,7 +179,6 @@ bool IsPreprocessDir(const char *path)
 
 char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename)
 {
-    printf("Getting basepath: %s\n", filename);
     int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
     if (LastPathChar == 0)
     {
@@ -231,13 +189,11 @@ char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename)
     memcpy(BasePath, filename, LastPathChar);
 
     BasePath[LastPathChar] = '\0';
-    printf("Returning BasePath: %s\n", BasePath);
     return BasePath;
 }
 
 char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
 {
-    printf("Getting basepath: %s\n", filename);
     int LastPathChar = LastOccurenceOfChar(filename, '/') + 1;
     if (LastPathChar == 0)
     {
@@ -250,100 +206,13 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     BasePath[LastPathChar] = '\0';
     if (IsPreprocessDir(filename))
     {
-        printf("is preprocess dir: %s\n", filename);
         BasePath = ReplaceSectionOfString(BasePath, 0, 29, Settings.entry);
     }
-    printf("Returning BasePath: %s\n", BasePath);
     return BasePath;
 }
 
 char *ReplaceSectionOfString(char *string, int start, int end, const char *ReplaceString)
 {
-    /*
-         if (end - start > strlen(ReplaceString))
-         {
-             printf("option 1\n");
-             ShiftNum = strlen(ReplaceString) - (end - start);
-         }
-         else
-         {
-             printf("option 2\n");
-             ShiftNum = strlen(ReplaceString);
-         }
-    ColorCyan();
-    printf("String replace debug start\n");
-    ColorNormal();
-    int ShiftNum = strlen(ReplaceString) - (end - start);
-    printf("Shift num: %i, replace string: %s, string: %s, end: %i\n", ShiftNum, ReplaceString, string, end);
-
-    size_t stringlen = (ShiftNum + (int)strlen(string) + 1) * sizeof(char);
-    if (ShiftNum > 0)
-    {
-        const int OldStringLen = strlen(string);
-        string = (char *)realloc(string, stringlen);
-        for (int i = OldStringLen + 1; i < stringlen; i++)
-        {
-            string[i] = 'w';
-        }
-        string[stringlen] = '\0';
-
-        for (unsigned int i = (int)stringlen - ShiftNum - 1; i >= end; i--)
-        {                                     // Loops through all characters that need to be shifted to the right
-            string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
-        }
-        ColorGreen();
-        printf("OldStringLen: %i, NewStringLen: %i\n", OldStringLen, strlen(string));
-        ColorNormal();
-
-        int NumbersToShift = OldStringLen - end;
-        bool StopShift = false;
-        for (unsigned int i = 0; i < ShiftNum; i++)
-        {
-            if (i < NumbersToShift)
-            {
-                string[i + ShiftNum + OldStringLen] = string[OldStringLen - ShiftNum + i]; // Shift the character the correct amount to the right
-            }
-            else
-            {
-                StopShift = true;
-                break;
-            }
-        }
-        printf("test 2 %s", string);
-        if (!StopShift)
-        {
-            for (unsigned int i = end; i < OldStringLen - ShiftNum; i++)
-            {
-                string[i + ShiftNum] = string[i]; // Shift the character the correct amount to the right
-            }
-        }
-
-        printf("Shifted string: %s\n", string);
-        for (unsigned int i = start; i < strlen(ReplaceString); i++)
-        {
-            string[i] = ReplaceString[i - start];
-        }
-        printf("Final string: %s\n", string);
-    }
-    else if (ShiftNum < 0)
-    {
-        printf("not implemented yet\n");
-        for (unsigned int i = end; i < strlen(string); i++) //
-        {                                                   // Loops through all characters that need to be shifted to the left
-            string[i + ShiftNum] = string[i];               // Shift the character the correct amount to the left
-        }
-        printf("Shifted string: %s\n", string);
-        for (unsigned int i = 0; i < strlen(ReplaceString); i++)
-        {
-            string[start + i] = ReplaceString[i];
-        }
-        string[strlen(string) + ShiftNum] = '\0';
-        printf("Finished string: %s\n", string);
-    }
-    ColorCyan();
-    printf("String replace debug end\n");
-    ColorNormal();*/
-
     if (string == NULL || ReplaceString == NULL)
     {
         return NULL;
@@ -364,7 +233,6 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         {
             stringLen += shiftNum;
             string = realloc(string, stringLen + 1);
-            printf("%s\n", string);
             if (string == NULL)
             {
                 return NULL;
@@ -398,8 +266,6 @@ char *InsertStringAtPosition(char *OriginalString, char *ReplaceString, int posi
 {
     if (OriginalString == NULL || ReplaceString == NULL)
     {
-        printf("Returning null from insert string\n");
-
         return NULL;
     }
     unsigned int OriginalLen = strlen(OriginalString);
@@ -415,7 +281,6 @@ bool EMSCRIPTEN_KEEPALIVE StringStartsWith(const char *string, const char *subst
 {
     if (string[0] == '\0' || substring[0] == '\0')
     {
-        printf("Returning false\n");
         return false;
     }
     return strncasecmp(substring, string, strlen(substring)) == 0;
@@ -497,7 +362,6 @@ void RemoveSectionOfString(char *str, int start, int end)
 {
     int i;
     int str_len = strlen(str);
-    printf("Section being removed %s\n", getSubstring(str, start, end));
 
     /* Shift characters after the end of the section to the left */
     for (i = end; i < str_len; i++)

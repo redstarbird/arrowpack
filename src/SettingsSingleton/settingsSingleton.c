@@ -52,7 +52,7 @@ int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
     {
         if (SetSetting(LastKey, strdup(String)) == 0)
         {
-            printf("Error applying settings %s with value %s with Wasm!\n", LastKey, String);
+            CreateWarning("Error applying settings %s with value %s with Wasm!\n", LastKey, String);
             return 0;
         }
     }

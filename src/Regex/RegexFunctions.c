@@ -10,7 +10,6 @@ unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
         ArrayLength++;
         IteratePointer++;
     }
-    printf("ArrayLength = %i\n", ArrayLength);
     return ArrayLength;
 }
 void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2)
@@ -37,7 +36,6 @@ void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, st
                 NewArray[i + Array1Length].EndIndex = (*Array2)[i].EndIndex;
                 NewArray[i + Array1Length].StartIndex = (*Array2)[i].StartIndex;
                 NewArray[i + Array1Length].Text = strdup((*Array2)[i].Text);
-                printf("new code: %s\n", NewArray[i + Array1Length].Text);
                 NewArray[i + Array1Length].IsArrayEnd = false;
             }
 
@@ -49,7 +47,6 @@ void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, st
 
             // Update Array1 to point to the new array
             *Array1 = NewArray;
-            printf("is 2nd the start: %i\n", NewArray[1].IsArrayEnd);
         }
         else
         {
@@ -61,7 +58,6 @@ void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, st
 
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
 {
-    // printf("Getting num of regex matches for text %s\n", Text);
     const int N_MATCHES = 512;
     regex_t regexp;
 
@@ -126,12 +122,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
             matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 1) * RegexMatchesSize);                                            // Reallocates memory for matches array
             matches[matchesCompleted].Text = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so + 1);                                        // Allocates memory for match
             matches[matchesCompleted].Text = strdup(getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos)); // Adds substring to matchs array
-            printf("Matched regex: %s\n", getSubstring(TextStartPointer, (int)match[0].rm_so, (int)match[0].rm_eo));
             matches[matchesCompleted].IsArrayEnd = false;
             matches[matchesCompleted].StartIndex = (unsigned int)match[0].rm_so + AmountShifted; // Saves start index so it doesn't need to be recalculated later
             matches[matchesCompleted].EndIndex = (unsigned int)match[0].rm_eo + AmountShifted;   // Does the same as above but for the end index
-            printf("Adjusted regex substring: %s, so %i, eo %i\n", getSubstring(Text, matches[matchesCompleted].StartIndex, matches[matchesCompleted].EndIndex), matches[matchesCompleted].StartIndex, matches[matchesCompleted].EndIndex);
-            TextStartPointer += (int)match[0].rm_eo; // Uses pointer arithmetic to set textStartPointer to end of match
+            TextStartPointer += (int)match[0].rm_eo;                                             // Uses pointer arithmetic to set textStartPointer to end of match
             AmountShifted += (int)match[0].rm_eo;
             matchesCompleted++; // Increments count of matches
         }

@@ -36,14 +36,12 @@ void StackpushV(struct Stack *stack, struct Node *Value)
     if (StackIsFull(stack))
         return;
     stack->array.VertexArray[++stack->top] = Value;
-    printf("%s pushed to stack\n", Value->path);
 }
 void StackpushI(struct Stack *stack, int Value)
 {
     if (StackIsFull(stack))
         return;
     stack->array.IntArray[++stack->top] = Value;
-    printf("%d pushed to stack\n", Value);
 }
 int StackpopI(struct Stack *stack) // Need to make overload for this function
 {

@@ -53,21 +53,18 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
     {
         return NULL;
     }
-    // printf("file contents: %s\n", FileContents);
-    // printf("num of regex mathces %d\n", GetNumOfRegexMatches(FileContents, pattern));
     struct RegexMatch *RegexMatches = GetAllRegexMatches(FileContents, pattern, Startpos, Endpos);
     if (RegexMatches == NULL)
     {
-        printf("No dependencies found for file: %s with pattern: %s\n", filename, pattern);
+        printf("No dependencies found for file: %s\n", filename);
         return NULL;
     }
     struct RegexMatch *IteratePointer = &RegexMatches[0];
     while (IteratePointer->IsArrayEnd != true)
     {
-        printf("\n\nWow: %s\n\n\n", IteratePointer->Text);
         if (StringContainsSubstring(IteratePointer->Text, "https://") || StringContainsSubstring(IteratePointer->Text, "http://"))
         {
-            printf("Found URL: %s\n", IteratePointer->Text);
+            printf("Ignoring URL: %s\n", IteratePointer->Text);
             RemoveRegexMatch(IteratePointer);
         }
 
@@ -87,24 +84,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
         }
         IteratePointer++;
     }
-
-    /*
-        printf("Size of regex matches: %i, size of regex matches[0]: %i\n", (int)sizeof(RegexMatches), (int)sizeof(RegexMatches));
-        printf("Looping %i times\n", (int)sizeof(&RegexMatches) / (int)sizeof(RegexMatches[0]));
-        for (int i = 0; i < sizeof(&RegexMatches) / sizeof(RegexMatches[0]) + 1; i++)
-        {
-            printf("test1245\n");
-            printf("hmm: %s\n", RegexMatches[i].Text);
-            RegexMatches[i].Text = strdup(TurnToFullRelativePath(RegexMatches[i].Text, ""));
-            // RegexMatches[i] = TurnToFullRelativePath(RegexMatches[i], "");
-            printf("hmmv2: %s\n", RegexMatches[i].Text);
-            if (i == 1)
-            {
-                printf("this is interesting: %s\n", RegexMatches[i - 1].Text);
-            }
-        }*/
-
-    printf("Got all regex matches\n");
 
     free(FileContents);
     return RegexMatches;
@@ -141,7 +120,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         IteratePointer = &CSSDependencies[0];
         while (IteratePointer->IsArrayEnd == false) // Gets link from CSS element
         {
-            printf("CSS loop\n"); //
             int HREFLocation = -1;
             TempStringPointer = &IteratePointer->Text[0];
             int TextLength = strlen(IteratePointer->Text);
@@ -189,13 +167,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                     }
                 }
             }
-            printf("FileName: %s, Basepath: %s\n", filename, GetBasePath(filename));
             IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
             IteratePointer++;
         }
     }
-    printf("Code reaches here\n");
-    // return HTMLIncludeMatches;
 
     struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0, NULL);
     if (JSDependencies != NULL)
@@ -248,7 +223,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                             break;
                         }
                     }
-                    printf("start location: %i, end location: %i, substring %s\n", StartLocation, EndLocation, getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1));
                     IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
                 }
             }
@@ -279,9 +253,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                     }
                     if (EndLocation != -1)
                     {
-                        printf("Success\n");
                         char *NewJSContents = getSubstring(TempFileContents, StartLocation + 1, EndLocation - 2);
-                        printf("New JS Contents:%s\n", NewJSContents);
 
                         char *NewJSName = TurnToFullRelativePath(CreateUnusedName(), GetBasePath(filename));
                         NewJSName = strdup(EntryToPreprocessPath(NewJSName));
@@ -295,14 +267,11 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                         strcpy(NewSRCAttr, " src=\"");
                         strcat(NewSRCAttr, NewJSName);
                         strcat(NewSRCAttr, "\" ");
-                        printf("New src %s\n", NewSRCAttr);
 
                         TempFileContents = InsertStringAtPosition(TempFileContents, NewSRCAttr, StartLocation);
-                        printf("\n\n%s\n", TempFileContents);
 
                         filename = EntryToPreprocessPath(filename);
                         vertex->path = filename;
-                        printf("vertex %s\n", vertex->path);
 
                         CreateFileWrite(filename, TempFileContents);
 
@@ -322,22 +291,18 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                     }
                 }
             }
-            printf("JS: %s\n", IteratePointer->Text);
             IteratePointer++;
         }
     }
-    printf("Code doesn't reach here\n");
     CombineRegexMatchArrays(&CSSDependencies, &JSDependencies);
     CombineRegexMatchArrays(&CSSDependencies, &HTMLIncludeMatches);
 
     IteratePointer = &CSSDependencies[0];
     while (IteratePointer->IsArrayEnd != true)
     {
-        printf("Final Iterate pointer: %s\n", IteratePointer->Text);
         IteratePointer++;
     }
 
-    printf("finished printing\n");
     return CSSDependencies;
 }
 
@@ -367,7 +332,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
         }
 
         strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, StartLocation, EndLocation));
-        printf("CSS URL: %s", IteratePointer->Text);
         IteratePointer++;
     }
     MakeMatchesFullPath(Dependencies, GetBasePath(filename));
@@ -435,7 +399,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         if (startLocation != -1 && endLocation != -1)
         {
             strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
-            printf("Yay: %s\n", IteratePointer->Text);
             bool LocalFileFound = false;
 
             if (!StringEndsWith(IteratePointer->Text, ".cjs") && !StringEndsWith(IteratePointer->Text, ".js"))
@@ -455,13 +418,11 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 {
                     TempCheckPath = ReplaceSectionOfString(TempCheckPath, TempLength, TempLength + 3, ".cjs\n");
                     TempCheckPath[TempLength + 4] = '\0';
-                    printf("CJS path: %s\n", TurnToFullRelativePath(TempCheckPath, GetBasePath(filename)));
                     if (FileExists(TurnToFullRelativePath(TempCheckPath, GetBasePath(filename))))
                     {
                         LocalFileFound = true;
                         free(IteratePointer->Text);
                         IteratePointer->Text = TurnToFullRelativePath(TempCheckPath, GetBasePath(filename));
-                        printf("Relative CJS path: %s\n", IteratePointer->Text);
                     }
                 }
             }
@@ -472,7 +433,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 LocalFileFound = true;
 
                 IteratePointer->Text = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
-                printf("Exiting %s\n", IteratePointer->Text);
             }
             if (!LocalFileFound)
             {
@@ -482,7 +442,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                     char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
                     strcpy(NodeModulePath, "node_modules/");
                     strcat(NodeModulePath, IteratePointer->Text);
-                    printf("Node modules path: %s\n", NodeModulePath);
                     if (DirectoryExists(NodeModulePath))
                     {
                         char *PackageJSONPath = malloc(strlen(NodeModulePath) + 15);
@@ -506,7 +465,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                             IteratePointer->Text = NodeModulePath;
                             LocalFileFound = true;
                             cJSON_Delete(PackageJSON);
-                            printf("wow %s\n", IteratePointer->Text);
                         }
                     }
                 }
@@ -532,7 +490,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         if (StartLocation == -1)
         {
-            printf("Could not find JS dependency in import\n");
+            CreateWarning("Could not find JS dependency in import\n");
         }
         else
         {

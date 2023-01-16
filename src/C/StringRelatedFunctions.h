@@ -55,4 +55,6 @@ char *AddPreprocessDIR(char *Path);
 
 char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename);
 
+bool IsURL(char *str);
+
 #endif // !STRINGFUNCTIONS_H

@@ -3,7 +3,9 @@
 
 void CopyFile(char *FileToCopy, char *FileToCopyTo)
 {
+    ColorGreen();
     printf("Copying file: %s to location: %s\n", FileToCopy, FileToCopyTo);
+    ColorNormal();
     FILE *input = fopen(FileToCopy, "r");
     FILE *output = fopen(FileToCopyTo, "w");
     if (!input || !output)
@@ -30,7 +32,6 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
 void CreateFileWrite(char *path, char *text)
 {
     EnsureDirectory(GetTrueBasePath(path));
-    printf("Creating file %s, text: %s\n", path, text);
     FILE *FilePTR;
     FilePTR = fopen(path, "w");
     if (!FilePTR)
@@ -77,41 +78,6 @@ char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
     fclose(filePTR);
     buffer[currentChar - 1] = '\0';
     return buffer;
-    /*
-        FILE *filePtr;
-        filePtr = fopen(path, "r");
-        printf("Reading from file %s\n", path);
-        char *buffer;
-        if (filePtr == NULL)
-        {
-            printf("%s has returned NULL\n", path);
-            return NULL;
-        }
-        printf("confused\n");
-        fseek(filePtr, 0, SEEK_END);         // seek to end of file
-        long int length = ftell(filePtr);    // get length of file
-        fseek(filePtr, 0, SEEK_SET);         // go back to start of file
-        buffer = (char *)malloc(length + 1); // allocate memory for buffer to store file contents
-        printf(":(\n");
-        if (buffer)
-        {
-            printf("buffer\n");
-            if (fread(buffer, length, 1, filePtr) == -1)
-            {
-                printf("error reading data from file :(\n");
-                exit(1);
-            } // read file into buffer
-        }
-        printf(":D\n");
-        printf("Buffer: %s\n", buffer);
-        printf("sdasdas\n");
-        if (fclose(filePtr) != 0)
-        {
-            printf("Error closing file: %s\n", path);
-            exit(1);
-        } // close the file
-        printf("what?!?!?!?!?");
-        return buffer;*/
 }
 bool FileExists(char *FilePath)
 {

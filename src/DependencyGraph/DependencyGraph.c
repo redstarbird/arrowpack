@@ -93,7 +93,6 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     {
         for (int j = 0; j < 4; j++)
         {
-            printf("%s\n", fileRules[i].FileExtensions[j]);
             if (fileRules[i].FileExtensions[j] == NULL || *fileRules[i].FileExtensions[j] == '\0')
             {
                 break;
@@ -116,7 +115,6 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTy
     switch (FileTypeID)
     {
     case HTMLFILETYPE_ID:
-        printf("Returning HTML Dependencies\n");
         return FindHTMLDependencies(vertex, DependencyGraph);
         break;
     case CSSFILETYPE_ID:
@@ -335,7 +333,9 @@ int count_edges(struct Node *vertex)
 void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 {
     bool DependencyFound = false;
+    ColorGreen();
     printf("Finding dependencies for file: %s\n", vertex->path);
+    ColorNormal();
     struct RegexMatch *Dependencies = GetDependencies(vertex, vertex->FileType, DependencyGraph); // Gets dependencies as strings
     if (Dependencies[0].IsArrayEnd == false)                                                      // Checks if dependencies have been found
     {
@@ -362,7 +362,7 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
             {
                 if (!StringStartsWith(IteratePointer->Text, Settings.entry))
                 {
-                    ColorYellow();
+                    ColorMagenta();
                     printf("Creating new node: %s\n", IteratePointer->Text);
                     ColorNormal();
                     add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));
@@ -372,7 +372,7 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
                 }
                 else
                 {
-                    printf("Could not find dependency file %s\n", IteratePointer->Text);
+                    CreateWarning("Could not find dependency file %s\n", IteratePointer->Text);
                 }
             }
             DependencyFound = false;
@@ -381,13 +381,13 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 
         // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
     }
-    printf("\n\nFile has %i dependencies!\n\n", count_edges(vertex));
+    printf("\n\nFile has %s %i dependencies\n", vertex->path, count_edges(vertex));
 }
 
 struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency Graph
 {
 
-    printf("Started creating dependency Graph\n");
+    printf("Creating dependency Graph!\n");
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
     int ElementsUnwrapped = 0;
@@ -429,19 +429,16 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
     int TempNum = 0;
     while (TempNum < DependencyGraph->VerticesNum) // Loops through each node and finds dependencies
     {
-        printf("Graph processing: %s\n", DependencyGraph->Vertexes[TempNum]->path);
         CreateDependencyEdges(DependencyGraph->Vertexes[TempNum], &DependencyGraph);
         TempNum++;
     }
-
-    printf("\n\n");
 
     topological_sort(DependencyGraph);
 
     for (int i = 0; i < DependencyGraph->VerticesNum; i++)
     {
         struct Node *node = DependencyGraph->SortedArray[i];
-        printf("Ordered: %s\n", node->path);
+        printf("Ordered graph node: %s\n", node->path);
     }
 
     return DependencyGraph;
