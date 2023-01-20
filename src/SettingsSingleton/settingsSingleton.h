@@ -11,6 +11,7 @@ typedef struct SettingsSingleton
     bool autoClear;
     bool largeProject;
     bool bundleCSSInHTML;
+    bool productionMode;
 } SettingsSingleton; // need to implement
 
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);

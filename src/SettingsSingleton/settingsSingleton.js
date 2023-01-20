@@ -4,7 +4,7 @@ const fs = require("fs");
 
 class settingsSingleton {
 	constructor(json) {
-		this.settings = { entry: "src/", exit: "public/", autoClear: false, largeProject: false, bundleCSSInHTML: true };
+		this.settings = { entry: "src/", exit: "public/", autoClear: false, largeProject: false, bundleCSSInHTML: true, productionMode: true };
 
 		/*if (fs.existsSync("./lib")) {
 			this.settings.entry = "lib";

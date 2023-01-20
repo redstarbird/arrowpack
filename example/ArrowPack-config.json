@@ -3,5 +3,6 @@
 	"exit": "example/dist",
 	"autoClear": false,
 	"largeProject": false,
-	"bundleCSSInHTML": true
+	"bundleCSSInHTML": true,
+	"productionMode": true
 }

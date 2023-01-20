@@ -34,6 +34,11 @@ static int SetSetting(char *key, char *value)
     {
         Settings.bundleCSSInHTML = StringToBool(value);
     }
+    else if (strcasecmp(key, "productionMode") == 0)
+    {
+        Settings.productionMode = StringToBool(value);
+    }
+
     else
     {
         return 0;
