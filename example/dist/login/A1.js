@@ -1,7 +1,11 @@
-function MakeSnakeCase(str) {
+function Test() {
+    console.log("Test!");
+}
+function MakeSnakeCaseA4(str) {
+    Test();
     str = str.replace(/ /g, '_');
 
-    // Replace uppercase characters with lowercase versions preceded by an underscore
+    // Replace uppercase characters with lowercase versions preceded by an underscore using the MakeSnakeCaseA4 function
     str = str.replace(/[A-Z]/g, function (char) {
         return '_' + char.toLowerCase();
     });
@@ -9,7 +13,7 @@ function MakeSnakeCase(str) {
     return str;
 
 }
-let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };
+let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCaseA4 };
 			const SnakeCaseModule = JSMakeSnakeCase_ARROWPACK;
 
 			function UpdateH1() {

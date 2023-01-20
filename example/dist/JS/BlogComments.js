@@ -1,7 +1,11 @@
-function MakeSnakeCase(str) {
+function TestA2() {
+    console.log("Test!");
+}
+function MakeSnakeCaseA3(str) {
+    TestA2();
     str = str.replace(/ /g, '_');
 
-    // Replace uppercase characters with lowercase versions preceded by an underscore
+    // Replace uppercase characters with lowercase versions preceded by an underscore using the MakeSnakeCaseA3 function
     str = str.replace(/[A-Z]/g, function (char) {
         return '_' + char.toLowerCase();
     });
@@ -9,12 +13,19 @@ function MakeSnakeCase(str) {
     return str;
 
 }
-let MakeSnakeCase_ARROWPACK = {};MakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };const MakeSnakeCaseModule = MakeSnakeCase_ARROWPACK;
+let MakeSnakeCase_ARROWPACK = {};MakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCaseA3 };const MakeSnakeCase = MakeSnakeCase_ARROWPACK;
+
+
 let Comments = ["This is a comment", "This is another comment", "This is yet another comment"];
+function Test(TestString) {
+    console.log("Testing " + TestString);
+}
 function LogComments(params) {
     for (let i = 0; i < params.length; i++) {
-        console.log(MakeSnakeCaseModule.SnakeCase(params[i]));
+        console.log(MakeSnakeCase.SnakeCase(params[i]));
     }
 }
 
 LogComments(Comments);
+
+

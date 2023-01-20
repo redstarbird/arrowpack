@@ -20,16 +20,22 @@ h1 {
 				color: rgb(46, 34, 45);
 			}
 		</style>
+		<!--<script src="invalidpath.js"></script><p>This is for testing whether arrowpack will properly ignore comments</p><h1>Hello World!</h1>
+-->
 	</head>
 	<body>
-		<nav><h2>Navbar is here!</h2><h1>Hello World!</h1>
+		<i<nav><h2>Navbar is here!</h2><h1>Hello World!</h1>
 </nav>
-
-		<script >console.log("Logging user in...");</script>
-		<script  >function MakeSnakeCase(str) {
+include>
+		<script ></console.log("Logging user in...");script>
+		<script  >function Test() {
+    console.log("Test!");
+}
+function MakeSnakeCaseA4(str) {
+    Test();
     str = str.replace(/ /g, '_');
 
-    // Replace uppercase characters with lowercase versions preceded by an underscore
+    // Replace uppercase characters with lowercase versions preceded by an underscore using the MakeSnakeCaseA4 function
     str = str.replace(/[A-Z]/g, function (char) {
         return '_' + char.toLowerCase();
     });
@@ -37,7 +43,7 @@ h1 {
     return str;
 
 }
-let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };
+let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCaseA4 };
 			const SnakeCaseModule = JSMakeSnakeCase_ARROWPACK;
 
 			function UpdateH1() {
