@@ -115,7 +115,8 @@ if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one strin
 				}
 			});
 			DirFunctions.DeleteDirectory(); //CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
-			console.log("Bundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds");
+			console.log(chalk.magentaBright("Bundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds"));
+
 		}
 	});
 
