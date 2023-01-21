@@ -11,6 +11,8 @@
 #include "FileTypesHandler.h"
 #include "ProgressBar.h"
 #include "../Regex/RegexFunctions.h"
+#include "StringShiftHandler.h"
+#include "../Minifiers/JSMinifier.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 

@@ -4,5 +4,5 @@
 	"autoClear": false,
 	"largeProject": false,
 	"bundleCSSInHTML": true,
-	"productionMode": true
+	"productionMode": false
 }

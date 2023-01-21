@@ -92,7 +92,7 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse",),
         SourceFiles=("src/C/cJSON/cJSON.c", "src/DependencyGraph/DependencyGraph.c", "./src/C/StringRelatedFunctions.c",
         "./src/Regex/RegexFunctions.c", "./src/DependencyGraph/FindDependencies.c","./src/SettingsSingleton/settingsSingleton.c", 
-         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c", "./src/Minifiers/HTMLMinifier.c", "./src/C/FileTypesHandler.c", "./src/C/Stack.c", "./src/C/BundleFiles.c", "./src/C/ProgressBar.c"),
+         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c", "./src/Minifiers/HTMLMinifier.c", "./src/C/FileTypesHandler.c", "./src/C/Stack.c", "./src/C/BundleFiles.c", "./src/C/ProgressBar.c", "./src/C/StringShiftHandler.c", "./src/Minifiers/JSMinifier.c"),
         Modularize=True,
         ExportedRuntimeMethods=("ccall",),
         ForceFS=True,
