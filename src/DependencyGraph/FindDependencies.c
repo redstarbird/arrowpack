@@ -79,6 +79,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
                     {
                         RemoveRegexMatch(IteratePointer);
                     }
+                    CurrentComment++;
                 }
             }
         }
@@ -100,8 +101,37 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         ┃╭━╮┃  ┃┃  ┃┃┃┃┃┃┃┃ ╭╮
         ┃┃ ┃┃  ┃┃  ┃┃┃┃┃┃┃╰━╯┃
         ╰╯ ╰╯  ╰╯  ╰╯╰╯╰╯╰━━━╯*/
-    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, NULL);
 
+    char *FileContents = ReadDataFromFile(filename);
+    unsigned int CommentLocationsFound = 0;
+    struct RegexMatch *CommentLocations = NULL;
+    for (unsigned int i = 0; i < strlen(FileContents); i++)
+    {
+        int start, end = -1;
+        if (FileContents[i] == '<' && FileContents[i + 1] == '!' && FileContents[i + 2] == '-' && FileContents[i + 3] == '-')
+        {
+            start = i;
+            i = i + 3;
+            while (i < strlen(FileContents) - 2)
+            {
+                if (FileContents[i] == '-' && FileContents[i + 1] == '-' && FileContents[i + 2] == '>')
+                {
+                    end = i + 2;
+                    CommentLocationsFound++;
+                    CommentLocations = realloc(CommentLocations, sizeof(struct RegexMatch) * (CommentLocationsFound + 1));
+                    CommentLocations[CommentLocationsFound].IsArrayEnd = true;
+                    CommentLocations[CommentLocationsFound - 1].StartIndex = start;
+                    CommentLocations[CommentLocationsFound - 1].EndIndex = end;
+                    CommentLocations[CommentLocationsFound - 1].IsArrayEnd = false;
+                    break;
+                }
+                i++;
+            }
+        }
+    }
+    printf("Finished finding comments\n");
+    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, CommentLocations);
+    printf("confused\n");
     MakeMatchesFullPath(HTMLIncludeMatches, filename);
 
     struct RegexMatch *IteratePointer = &HTMLIncludeMatches[0];
@@ -114,7 +144,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         ┃╰━╯┃┃╰━╯┃┃╰━╯┃
         ╰━━━╯╰━━━╯╰━━━╯*/
     // struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link\\s+rel\\s*=\\s*(\"')?stylesheet(\"')?\\s*(type\\s*=\\s*(\"')?text/css(\"')?)?\\s+href\\s*=\\s*(\"')?(.*?)(\"')?\\s*\\/>", 5, 0);
-    struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link[^>$]*stylesheet[^>$]*", 0, 0, NULL);
+    struct RegexMatch *CSSDependencies = BasicRegexDependencies(filename, "<link[^>$]*stylesheet[^>$]*", 0, 0, CommentLocations);
     if (CSSDependencies != NULL)
     {
         IteratePointer = &CSSDependencies[0];
@@ -172,7 +202,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         }
     }
 
-    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0, NULL);
+    struct RegexMatch *JSDependencies = BasicRegexDependencies(filename, "<script[^>$]*", 7, 0, CommentLocations);
     if (JSDependencies != NULL)
     {
         IteratePointer = &JSDependencies[0];
