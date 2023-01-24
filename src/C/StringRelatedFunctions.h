@@ -13,6 +13,8 @@
 
 #define PREPROCESS_DIR "ARROWPACK_TEMP_PREPROCESS_DIR"
 
+int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character);
+
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
 
 char EMSCRIPTEN_KEEPALIVE *GetFileExtension(const char *path); // Returns the file extension for the given path without the dot char

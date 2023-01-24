@@ -24,27 +24,6 @@ void ShiftRegexMatches(struct RegexMatch **matches, int Location, int Amount)
     }
 }
 
-void RemoveRegexMatch(struct RegexMatch *match)
-{
-    struct RegexMatch *LastMatch = match;
-    while (1)
-    {
-        match++;
-        if (match->IsArrayEnd == true)
-        {
-            LastMatch->IsArrayEnd = true;
-            break;
-        }
-        else
-        {
-            LastMatch->Text = match->Text;
-            LastMatch->EndIndex = match->EndIndex;
-            LastMatch->StartIndex = match->StartIndex;
-            LastMatch++;
-        }
-    }
-}
-
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos, struct RegexMatch *CommentLocations)
 { // Allows any function that only needs basic regex to easily be run
 
@@ -506,25 +485,29 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         IteratePointer++;
     }
-    struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*", 8, 0, CommentLocations);
+    struct RegexMatch *ESDependencies = BasicRegexDependencies(filename, "import [^;]*from[^;]*;", 8, 0, CommentLocations);
+    IteratePointer = &ESDependencies[0];
     while (IteratePointer->IsArrayEnd != true)
     {
+
+        int FromLocation = -1;
         int StartLocation = -1;
         int EndLocation = -1;
-        for (int i = 0; i < strlen(IteratePointer->Text); i++)
+        bool InDestructure = false; // Makes it so that having " true " as a variable won't cause problems
+        for (int i = 0; i < strlen(IteratePointer->Text) - 6; i++)
         {
             if (strncasecmp(IteratePointer->Text + i, " from ", 6) == 0)
             {
-                StartLocation = i + 5; // Doesn't break so that function won't be messed up if function name includes " from "
+                FromLocation = i + 5; // Doesn't break so that function won't be messed up if function name includes " from "
             }
         }
-        if (StartLocation == -1)
+        if (FromLocation == -1)
         {
             CreateWarning("Could not find JS dependency in import\n");
         }
         else
         {
-            for (int i = StartLocation; i < strlen(IteratePointer->Text); i++)
+            for (int i = FromLocation; i < strlen(IteratePointer->Text); i++)
             {
                 if (IteratePointer->Text[i] != ' ' && IteratePointer->Text[i] != '\'' && IteratePointer->Text[i] != '\"')
                 {
@@ -532,8 +515,32 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                     break;
                 }
             }
+            if (StartLocation != -1)
+            {
+                for (int i = StartLocation; i < strlen(IteratePointer->Text); i++)
+                {
+                    if (IteratePointer->Text[i] == ' ' || IteratePointer->Text[i] == '\'' || IteratePointer->Text[i] == '\"')
+                    {
+                        EndLocation = i - 1;
+                        break;
+                    }
+                }
+                if (EndLocation != -1)
+                {
+                    IteratePointer->Text = TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation), GetBasePath(filename));
+
+                    if (!StringEndsWith(IteratePointer->Text, ".js"))
+                    {
+                        IteratePointer->Text = realloc(IteratePointer->Text, strlen(IteratePointer->Text) + 4);
+                        strcat(IteratePointer->Text, ".js");
+                    }
+                    printf("Found ESM path: %s\n", IteratePointer->Text);
+                }
+            }
         }
+        IteratePointer++;
     }
+    CombineRegexMatchArrays(&CJSDependencies, &ESDependencies);
 
     return CJSDependencies;
 }

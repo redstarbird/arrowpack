@@ -1,5 +1,26 @@
 #include "RegexFunctions.h"
 
+void RemoveRegexMatch(struct RegexMatch *match)
+{
+    struct RegexMatch *LastMatch = match;
+    while (1)
+    {
+        match++;
+        if (match->IsArrayEnd == true)
+        {
+            LastMatch->IsArrayEnd = true;
+            break;
+        }
+        else
+        {
+            LastMatch->Text = match->Text;
+            LastMatch->EndIndex = match->EndIndex;
+            LastMatch->StartIndex = match->StartIndex;
+            LastMatch++;
+        }
+    }
+}
+
 unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
 {
     struct RegexMatch *IteratePointer = &Array[0];
@@ -89,11 +110,30 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     return matchesCompleted;
 }
 
-struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch()
+struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch(char *Text, char *Pattern)
 {
-    struct RegexMatch *match = malloc(sizeof(struct RegexMatch));
+    struct RegexMatch *Match = malloc(sizeof(struct RegexMatch) * 2);
     regex_t regexp;
-    return match;
+
+    const int N_MATCHES = 512;
+
+    regmatch_t match[N_MATCHES];
+
+    int flags = REG_EXTENDED | REG_ICASE;
+    if (regcomp(&regexp, Pattern, flags) != 0) // compiles regex
+    {
+        ThrowFatalError("Could not compile regex pattern: %s", Pattern); // Throws a fatal error if an error occured during regex compilation
+    };
+
+    int error = regexec(&regexp, Text, N_MATCHES, match, flags);
+    if (error == 0)
+    {
+        Match[0].IsArrayEnd = false;
+        Match[0].StartIndex = match[0].rm_so;
+        Match[0].EndIndex = match[0].rm_eo;
+        Match[1].IsArrayEnd = true;
+    }
+    return NULL;
 }
 
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)

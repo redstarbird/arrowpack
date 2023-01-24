@@ -1,5 +1,27 @@
 #include "BundleFiles.h"
 
+struct ImportedESM
+{
+    char *name;
+    char *alias;
+    bool IsDefault;
+    bool IsArrayEnd;
+} ImportedESM;
+
+int IsEndOfJSName(const char character)
+{
+    const char disallowed_chars[] = {' ', '!', '@', '#', '%', '^', '&', '*', '(', ')', '-', '+', '=', '{', '}', '[', ']', ':', ';', '"', '\'', '<', '>', ',', '.', '?', '/', '+', '-', '*', '/', '%', '+', '-', '\n'};
+    const int array_size = sizeof(disallowed_chars) / sizeof(disallowed_chars[0]);
+    for (int i = 0; i < array_size; i++)
+    {
+        if (disallowed_chars[i] == character)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void BundleFile(struct Node *GraphNode)
 {
     int ShiftLocationsLength = 1; // Includes end element to signal the end of the array
@@ -159,53 +181,158 @@ void BundleFile(struct Node *GraphNode)
         {
             if (DependencyFileType == JSFILETYPE_ID)
             {
-                char *InsertText = ReadDataFromFile(DependencyExitPath);
-                struct RegexMatch *FullExportMatches = GetAllRegexMatches(InsertText, "module\\.exports\\s*=\\s*[^;]*", 0, 0);
-                int FullExportsArrayLength = RegexMatchArrayLength(FullExportMatches);
-
+                char *ReferenceText = getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
+                bool ISESModule = StringStartsWith(ReferenceText, "import "); //  Checks if the current dependency is an ESModule
+                struct RegexMatch *IteratePointer;                            // Defines Iterate Pointer
+                char *InsertText = ReadDataFromFile(DependencyExitPath);      // Reads the data for the current dependency
+                struct RegexMatch *ExtraExportMatches;                        // Defines Extra Export Matches for commonJS modules to use
+                struct RegexMatch *UsableExtraImports;                        // Defines usable extra imports needed for commonJS modules
                 struct RegexMatch *FinalElement;
 
-                if (FullExportsArrayLength != 0)
+                int FullExportsArrayLength;
+                char *NewModuleExportsName;
+                int ImportedFunctionNameLength = 0;
+                struct ImportedESM *ImportedFunctionNames = malloc(sizeof(struct ImportedESM));
+                ImportedFunctionNames[0].IsArrayEnd = true;
+
+                struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
+                IteratePointer = &FunctionNames[0];
+                for (int i = 0; i < strlen(IteratePointer->Text); i++)
                 {
-                    FinalElement = &FullExportMatches[FullExportsArrayLength - 1];
-                }
-                struct RegexMatch *ExtraExportMatches = GetAllRegexMatches(InsertText, "[^.]exports.[^;]*", 0, 0);
-                struct RegexMatch *UsableExtraImports = &ExtraExportMatches[0];
-                if (FullExportsArrayLength > 0)
-                {
-                    while (UsableExtraImports->IsArrayEnd != true)
+                    if (IsEndOfJSName(IteratePointer->Text[i]))
                     {
-                        if (UsableExtraImports->StartIndex < FinalElement->EndIndex)
-                        {
-                            UsableExtraImports++;
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        IteratePointer->Text[i] = '\0';
+                        break;
                     }
                 }
 
-                char *NewModuleExportsName = malloc(CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 11);
-                strcpy(NewModuleExportsName, getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos + 9, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos - 2, ShiftLocations)));
-                RemoveCharFromString(NewModuleExportsName, '/');
-                strcat(NewModuleExportsName, "_ARROWPACK");
-
-                RemoveCharFromString(NewModuleExportsName, '.');
-                while (StringContainsSubstring(InsertText, NewModuleExportsName) || StringContainsSubstring(FileContents, NewModuleExportsName))
+                if (ISESModule) // If the current dependency is an ESModule then this code is run to find the exports
                 {
-                    char *NewUniqueName = CreateUnusedName();
-                    NewModuleExportsName = realloc(NewModuleExportsName, (strlen(NewUniqueName) + strlen(NewModuleExportsName) + 1) * sizeof(char));
-                    strcat(NewModuleExportsName, NewUniqueName);
+                    bool ImportDefault, ImportNamed, ImportAll, ImportAllAlias = false; // Tracks how/what needs to be imported
+                    if (HasRegexMatch(ReferenceText, "import\\s+*"))                    // Detects if the import is importing all exports
+                    {
+                        ImportAll = true;
+                        if (HasRegexMatch(ReferenceText, "import\\s+*\\s+as")) // Checks if the import is using an alias
+                        {
+                            ImportAllAlias = true;
+                        }
+                    }
+                    else if (LastOccurenceOfChar(ReferenceText, '{') != -1) // Checks if the import uses named exports
+                    {
+                        int EndLocation = LastOccurenceOfChar(ReferenceText, '}');
+                        bool InVariable = false;
+                        int CurrentVariableStart = 0;
+                        for (int i = LastOccurenceOfChar(ReferenceText, '{'); i <= EndLocation; i++)
+                        {
+                            if (!InVariable)
+                            {
+                                if (!IsEndOfJSName(ReferenceText[i]))
+                                {
+                                    InVariable = true;
+                                    CurrentVariableStart = i;
+                                    ImportedFunctionNameLength++;
+                                    ImportedFunctionNames = realloc(ImportedFunctionNames, sizeof(struct ImportedESM) * (ImportedFunctionNameLength + 1));
+                                }
+                            }
+                            else
+                            {
+                                if (IsEndOfJSName(ReferenceText[i]))
+                                {
+                                    InVariable = false;
+                                    // ImportedFunctionNames[ImportedFunctionNameLength] = malloc(sizeof(char) * (2 + i - CurrentVariableStart));
+                                    if (0) {
+
+                                    }
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(ReferenceText, CurrentVariableStart, i);
+                                }
+                            }
+                        }
+                        ImportNamed = true;
+                        ImportDefault = HasRegexMatch(ReferenceText, "import[^,;]*,[^;]*{[^;]*}[^;]*;");
+                    }
+                    else
+                    {
+                        ImportDefault = true;
+                    }
+                    struct RegexMatch *DefaultExport;
+                    struct RegexMatch *Exports;
+                    if (ImportDefault || ImportAll)
+                    {
+                        DefaultExport = GetRegexMatch(InsertText, "export\\s+default");
+                    }
+                    if (ImportNamed || ImportAll)
+                    {
+                        Exports = GetAllRegexMatches(InsertText, "export[^;]+;", 7, 0);
+                    }
+
+                    IteratePointer = &Exports[0];
+
+                    while (IteratePointer->IsArrayEnd == false) // Removes export if it is a default export
+                    {
+                        struct RegexMatch *IteratePointer2 = &FunctionNames[0];
+
+                        while (IteratePointer2->IsArrayEnd != true)
+                        {
+                            if (IteratePointer2->StartIndex > IteratePointer->StartIndex && IteratePointer2->StartIndex < IteratePointer->EndIndex)
+                            {
+                                RemoveRegexMatch(IteratePointer2);
+                            }
+                        }
+
+                        if (HasRegexMatch(IteratePointer->Text, "export\\s+default"))
+                        {
+                            RemoveRegexMatch(IteratePointer); // Doesn't break in the case of the JS being invalid and having 2 default exports
+                        }
+
+                        IteratePointer++;
+                    }
+
+                    IteratePointer = &FunctionNames[0];
                 }
+                else // If the current dependency is a CommonJS module then this code is run to find the exports
+                {
+                    struct RegexMatch *FullExportMatches = GetAllRegexMatches(InsertText, "module\\.exports\\s*=\\s*[^;]*", 0, 0);
+                    FullExportsArrayLength = RegexMatchArrayLength(FullExportMatches);
+
+                    if (FullExportsArrayLength != 0)
+                    {
+                        FinalElement = &FullExportMatches[FullExportsArrayLength - 1];
+                    }
+                    ExtraExportMatches = GetAllRegexMatches(InsertText, "[^.]exports.[^;]*", 0, 0);
+                    UsableExtraImports = &ExtraExportMatches[0];
+                    if (FullExportsArrayLength > 0)
+                    {
+                        while (UsableExtraImports->IsArrayEnd != true)
+                        {
+                            if (UsableExtraImports->StartIndex < FinalElement->EndIndex)
+                            {
+                                UsableExtraImports++;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    NewModuleExportsName = malloc(CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 11);
+                    strcpy(NewModuleExportsName, getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos + 9, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos - 2, ShiftLocations)));
+                    RemoveCharFromString(NewModuleExportsName, '/');
+                    strcat(NewModuleExportsName, "_ARROWPACK");
+
+                    RemoveCharFromString(NewModuleExportsName, '.');
+                    while (StringContainsSubstring(InsertText, NewModuleExportsName) || StringContainsSubstring(FileContents, NewModuleExportsName))
+                    {
+                        char *NewUniqueName = CreateUnusedName();
+                        NewModuleExportsName = realloc(NewModuleExportsName, (strlen(NewUniqueName) + strlen(NewModuleExportsName) + 1) * sizeof(char));
+                        strcat(NewModuleExportsName, NewUniqueName);
+                    }
+                }
+                // This code is run once the exports have been found
                 struct ShiftLocation *JSFileShiftLocations = malloc(sizeof(ShiftLocation));
                 JSFileShiftLocations[0].location = -1;
                 int JSShiftLocationsLength = 1;
 
-                struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
-                struct RegexMatch *IteratePointer = &FunctionNames[0];
-                struct ShiftLocation *FunctionNameShiftNums = malloc(sizeof(struct ShiftLocation));
-                int FunctionNameShiftNumsLength = 1;
                 while (IteratePointer->IsArrayEnd != true)
                 {
                     if (strlen(IteratePointer->Text) > 1) // Ignores unamed functions
@@ -293,42 +420,46 @@ void BundleFile(struct Node *GraphNode)
                     }
                     IteratePointer++;
                 }
-
-                IteratePointer = &ExtraExportMatches[0];
-                while (IteratePointer != UsableExtraImports && IteratePointer->IsArrayEnd == false)
+                if (ISESModule)
                 {
-                    RemoveSectionOfString(InsertText, IteratePointer->StartIndex, IteratePointer->EndIndex);
-                    AddShiftNum(IteratePointer->StartIndex, (IteratePointer->EndIndex - IteratePointer->StartIndex) * -1, &JSFileShiftLocations, &JSShiftLocationsLength);
-                    IteratePointer++;
-                }
-
-                char *ModuleObjectDefinition = malloc(strlen(NewModuleExportsName) + 13);
-                strcpy(ModuleObjectDefinition, "let ");
-                strcat(ModuleObjectDefinition, NewModuleExportsName);
-                strcat(ModuleObjectDefinition, " = {};");
-                if (FullExportsArrayLength > 0)
-                {
-                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
-                    AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
-                    InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
-                    AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
                 }
                 else
                 {
-                    InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, UsableExtraImports->StartIndex);
-                    AddShiftNum(UsableExtraImports->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
-                }
 
-                while (!UsableExtraImports->IsArrayEnd)
-                {
-                    InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(UsableExtraImports->StartIndex, JSFileShiftLocations), GetShiftedAmount(UsableExtraImports->StartIndex + 8, JSFileShiftLocations), NewModuleExportsName);
-                    AddShiftNum(UsableExtraImports->StartIndex, strlen(NewModuleExportsName) - 8, &JSFileShiftLocations, &JSShiftLocationsLength);
-                    UsableExtraImports++;
-                }
+                    IteratePointer = &ExtraExportMatches[0];
+                    while (IteratePointer != UsableExtraImports && IteratePointer->IsArrayEnd == false)
+                    {
+                        RemoveSectionOfString(InsertText, IteratePointer->StartIndex, IteratePointer->EndIndex);
+                        AddShiftNum(IteratePointer->StartIndex, (IteratePointer->EndIndex - IteratePointer->StartIndex) * -1, &JSFileShiftLocations, &JSShiftLocationsLength);
+                        IteratePointer++;
+                    }
 
+                    char *ModuleObjectDefinition = malloc(strlen(NewModuleExportsName) + 13);
+                    strcpy(ModuleObjectDefinition, "let ");
+                    strcat(ModuleObjectDefinition, NewModuleExportsName);
+                    strcat(ModuleObjectDefinition, " = {};");
+                    if (FullExportsArrayLength > 0)
+                    {
+                        InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
+                        AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
+                        InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
+                        AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
+                    }
+                    else
+                    {
+                        InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, UsableExtraImports->StartIndex);
+                        AddShiftNum(UsableExtraImports->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
+                    }
+
+                    while (!UsableExtraImports->IsArrayEnd)
+                    {
+                        InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(UsableExtraImports->StartIndex, JSFileShiftLocations), GetShiftedAmount(UsableExtraImports->StartIndex + 8, JSFileShiftLocations), NewModuleExportsName);
+                        AddShiftNum(UsableExtraImports->StartIndex, strlen(NewModuleExportsName) - 8, &JSFileShiftLocations, &JSShiftLocationsLength);
+                        UsableExtraImports++;
+                    }
+                }
                 if (Settings.productionMode == false) // Keeps line numbers the same by turning new import into one line
                 {
-
                     RemoveSingleLineComments(InsertText);
                     RemoveCharFromString(InsertText, '\n');
                 }
