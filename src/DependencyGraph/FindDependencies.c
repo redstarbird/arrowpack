@@ -73,6 +73,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
 {
 
     char *filename = vertex->path;
+    char *FileNameBasePath = GetBasePath(filename);
     /*
         ╭╮ ╭╮╭━━━━╮╭━╮╭━╮╭╮
         ┃┃ ┃┃┃╭╮╭╮┃┃┃╰╯┃┃┃┃
@@ -108,11 +109,8 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
             }
         }
     }
-    printf("Finished finding comments\n");
     struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, CommentLocations);
-    printf("confused\n");
     MakeMatchesFullPath(HTMLIncludeMatches, filename);
-
     struct RegexMatch *IteratePointer = &HTMLIncludeMatches[0];
     char *TempStringPointer;
     /*
@@ -232,7 +230,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                             break;
                         }
                     }
-                    IteratePointer->Text = strdup(TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), GetBasePath(filename)));
+                    IteratePointer->Text = TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), FileNameBasePath);
                 }
             }
             else
