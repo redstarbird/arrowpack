@@ -12,18 +12,19 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     {
         ThrowFatalError("Error opening file %s or %s\n", FileToCopy, FileToCopyTo);
     }
-
+    size_t BufferSize = 1024;
     // Create a buffer to hold the data from the input file
-    char buffer[1024];
+    char *buffer = malloc(BufferSize);
 
     // Read the data from the input file and write it to the output file
     // in chunks of BUFFER_SIZE bytes
     size_t bytesRead;
-    while ((bytesRead = fread(buffer, 1, 1024, input)) > 0)
+    while ((bytesRead = fread(buffer, 1, BufferSize, input)) > 0)
     {
         fwrite(buffer, 1, bytesRead, output);
+        BufferSize *= 2;
+        buffer = realloc(buffer, BufferSize);
     }
-
     // Close the input and output files
     fclose(input);
     fclose(output);
