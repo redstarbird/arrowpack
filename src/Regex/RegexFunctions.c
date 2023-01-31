@@ -131,7 +131,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch(char *Text, char *Pattern)
         Match[0].IsArrayEnd = false;
         Match[0].StartIndex = match[0].rm_so;
         Match[0].EndIndex = match[0].rm_eo;
+        Match[0].Text = getSubstring(Text, match[0].rm_so, match[0].rm_eo);
         Match[1].IsArrayEnd = true;
+        return Match;
     }
     return NULL;
 }
