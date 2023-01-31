@@ -92,8 +92,19 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             return entryPath;
         }
     }*/
+
     char *tempHolder; // Buffer to hold the absolute path
     char *path = strdup(PATH);
+    if (containsCharacter(path, '\\'))
+    {
+        for (int i = 0; i < strlen(path); i++)
+        {
+            if (path[i] == '\\')
+            {
+                path[i] = '/';
+            }
+        }
+    }
     if (path[0] == '/' || path[0] == '\\')
     {
         tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
@@ -105,12 +116,12 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
     else
     {
 
-        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./"); // This is adding broken char to end of BasePath for some reason
-        if (MatchesNum > 0)
-        { // Handles paths containing ../
-            if (BasePath[0] == '\0' || BasePath == NULL)
-            { // BasePath is only needed for paths with ../
-                ThrowFatalError("Error no base path specified");
+        int MatchesNum = GetNumOfRegexMatches(path, "\\.\\./");
+        if (MatchesNum > 0) // Handles paths containing ../
+        {
+            if (BasePath[0] == '\0' || BasePath == NULL) // BasePath is only needed for paths with ../
+            {
+                ThrowFatalError("Error no base path specified for path: %s\n", path);
             }
             char *PathCopy = strdup(path);
             char *BasePathCopy = strdup(BasePath);
