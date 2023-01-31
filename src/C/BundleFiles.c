@@ -153,6 +153,8 @@ void BundleFile(struct Node *GraphNode)
                         }
                         RemoveSectionOfString(FileContents, startlocation, endlocation);
                         AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
+                        RemoveSubstring(InsertText, "export default ");
+                        RemoveSubstring(InsertText, "export ");
                         FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
                         AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
                     }
@@ -186,15 +188,17 @@ void BundleFile(struct Node *GraphNode)
                 struct RegexMatch *IteratePointer;                            // Defines Iterate Pointer
                 char *InsertText = ReadDataFromFile(DependencyExitPath);      // Reads the data for the current dependency
                 struct RegexMatch *ExtraExportMatches;                        // Defines Extra Export Matches for commonJS modules to use
-                struct RegexMatch *UsableExtraImports;                        // Defines usable extra imports needed for commonJS modules
+                struct RegexMatch *UsableExtraImports;                        // Defines usable extra imports needed for commonJS modules e.g "exports.HelloWorld"
                 struct RegexMatch *FinalElement;
+                struct RegexMatch *DefaultExport = NULL; // Defines default export for ES modules
+                struct RegexMatch *Exports = NULL;       // Defines non-default exports for ES modules
 
                 int FullExportsArrayLength;
                 char *NewModuleExportsName;
                 int ImportedFunctionNameLength = 0;
                 struct ImportedESM *ImportedFunctionNames = malloc(sizeof(struct ImportedESM));
                 ImportedFunctionNames[0].IsArrayEnd = true;
-
+                bool ImportDefault, ImportNamed, ImportAll, ImportAllAlias = false; // Tracks how/what needs to be imported for ES modules
                 struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
                 IteratePointer = &FunctionNames[0];
                 for (int i = 0; i < strlen(IteratePointer->Text); i++)
@@ -206,70 +210,223 @@ void BundleFile(struct Node *GraphNode)
                     }
                 }
 
-                if (ISESModule) // If the current dependency is an ESModule then this code is run to find the exports
+                if (ISESModule) // If the current dependency is an ESModule then this code is run to find the imports
                 {
-                    bool ImportDefault, ImportNamed, ImportAll, ImportAllAlias = false; // Tracks how/what needs to be imported
-                    if (HasRegexMatch(ReferenceText, "import\\s+*"))                    // Detects if the import is importing all exports
+                    printf("ES Module found\n");
+
+                    if (HasRegexMatch(ReferenceText, "import\\s+\\*")) // Detects if the import is importing all imports
                     {
+                        printf("Import ALL\n");
                         ImportAll = true;
                         if (HasRegexMatch(ReferenceText, "import\\s+*\\s+as")) // Checks if the import is using an alias
                         {
                             ImportAllAlias = true;
                         }
                     }
-                    else if (LastOccurenceOfChar(ReferenceText, '{') != -1) // Checks if the import uses named exports
+                    else
                     {
-                        int EndLocation = LastOccurenceOfChar(ReferenceText, '}');
-                        bool InVariable = false;
-                        int CurrentVariableStart = 0;
-                        for (int i = LastOccurenceOfChar(ReferenceText, '{'); i <= EndLocation; i++)
+                        if (LastOccurenceOfChar(ReferenceText, '{') != -1) // Checks if the import uses named imports
                         {
-                            if (!InVariable)
+                            int EndLocation = LastOccurenceOfChar(ReferenceText, '}'); // Gets the end location of the named exports
+                            bool InVariable, AfterAs, InAlias = false;                 // Initialises variables
+
+                            int CurrentVariableStart = 0;
+
+                            for (int i = LastOccurenceOfChar(ReferenceText, '{'); i <= EndLocation; i++) // Loops through named imports to find the names and their aliases
                             {
-                                if (!IsEndOfJSName(ReferenceText[i]))
+                                if (AfterAs)
                                 {
-                                    InVariable = true;
-                                    CurrentVariableStart = i;
-                                    ImportedFunctionNameLength++;
-                                    ImportedFunctionNames = realloc(ImportedFunctionNames, sizeof(struct ImportedESM) * (ImportedFunctionNameLength + 1));
+                                    if (!IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        AfterAs = false;
+                                        InAlias = true;
+                                        CurrentVariableStart = i;
+                                    }
+                                }
+                                else if (InAlias)
+                                {
+                                    if (IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, i, CurrentVariableStart);
+                                        InAlias = false;
+                                    }
+                                }
+                                else if (!InVariable)
+                                {
+                                    if (!IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        InVariable = true;
+                                        CurrentVariableStart = i;
+                                        ImportedFunctionNameLength++;
+                                        ImportedFunctionNames = realloc(ImportedFunctionNames, sizeof(struct ImportedESM) * (ImportedFunctionNameLength + 1)); // Adds extra space for end struct
+                                        ImportedFunctionNames[ImportedFunctionNameLength].IsArrayEnd = true;                                                   // Used for end of array when iterating
+                                    }
+                                }
+                                else
+                                {
+                                    if (IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        InVariable = false;
+                                        // ImportedFunctionNames[ImportedFunctionNameLength] = malloc(sizeof(char) * (2 + i - CurrentVariableStart));
+                                        if (i - CurrentVariableStart == 2)
+                                        {
+                                            if (ReferenceText[CurrentVariableStart] == 'a' && ReferenceText[CurrentVariableStart + 1] == 's') // detects if alias is used for previous variable
+                                            {
+                                                AfterAs = true;
+                                                InVariable = false;
+                                            }
+                                        }
+                                        if (!AfterAs)
+                                        {
+                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(ReferenceText, CurrentVariableStart, i);
+                                            ImportedFunctionNames->IsDefault = false;
+                                            ImportedFunctionNames->IsArrayEnd = false;
+                                        }
+                                    }
                                 }
                             }
-                            else
-                            {
-                                if (IsEndOfJSName(ReferenceText[i]))
-                                {
-                                    InVariable = false;
-                                    // ImportedFunctionNames[ImportedFunctionNameLength] = malloc(sizeof(char) * (2 + i - CurrentVariableStart));
-                                    if (0) {
+                            ImportNamed = true;
 
+                            ImportDefault = HasRegexMatch(ReferenceText, "import[^,;]*,[^;]*{[^;]*}[^;]*;");
+                        }
+                        else
+                        {
+                            ImportDefault = true;
+                        }
+
+                        if (ImportDefault) // If a default import is present then find the name and alias
+                        {
+                            if (ImportDefault || ImportAll)
+                            {
+                                DefaultExport = GetRegexMatch(InsertText, "export\\s+default");
+                                printf("Insert text %s, file contents %s\n", InsertText, FileContents);
+                                IteratePointer = &DefaultExport[0];
+                            }
+                            printf("Default found\n");
+                            int StartLocation = -1;
+                            bool NameFound = false;
+                            bool AfterAs = false;
+                            int CheckEnd = LastOccurenceOfChar(ReferenceText, '{');
+                            if (CheckEnd == -1)
+                            {
+                                CheckEnd = strlen(ReferenceText);
+                            }
+
+                            for (int i = 7; i < CheckEnd; i++)
+                            {
+                                printf("S: %s\n", ReferenceText + i);
+                                if (NameFound)
+                                {
+                                    if (AfterAs)
+                                    {
+                                        if (StartLocation == -1)
+                                        {
+                                            if (!IsEndOfJSName(ReferenceText[i]))
+                                            {
+                                                StartLocation = i;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (IsEndOfJSName(ReferenceText[i]))
+                                            {
+                                                ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i);
+                                            }
+                                        }
                                     }
-                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(ReferenceText, CurrentVariableStart, i);
+                                }
+                                else if (!IsEndOfJSName(ReferenceText[i]) && NameFound)
+                                {
+                                    if (ReferenceText[i] == 'a' && ReferenceText[i + 1] == 's')
+                                    {
+                                        i++;
+                                        AfterAs = true;
+                                        printf("AfterAs just found: %s\n", ReferenceText + i);
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                                else if (StartLocation != -1)
+                                {
+                                    if (IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        printf("Found end of name: %s\n", ReferenceText + i);
+                                        ImportedFunctionNameLength++;
+                                        ImportedFunctionNames = realloc(ImportedFunctionNames, sizeof(struct ImportedESM) * (ImportedFunctionNameLength + 1));
+                                        ImportedFunctionNames[ImportedFunctionNameLength].IsArrayEnd = true;
+                                        int DefaultExportNameEnd = strlen(InsertText);
+                                        for (int i = DefaultExport->EndIndex + 10; i < DefaultExportNameEnd; i++)
+                                        {
+                                            printf("sd: %s\n", InsertText + i);
+                                            if (IsEndOfJSName(InsertText[i]))
+                                            {
+                                                DefaultExportNameEnd = i - 1;
+                                                break;
+                                            }
+                                        }
+
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(InsertText, DefaultExport->EndIndex + 10, DefaultExportNameEnd);
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].IsArrayEnd = false;
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].IsDefault = true;
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i);
+                                        NameFound = true;
+                                        StartLocation = -1;
+                                    }
+                                }
+                                else
+                                {
+                                    printf("T: %s\n", ReferenceText + i);
+                                    if (!IsEndOfJSName(ReferenceText[i]))
+                                    {
+                                        printf("Found start location");
+                                        StartLocation = i;
+                                    }
                                 }
                             }
                         }
-                        ImportNamed = true;
-                        ImportDefault = HasRegexMatch(ReferenceText, "import[^,;]*,[^;]*{[^;]*}[^;]*;");
+                        printf("Default: %i\n", ImportDefault);
                     }
-                    else
-                    {
-                        ImportDefault = true;
-                    }
-                    struct RegexMatch *DefaultExport;
-                    struct RegexMatch *Exports;
-                    if (ImportDefault || ImportAll)
-                    {
-                        DefaultExport = GetRegexMatch(InsertText, "export\\s+default");
-                    }
+
                     if (ImportNamed || ImportAll)
                     {
                         Exports = GetAllRegexMatches(InsertText, "export[^;]+;", 7, 0);
+                        IteratePointer = &Exports[0];
                     }
+                    if ((ImportDefault && ImportNamed) || ImportAll)
+                    {
+                        CombineRegexMatchArrays(&DefaultExport, &Exports);
+                        IteratePointer = &DefaultExport[0];
+                    }
+                    printf("Test: %i\n", ImportedFunctionNames[1].IsArrayEnd);
+                    printf("Design\n");
 
-                    IteratePointer = &Exports[0];
-
+                    struct RegexMatch *IteratePointer2;
+                    struct ImportedESM *ESMIteratePointer;
                     while (IteratePointer->IsArrayEnd == false) // Removes export if it is a default export
                     {
-                        struct RegexMatch *IteratePointer2 = &FunctionNames[0];
+                        ESMIteratePointer = &ImportedFunctionNames[0]; // Loops through functions that are being imported to remove uneeded exported functions
+                        if (!ImportAll)                                // Removes all exported functions that are not being imported so they can have name collisions fixed
+                        {
+                            bool FoundExport = false; // Tracks whether the function is being imported
+                            while (ESMIteratePointer->IsArrayEnd != true)
+                            {
+                                if (StringContainsSubstring(IteratePointer->Text, ESMIteratePointer->name))
+                                {
+                                    FoundExport = true;
+                                    break;
+                                }
+                                ESMIteratePointer++;
+                            }
+                            if (!FoundExport)
+                            {
+                                RemoveRegexMatch(IteratePointer);
+                                continue;
+                            }
+                        }
+
+                        IteratePointer2 = &FunctionNames[0];
 
                         while (IteratePointer2->IsArrayEnd != true)
                         {
@@ -277,6 +434,7 @@ void BundleFile(struct Node *GraphNode)
                             {
                                 RemoveRegexMatch(IteratePointer2);
                             }
+                            IteratePointer2++;
                         }
 
                         if (HasRegexMatch(IteratePointer->Text, "export\\s+default"))
@@ -286,7 +444,7 @@ void BundleFile(struct Node *GraphNode)
 
                         IteratePointer++;
                     }
-
+                    printf("Reached here\n");
                     IteratePointer = &FunctionNames[0];
                 }
                 else // If the current dependency is a CommonJS module then this code is run to find the exports
@@ -333,7 +491,7 @@ void BundleFile(struct Node *GraphNode)
                 JSFileShiftLocations[0].location = -1;
                 int JSShiftLocationsLength = 1;
 
-                while (IteratePointer->IsArrayEnd != true)
+                while (IteratePointer->IsArrayEnd != true) // Solves name collisions
                 {
                     if (strlen(IteratePointer->Text) > 1) // Ignores unamed functions
                     {
@@ -420,10 +578,38 @@ void BundleFile(struct Node *GraphNode)
                     }
                     IteratePointer++;
                 }
-                if (ISESModule)
+                if (ISESModule) // Bundles the files together if they are ES modules
                 {
+
+                    struct ImportedESM *ESMIteratePointer = &ImportedFunctionNames[0];
+                    while (ESMIteratePointer->IsArrayEnd == false)
+                    {
+                        char *NewDefinition;
+                        if (ESMIteratePointer->alias != NULL || ESMIteratePointer->IsDefault)
+                        {
+                            if (ESMIteratePointer->IsDefault)
+                            {
+                                NewDefinition = malloc(sizeof(char) * strlen(ESMIteratePointer->alias) + strlen(ESMIteratePointer->name) + 7);
+                            }
+                            else
+                            {
+                                RemoveSubstring(FileContents, "export default ");
+                                RemoveSubstring(FileContents, "export ");
+                            }
+
+                            strcpy(NewDefinition, "let ");
+                            NewDefinition = strcat(NewDefinition, ESMIteratePointer->alias);
+                            NewDefinition = strcat(NewDefinition, "=");
+                            NewDefinition = strcat(NewDefinition, ESMIteratePointer->name);
+                            NewDefinition = strcat(NewDefinition, ";");
+                            InsertText = realloc(InsertText, sizeof(char) * strlen(InsertText) + strlen(NewDefinition) + 1);
+                            InsertText = strcat(InsertText, NewDefinition);
+                        }
+
+                        ESMIteratePointer++;
+                    }
                 }
-                else
+                else // Bundles the files together if they are CommonJS modules
                 {
 
                     IteratePointer = &ExtraExportMatches[0];
@@ -458,14 +644,23 @@ void BundleFile(struct Node *GraphNode)
                         UsableExtraImports++;
                     }
                 }
+                printf("IS ES MODULE: %i\n", ISESModule);
                 if (Settings.productionMode == false) // Keeps line numbers the same by turning new import into one line
                 {
                     RemoveSingleLineComments(InsertText);
                     RemoveCharFromString(InsertText, '\n');
                 }
 
-                FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1, NewModuleExportsName);
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(NewModuleExportsName) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+                if (ISESModule)
+                {
+                    RemoveSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
+                    AddShiftNum(CurrentEdge->StartRefPos, strlen(ReferenceText), &ShiftLocations, &ShiftLocationsLength);
+                }
+                else
+                {
+                    FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1, NewModuleExportsName);
+                    AddShiftNum(CurrentEdge->StartRefPos, strlen(NewModuleExportsName) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+                }
                 FileContents = InsertStringAtPosition(FileContents, InsertText, 0);
                 AddShiftNum(0, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
                 /*free(JSFileShiftLocations);
@@ -476,8 +671,12 @@ void BundleFile(struct Node *GraphNode)
     }
     free(ShiftLocations);
     ShiftLocations = NULL;
-    RemoveSubstring(FileContents, "</include>");
-    CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents);
+    if (GraphNode->FileType == HTMLFILETYPE_ID)
+    {
+        RemoveSubstring(FileContents, "</include>");
+    }
+
+    CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents); // Saves final file contents
     ColorGreen();
     printf("Finished bundling file:%s\n", GraphNode->path);
     ColorNormal();
@@ -515,6 +714,8 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
             AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
             IteratePointer++;
         }
+        RemoveSubstring(FileContents, "export default ");
+        RemoveSubstring(FileContents, "export ");
         ColorGreen();
         printf("Post processed: %s", FileContents);
         ColorNormal();
@@ -534,11 +735,14 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
         struct Node *FileNode = graph->SortedArray[FilesBundled];
         if (count_edges(FileNode) == 0)
         {
-            char *ExitPath = strdup(FileNode->path);
-            ExitPath = EntryToExitPath(ExitPath);
+            char *TempExitPath = strdup(FileNode->path);
+            char *ExitPath = EntryToExitPath(TempExitPath);
+            free(TempExitPath);
 
             CopyFile(FileNode->path, ExitPath);
-            free(ExitPath);
+            printf("ExitPath: %s\n", ExitPath);
+            //  free(ExitPath); // Temporarily reemoved beause was crsahing program
+            printf("Freed\n");
         }
         else
         {
