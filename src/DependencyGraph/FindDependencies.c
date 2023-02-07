@@ -41,21 +41,30 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, c
     struct RegexMatch *IteratePointer = &RegexMatches[0];
     while (IteratePointer->IsArrayEnd != true)
     {
+        printf("Found dependency %s\n", IteratePointer->Text);
         if (StringContainsSubstring(IteratePointer->Text, "https://") || StringContainsSubstring(IteratePointer->Text, "http://"))
         {
             printf("Ignoring URL: %s\n", IteratePointer->Text);
             RemoveRegexMatch(IteratePointer);
+            IteratePointer--;
         }
+        else
 
-        if (CommentLocations != NULL)
+            if (CommentLocations != NULL) // Checks if comments are present in the file
         {
-            if (CommentLocations[0].IsArrayEnd != true)
+            printf("Comment locations not null\n");
+            if (CommentLocations[0].IsArrayEnd != true) // Checks that comment list is not empty
             {
-                struct RegexMatch *CurrentComment = &CommentLocations[0];
-                while (IteratePointer->StartIndex < CurrentComment->EndIndex)
+                printf("Comment locations not empty\n");
+                struct RegexMatch *CurrentComment = &CommentLocations[0]; // Initialise variable to iterate through comment locations
+
+                while (CurrentComment->IsArrayEnd != true) // Loops through comments
                 {
-                    if (IteratePointer->StartIndex > CurrentComment->StartIndex && IteratePointer->StartIndex < CurrentComment->EndIndex)
+                    printf("iterate pointer %s, startindex iterate: %i, currentcomment start: %i, Currentcomment end: %i\n", IteratePointer->Text,
+                           IteratePointer->StartIndex, CurrentComment->StartIndex, CurrentComment->EndIndex);
+                    if (IteratePointer->StartIndex > CurrentComment->StartIndex && IteratePointer->StartIndex < CurrentComment->EndIndex) // Checks if current dependency is inside of a comment
                     {
+
                         RemoveRegexMatch(IteratePointer);
                     }
                     CurrentComment++;
@@ -85,9 +94,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
     char *FileContents = ReadDataFromFile(filename);
     unsigned int CommentLocationsFound = 0;
     struct RegexMatch *CommentLocations = NULL;
-    for (unsigned int i = 0; i < strlen(FileContents); i++)
+    for (int i = 0; i < strlen(FileContents); i++)
     {
-        int start, end = -1;
+        unsigned int start, end = 0;
         if (FileContents[i] == '<' && FileContents[i + 1] == '!' && FileContents[i + 2] == '-' && FileContents[i + 3] == '-')
         {
             start = i;
@@ -96,12 +105,14 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
             {
                 if (FileContents[i] == '-' && FileContents[i + 1] == '-' && FileContents[i + 2] == '>')
                 {
+                    printf("End: %i\n", end);
                     end = i + 2;
                     CommentLocationsFound++;
                     CommentLocations = realloc(CommentLocations, sizeof(struct RegexMatch) * (CommentLocationsFound + 1));
                     CommentLocations[CommentLocationsFound].IsArrayEnd = true;
                     CommentLocations[CommentLocationsFound - 1].StartIndex = start;
                     CommentLocations[CommentLocationsFound - 1].EndIndex = end;
+                    printf("Comment end: %i, FileContents len: %i\n", CommentLocations[CommentLocationsFound - 1].EndIndex, strlen(FileContents));
                     CommentLocations[CommentLocationsFound - 1].IsArrayEnd = false;
                     break;
                 }
@@ -110,6 +121,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         }
     }
     struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, CommentLocations);
+    printf("Arary length: %i\n", RegexMatchArrayLength(HTMLIncludeMatches));
     MakeMatchesFullPath(HTMLIncludeMatches, filename);
     struct RegexMatch *IteratePointer = &HTMLIncludeMatches[0];
     char *TempStringPointer;
@@ -230,7 +242,14 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                             break;
                         }
                     }
-                    IteratePointer->Text = TurnToFullRelativePath(getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1), FileNameBasePath);
+                    char *TempSubStr = getSubstring(IteratePointer->Text, StartLocation, EndLocation - 1);
+                    if (!StringEndsWith(TempSubStr, ".js"))
+                    {
+                        TempSubStr = realloc(TempSubStr, (((EndLocation)-StartLocation) + 3) * sizeof(char));
+                        TempSubStr = strcat(TempSubStr, ".js");
+                    }
+                    IteratePointer->Text = TurnToFullRelativePath(TempSubStr, FileNameBasePath);
+                    printf("Iterate pointer memory problem: %s\n", IteratePointer->Text);
                 }
             }
             else
@@ -301,14 +320,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
             IteratePointer++;
         }
     }
+
     CombineRegexMatchArrays(&CSSDependencies, &JSDependencies);
     CombineRegexMatchArrays(&CSSDependencies, &HTMLIncludeMatches);
-
-    IteratePointer = &CSSDependencies[0];
-    while (IteratePointer->IsArrayEnd != true)
-    {
-        IteratePointer++;
-    }
 
     return CSSDependencies;
 }
