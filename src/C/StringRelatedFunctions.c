@@ -34,21 +34,24 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
     {
         return NULL;
     }
-    lastFullStop++;                            // Stops fullstop character being included
-    const int length = pathLen - lastFullStop; // gets length of file ext
+    lastFullStop++;             // Stops fullstop character being included
+    const int length = pathLen; // gets length of file ext
     char *extension = malloc(length + 1);
-    for (int i = 0; i < length; i++)
+    strncpy(extension, path + lastFullStop, length);
+    extension[length] = '\0';
+
+    /*for (int i = 0; i < length; i++)
     {
         extension[i] = path[lastFullStop + i]; // string doesn't include fullstop
     }
-    extension[length] = '\0';
+    extension[length] = '\0';*/
     return extension;
 }
 
 char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex) // Returns substring between start and end indexes
 {
-    const int substringLength = EndIndex - StartIndex + 1;    // Gets the length of the substring
-    char *substring = malloc(sizeof(char) * substringLength); // Allocates memory for substring
+    const int substringLength = EndIndex - StartIndex + 1;          // Gets the length of the substring
+    char *substring = malloc(sizeof(char) * (substringLength + 2)); // Allocates memory for substring
     for (int i = 0; i < substringLength; i++)
     {
         substring[i] = Text[StartIndex + i];
@@ -80,21 +83,11 @@ char **SplitStringByChar(char *str, const char delimiter)
     return Result;
 }
 
-char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePath)
-{ // Turns a relative path into absolute path
-    /*if (!containsCharacter(path, ':')) {
-        if (PATH_SEPARATOR) {}
-    }
-    if (!containsCharacter(path,':') || PATH_SEPARATOR == '/') {
-        if (path[0] == '/' || path[0] == '\\') {
-            *path += 1;
-            strcat(entryPath, path);
-            return entryPath;
-        }
-    }*/
-
+char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePath) // Turns a relative path into full path
+{
     char *tempHolder; // Buffer to hold the absolute path
     char *path = strdup(PATH);
+
     if (containsCharacter(path, '\\'))
     {
         for (int i = 0; i < strlen(path); i++)
@@ -105,12 +98,12 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             }
         }
     }
-    if (path[0] == '/' || path[0] == '\\')
+    if (path[0] == '/')
     {
         tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
         strcpy(tempHolder, Settings.entry);
-        tempHolder[strlen(tempHolder)] = '\0';
         strcat(tempHolder, path + 1);
+
         return tempHolder;
     }
     else
@@ -123,7 +116,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             {
                 ThrowFatalError("Error no base path specified for path: %s\n", path);
             }
-            char *PathCopy = strdup(path);
+
             char *BasePathCopy = strdup(BasePath);
             // Create a copy of the path variable so it doesn't get overwritten by strtok()
 
@@ -148,8 +141,13 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
                 }
             }
 
-            RemoveSubstring(PathCopy, "../");
-            BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), PathCopy);
+            path = RemoveSubstring(path, "../");
+            // BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), path);
+            BasePathCopy = realloc(BasePathCopy, strlen(BasePathCopy) + strlen(path) + 3);
+
+            BasePathCopy[LocationFound + 1] = '\0';
+            BasePathCopy[LocationFound] = '/';
+            strcat(BasePathCopy, path);
             return BasePathCopy;
         }
         else
@@ -171,8 +169,6 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             {
                 strcat(TempPath, TempPath2);
             }
-            ColorCyan();
-            ColorNormal();
             return TempPath;
         }
     }
@@ -232,7 +228,7 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
     int replaceLen = strlen(ReplaceString);
     int shiftNum = replaceLen - (end - start);
     // Reallocate memory for the string if necessary
-    char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 1));
+    char *newString = malloc(sizeof(char) * (stringLen + shiftNum + 2));
     if (shiftNum != 0)
     {
         if (newString == NULL)
@@ -243,31 +239,29 @@ char *ReplaceSectionOfString(char *string, int start, int end, const char *Repla
         if (shiftNum > 0)
         {
             stringLen += shiftNum;
-            string = realloc(string, stringLen + 1);
+            /*string = realloc(string, stringLen + 2);
             if (string == NULL)
-            {
+            // {
                 return NULL;
-            }
+        }*/
         }
-
-        // Copy the original string up to the start index
-        strncpy(newString, string, start);
-
-        // Copy the replacement string
+        //  Copy the original string up to the start index
+        newString = strncpy(newString, string, start);
+        newString[start] = '\0';
+        //  Copy the replacement string
         strncpy(newString + start, ReplaceString, replaceLen);
-
-        // Copy the rest of the original string after the end index
+        //  Copy the rest of the original string after the end index
         strcpy(newString + start + replaceLen, string + end);
         // Free the old string and update the pointer
-        free(string);
-        newString[stringLen + 1] = '\0';
+
+        // newString[stringLen] = '\0';
     }
     else
     {
         // If the replacement string has the same length as the original
         // section, simply copy it into the string
         strncpy(string + start, ReplaceString, end - start);
-        return string;
+        return strdup(string);
     }
 
     return newString;
@@ -323,12 +317,12 @@ void StringFormatInsert(char *string, const char *InsertString)
     // todo
 }
 
-void RemoveSubstring(char *string, const char *substring)
+char *RemoveSubstring(char *string, const char *substring)
 {
     // Check for NULL input
     if (string == NULL || substring == NULL)
     {
-        return;
+        return string;
     }
     // Get the lengths of the strings
     int stringLen = strlen(string);
@@ -336,13 +330,13 @@ void RemoveSubstring(char *string, const char *substring)
     // Check if the substring is empty
     if (substringLen == 0)
     {
-        return;
+        return string;
     }
     // Allocate memory for the new string
     char *newString = malloc(sizeof(char) * (stringLen + 1));
     if (newString == NULL)
     {
-        return;
+        return string;
     }
     // Initialize the new string
     newString[0] = '\0';
@@ -362,10 +356,10 @@ void RemoveSubstring(char *string, const char *substring)
             strcat(newString, currentChar);
         }
     }
-    // Copy the new string back into the original string
-    strcpy(string, newString);
+
     // Free the memory allocated for the new string
-    free(newString);
+    free(string);
+    return newString;
 }
 
 /* Function to remove a section of a string */

@@ -142,7 +142,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
 {
     const int N_MATCHES = 512;
     size_t RegexMatchesSize = sizeof(struct RegexMatch);
-    struct RegexMatch *matches = (struct RegexMatch *)malloc(RegexMatchesSize);
+    struct RegexMatch *matches = malloc(RegexMatchesSize);
     regex_t regexp;
 
     char *TextStartPointer = Text; //  points to start of string after match
@@ -161,9 +161,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
         int error = regexec(&regexp, TextStartPointer, N_MATCHES, match, 0);
         if (error == 0)
         {
-            matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 1) * RegexMatchesSize);                                            // Reallocates memory for matches array
-            matches[matchesCompleted].Text = (char *)malloc((int)match[0].rm_eo - (int)match[0].rm_so + 1);                                        // Allocates memory for match
-            matches[matchesCompleted].Text = strdup(getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos)); // Adds substring to matchs array
+            matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 2) * RegexMatchesSize); // Reallocates memory for matches array
+
+            matches[matchesCompleted].Text = getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos); // Adds substring to matchs array
+
             matches[matchesCompleted].IsArrayEnd = false;
             matches[matchesCompleted].StartIndex = (unsigned int)match[0].rm_so + AmountShifted; // Saves start index so it doesn't need to be recalculated later
             matches[matchesCompleted].EndIndex = (unsigned int)match[0].rm_eo + AmountShifted;   // Does the same as above but for the end index
@@ -177,7 +178,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
         }
     }
     regfree(&regexp);
-    matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 1) * RegexMatchesSize);
+    // matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 3) * RegexMatchesSize);
     matches[matchesCompleted].IsArrayEnd = true; // Allows array to be reliably iterated over
     return matches;
 }

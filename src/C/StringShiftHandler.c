@@ -16,7 +16,6 @@ int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
             break;
         }
     }
-
     return ShiftNum + Location;
 }
 
@@ -42,22 +41,22 @@ int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
 void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *ShiftLocationLength)
 {
     (*ShiftLocationLength)++;
-    struct ShiftLocation *NewShiftLocations = malloc(((*ShiftLocationLength) + 2) * sizeof(struct ShiftLocation));
-    memcpy(NewShiftLocations, *ShiftLocations, (*ShiftLocationLength) * sizeof(struct ShiftLocation));
-    free(*ShiftLocations); // Need to find why this was causing problems
-    *ShiftLocations = NewShiftLocations;
+    *ShiftLocations = realloc(*ShiftLocations, ((*ShiftLocationLength)) * sizeof(struct ShiftLocation));
+    // memcpy(NewShiftLocations, *ShiftLocations, ((*ShiftLocationLength) - 2) * sizeof(struct ShiftLocation));
+    // free(*ShiftLocations);
+    // *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {
-        if ((*ShiftLocations)[i].location >= Location)
+        if ((*ShiftLocations)[i].location >= Location) // Find where to place element so that list is ordered (should probably change to binary search)
         {
-            for (int v = (*ShiftLocationLength); v > i; v--) // Find where to place element so that list is ordered (should probably change to binary search)
+            for (int v = (*ShiftLocationLength) - 1; v > i; v--) // Shifts all elements to the right
             {
                 (*ShiftLocations)[v] = (*ShiftLocations)[v - 1];
             }
             (*ShiftLocations)[i].location = Location;
             (*ShiftLocations)[i].ShiftNum = ShiftNum;
-            (*ShiftLocations)[(*ShiftLocationLength)].location = -1;
+            (*ShiftLocations)[(*ShiftLocationLength) - 1].location = -1;
             break;
         }
         else if ((*ShiftLocations)[i].location == -1)

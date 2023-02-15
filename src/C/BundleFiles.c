@@ -31,6 +31,7 @@ void BundleFile(struct Node *GraphNode)
     int FileTypeID = GetFileTypeID(GraphNode->path);
 
     char *FileContents = ReadDataFromFile(GraphNode->path);
+
     if (FileContents == NULL)
     {
         return;
@@ -54,9 +55,10 @@ void BundleFile(struct Node *GraphNode)
                 FileContents = ReplaceSectionOfString(
                     FileContents,
                     GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                    GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
+                    GetShiftedAmount(CurrentEdge->EndRefPos + 3, ShiftLocations), InsertText);
                 // totalAmountShifted += strlen(InsertText) - (InsertEnd - GraphNode->Dependencies[i].StartRefPos);
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - ((InsertEnd + 3) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
             else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
             {
@@ -67,9 +69,9 @@ void BundleFile(struct Node *GraphNode)
                     if (StyleResults[0].IsArrayEnd)
                     {
                         // Style tag doesn't already exist
-                        InsertString = malloc(strlen(InsertText) + 16); // allocates space for start and end of <style> tag
+                        InsertString = malloc(strlen(InsertText) + 18); // allocates space for start and end of <style> tag
                         strcpy(InsertString, "<style>");
-                        strcpy(InsertString + 7, InsertText);
+                        strcat(InsertString, InsertText);
                         strcat(InsertString, "</style>");
                         struct RegexMatch *HeadTagResults = GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);
                         if (HeadTagResults[0].IsArrayEnd == false) // If <head> tag is found
@@ -78,9 +80,9 @@ void BundleFile(struct Node *GraphNode)
                             RemoveSectionOfString(
                                 FileContents,
                                 GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1);
+                                GetShiftedAmount(CurrentEdge->EndRefPos + 3, ShiftLocations));
                             // totalAmountShifted -= (GraphNode->Dependencies[i].EndRefPos - GraphNode->Dependencies[i].StartRefPos + 1);
-                            AddShiftNum(CurrentEdge->StartRefPos, (CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 1) * -1, &ShiftLocations, &ShiftLocationsLength);
+                            AddShiftNum(CurrentEdge->StartRefPos, ((CurrentEdge->EndRefPos + 3) - CurrentEdge->StartRefPos) * -1, &ShiftLocations, &ShiftLocationsLength);
                             FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
                             AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationsLength);
                             // totalAmountShifted += strlen(InsertString);
@@ -100,9 +102,11 @@ void BundleFile(struct Node *GraphNode)
             }
             else if (DependencyFileType == JSFILETYPE_ID)
             {
+
                 char *ReferencedString = getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
                 if (!StringContainsSubstring(ReferencedString, " defer") && !StringContainsSubstring(ReferencedString, "async"))
                 {
+
                     int startlocation = -1;
                     int endlocation = -1;
                     int TempShiftedAmount = GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations);
@@ -153,8 +157,8 @@ void BundleFile(struct Node *GraphNode)
                         }
                         RemoveSectionOfString(FileContents, startlocation, endlocation);
                         AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
-                        RemoveSubstring(InsertText, "export default ");
-                        RemoveSubstring(InsertText, "export ");
+                        InsertText = RemoveSubstring(InsertText, "export default ");
+                        InsertText = RemoveSubstring(InsertText, "export ");
                         FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
                         AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
                     }
@@ -193,12 +197,15 @@ void BundleFile(struct Node *GraphNode)
                 struct RegexMatch *DefaultExport = NULL; // Defines default export for ES modules
                 struct RegexMatch *Exports = NULL;       // Defines non-default exports for ES modules
 
-                int FullExportsArrayLength;
-                char *NewModuleExportsName;
+                int FullExportsArrayLength = 0;
+                char *NewModuleExportsName = NULL;
                 int ImportedFunctionNameLength = 0;
                 struct ImportedESM *ImportedFunctionNames = malloc(sizeof(struct ImportedESM));
                 ImportedFunctionNames[0].IsArrayEnd = true;
-                bool ImportDefault, ImportNamed, ImportAll, ImportAllAlias = false; // Tracks how/what needs to be imported for ES modules
+                bool ImportDefault = false;
+                bool ImportNamed = false;
+                bool ImportAll = false;
+                bool ImportAllAlias = false; // Tracks how/what needs to be imported for ES modules
                 struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
                 IteratePointer = &FunctionNames[0];
                 for (int i = 0; i < strlen(IteratePointer->Text); i++)
@@ -212,11 +219,9 @@ void BundleFile(struct Node *GraphNode)
 
                 if (ISESModule) // If the current dependency is an ESModule then this code is run to find the imports
                 {
-                    printf("ES Module found\n");
 
                     if (HasRegexMatch(ReferenceText, "import\\s+\\*")) // Detects if the import is importing all imports
                     {
-                        printf("Import ALL\n");
                         ImportAll = true;
                         if (HasRegexMatch(ReferenceText, "import\\s+*\\s+as")) // Checks if the import is using an alias
                         {
@@ -228,7 +233,9 @@ void BundleFile(struct Node *GraphNode)
                         if (LastOccurenceOfChar(ReferenceText, '{') != -1) // Checks if the import uses named imports
                         {
                             int EndLocation = LastOccurenceOfChar(ReferenceText, '}'); // Gets the end location of the named exports
-                            bool InVariable, AfterAs, InAlias = false;                 // Initialises variables
+                            bool InVariable = false;
+                            bool AfterAs = false;
+                            bool InAlias = false; // Initialises variables
 
                             int CurrentVariableStart = 0;
 
@@ -299,10 +306,8 @@ void BundleFile(struct Node *GraphNode)
                             if (ImportDefault || ImportAll)
                             {
                                 DefaultExport = GetRegexMatch(InsertText, "export\\s+default");
-                                printf("Insert text %s, file contents %s\n", InsertText, FileContents);
                                 IteratePointer = &DefaultExport[0];
                             }
-                            printf("Default found\n");
                             int StartLocation = -1;
                             bool NameFound = false;
                             bool AfterAs = false;
@@ -314,7 +319,6 @@ void BundleFile(struct Node *GraphNode)
 
                             for (int i = 7; i < CheckEnd; i++)
                             {
-                                printf("S: %s\n", ReferenceText + i);
                                 if (NameFound)
                                 {
                                     if (AfterAs)
@@ -341,7 +345,6 @@ void BundleFile(struct Node *GraphNode)
                                     {
                                         i++;
                                         AfterAs = true;
-                                        printf("AfterAs just found: %s\n", ReferenceText + i);
                                     }
                                     else
                                     {
@@ -352,14 +355,12 @@ void BundleFile(struct Node *GraphNode)
                                 {
                                     if (IsEndOfJSName(ReferenceText[i]))
                                     {
-                                        printf("Found end of name: %s\n", ReferenceText + i);
                                         ImportedFunctionNameLength++;
                                         ImportedFunctionNames = realloc(ImportedFunctionNames, sizeof(struct ImportedESM) * (ImportedFunctionNameLength + 1));
                                         ImportedFunctionNames[ImportedFunctionNameLength].IsArrayEnd = true;
                                         int DefaultExportNameEnd = strlen(InsertText);
                                         for (int i = DefaultExport->EndIndex + 10; i < DefaultExportNameEnd; i++)
                                         {
-                                            printf("sd: %s\n", InsertText + i);
                                             if (IsEndOfJSName(InsertText[i]))
                                             {
                                                 DefaultExportNameEnd = i - 1;
@@ -377,18 +378,14 @@ void BundleFile(struct Node *GraphNode)
                                 }
                                 else
                                 {
-                                    printf("T: %s\n", ReferenceText + i);
                                     if (!IsEndOfJSName(ReferenceText[i]))
                                     {
-                                        printf("Found start location");
                                         StartLocation = i;
                                     }
                                 }
                             }
                         }
-                        printf("Default: %i\n", ImportDefault);
                     }
-
                     if (ImportNamed || ImportAll)
                     {
                         Exports = GetAllRegexMatches(InsertText, "export[^;]+;", 7, 0);
@@ -399,8 +396,6 @@ void BundleFile(struct Node *GraphNode)
                         CombineRegexMatchArrays(&DefaultExport, &Exports);
                         IteratePointer = &DefaultExport[0];
                     }
-                    printf("Test: %i\n", ImportedFunctionNames[1].IsArrayEnd);
-                    printf("Design\n");
 
                     struct RegexMatch *IteratePointer2;
                     struct ImportedESM *ESMIteratePointer;
@@ -444,7 +439,6 @@ void BundleFile(struct Node *GraphNode)
 
                         IteratePointer++;
                     }
-                    printf("Reached here\n");
                     IteratePointer = &FunctionNames[0];
                 }
                 else // If the current dependency is a CommonJS module then this code is run to find the exports
@@ -496,7 +490,9 @@ void BundleFile(struct Node *GraphNode)
                     if (strlen(IteratePointer->Text) > 1) // Ignores unamed functions
                     {
 
-                        bool InString, StringStartDoubleQuotes, FunctionDuplicateFound = false;
+                        bool InString = false;
+                        bool StringStartDoubleQuotes = false;
+                        bool FunctionDuplicateFound = false;
                         for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text); i++)
                         {
                             if (FileContents[i] == '\'' || FileContents[i] == '\"')
@@ -593,8 +589,8 @@ void BundleFile(struct Node *GraphNode)
                             }
                             else
                             {
-                                RemoveSubstring(FileContents, "export default ");
-                                RemoveSubstring(FileContents, "export ");
+                                FileContents = RemoveSubstring(FileContents, "export default ");
+                                FileContents = RemoveSubstring(FileContents, "export ");
                             }
 
                             strcpy(NewDefinition, "let ");
@@ -629,7 +625,7 @@ void BundleFile(struct Node *GraphNode)
                         InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
                         AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);
                         InsertText = ReplaceSectionOfString(InsertText, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations), GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations) + 14, NewModuleExportsName);
-                        AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &ShiftLocationsLength);
+                        AddShiftNum(FinalElement->StartIndex, strlen(NewModuleExportsName) - 14, &JSFileShiftLocations, &JSShiftLocationsLength);
                     }
                     else
                     {
@@ -644,7 +640,6 @@ void BundleFile(struct Node *GraphNode)
                         UsableExtraImports++;
                     }
                 }
-                printf("IS ES MODULE: %i\n", ISESModule);
                 if (Settings.productionMode == false) // Keeps line numbers the same by turning new import into one line
                 {
                     RemoveSingleLineComments(InsertText);
@@ -663,23 +658,25 @@ void BundleFile(struct Node *GraphNode)
                 }
                 FileContents = InsertStringAtPosition(FileContents, InsertText, 0);
                 AddShiftNum(0, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
-                /*free(JSFileShiftLocations);
-                JSFileShiftLocations = NULL;*/
+                free(JSFileShiftLocations);
+                JSFileShiftLocations = NULL;
             }
         }
         CurrentEdge = CurrentEdge->next;
     }
-    free(ShiftLocations);
-    ShiftLocations = NULL;
+
     if (GraphNode->FileType == HTMLFILETYPE_ID)
     {
-        RemoveSubstring(FileContents, "</include>");
+        FileContents = RemoveSubstring(FileContents, "</include>");
     }
 
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents); // Saves final file contents
+    free(FileContents);
     ColorGreen();
     printf("Finished bundling file:%s\n", GraphNode->path);
     ColorNormal();
+    free(ShiftLocations);
+    // ShiftLocations = NULL;
 }
 
 void PostProcessFile(struct Node *node, struct Graph *graph)
@@ -689,7 +686,8 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
         return;
     }
     struct ShiftLocation *shiftLocations = malloc(sizeof(struct ShiftLocation));
-    int ShiftlocationLength = 0;
+    int ShiftlocationLength = 1;
+    shiftLocations[0].location = -1;
     char *ExitPath = EntryToExitPath(node->path);
     if (node->FileType == JSFILETYPE_ID)
     {
@@ -714,8 +712,8 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
             AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
             IteratePointer++;
         }
-        RemoveSubstring(FileContents, "export default ");
-        RemoveSubstring(FileContents, "export ");
+        FileContents = RemoveSubstring(FileContents, "export default ");
+        FileContents = RemoveSubstring(FileContents, "export ");
         ColorGreen();
         printf("Post processed: %s", FileContents);
         ColorNormal();
@@ -740,25 +738,18 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
             free(TempExitPath);
 
             CopyFile(FileNode->path, ExitPath);
-            printf("ExitPath: %s\n", ExitPath);
-            //  free(ExitPath); // Temporarily reemoved beause was crsahing program
-            printf("Freed\n");
+            free(ExitPath);
         }
         else
         {
-            FilesBundled--;
-            break;
+            struct Node *FileNode = graph->SortedArray[FilesBundled];
+            ColorMagenta();
+            printf("\nBundling file: %s\n", FileNode->path);
+            ColorReset();
+            // print_progress_bar(i, graph->VerticesNum);
+            BundleFile(FileNode);
         }
-    }
-
-    for (int i = FilesBundled; i < graph->VerticesNum; i++)
-    {
-        struct Node *FileNode = graph->SortedArray[i];
-        ColorMagenta();
-        printf("\nBundling file: %s\n", FileNode->path);
-        ColorReset();
-        // print_progress_bar(i, graph->VerticesNum);
-        BundleFile(FileNode);
+        graph->SortedArray[FilesBundled]->Bundled = true;
     }
 
     // PostProcess functions that run after main bundling process
