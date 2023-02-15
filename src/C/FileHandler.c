@@ -46,6 +46,7 @@ void CreateFileWrite(char *path, char *text)
             fputc(text[i], FilePTR);
         }
     }
+
     fclose(FilePTR);
 }
 void CreateFile(char *path)
@@ -65,19 +66,18 @@ char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
     long int length = ftell(filePTR); // get length of file
     fseek(filePTR, 0, SEEK_SET);      // go back to start of file
 
-    char *buffer = malloc(length + 1);
-    int currentChar = 0;
-    do
+    char *buffer = malloc(length + 1); // This is where it crashes
+    if (buffer == NULL)
     {
-        if (feof(filePTR))
-        {
-            break;
-        }
-        buffer[currentChar] = fgetc(filePTR);
-        currentChar++;
-    } while (1);
+        printf("Error creating buffer\n");
+        exit(1);
+    }
+
+    // int currentChar = 0;
+    fread(buffer, 1, length, filePTR);
     fclose(filePTR);
-    buffer[currentChar - 1] = '\0';
+    buffer[length] = '\0';
+
     return buffer;
 }
 bool FileExists(char *FilePath)
