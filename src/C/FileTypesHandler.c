@@ -22,16 +22,20 @@ int GetFileTypeID(const char *path)
     char *FileExtension = GetFileExtension(path);
     if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0 || strcasecmp(FileExtension, "htmla") == 0)
     {
+        free(FileExtension);
         return HTMLFILETYPE_ID;
     }
     else if (strcasecmp(FileExtension, "css") == 0)
     {
+        free(FileExtension);
         return CSSFILETYPE_ID;
     }
     else if (strcasecmp(FileExtension, "js") == 0 || strcasecmp(FileExtension, "cjs") == 0)
     {
+        free(FileExtension);
         return JSFILETYPE_ID;
     }
+    free(FileExtension);
     return -1;
 }
 
