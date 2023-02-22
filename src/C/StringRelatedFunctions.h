@@ -15,7 +15,7 @@
 
 int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character);
 
-bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character); // Checks if string contains a certain character
+bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string, char character); // Checks if string contains a certain character
 
 char EMSCRIPTEN_KEEPALIVE *GetFileExtension(const char *path); // Returns the file extension for the given path without the dot char
 
@@ -58,5 +58,11 @@ char *AddPreprocessDIR(char *Path);
 char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename);
 
 bool IsURL(char *str);
+
+char **ArrowDeserialize(const char *serialized, int *n_strings);
+
+char *ArrowSerialize(const char *strings[], size_t count);
+
+int StringToInt(const char *string);
 
 #endif // !STRINGFUNCTIONS_H

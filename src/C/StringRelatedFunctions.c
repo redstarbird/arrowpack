@@ -16,7 +16,7 @@ int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character)
     return LastOccurence;
 }
 
-bool EMSCRIPTEN_KEEPALIVE containsCharacter(char *string, char character) // Checks if string contains a certain character
+bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string, char character) // Checks if string contains a certain character
 {
     for (int i = 0; i < strlen(string); i++)
     {
@@ -482,4 +482,120 @@ char *AddPreprocessDIR(char *Path)
     strcat(NewString, Path);
     free(Path);
     return NewString;
+}
+
+char **ArrowDeserialize(const char *serialized, int *n_strings)
+{
+
+    const char separator = '\x1f'; // custom separator character
+    const char escape = '\x1e';    // custom escape character
+    if (!containsCharacter(serialized, separator))
+    {
+        char **returnString = malloc(sizeof(char *));
+        returnString[0] = strdup(serialized);
+        return returnString;
+    };
+    int count = 0;
+    char **strings = NULL;
+    char *str = NULL;
+    int str_len = 0;
+    for (int i = 0; i < strlen(serialized); i++)
+    {
+        char c = serialized[i];
+        if (c == separator)
+        {
+            count++;
+            strings = realloc(strings, count * sizeof(char *));
+            strings[count - 1] = str;
+            str = NULL;
+            str_len = 0;
+        }
+        else if (c == escape)
+        {
+            char next_c = serialized[i + 1];
+            if (next_c == separator || next_c == escape)
+            {
+                str = realloc(str, str_len + 1);
+                str[str_len] = next_c;
+                str_len++;
+                i++;
+            }
+            else
+            {
+                str = realloc(str, str_len + 2);
+                str[str_len] = c;
+                str[str_len + 1] = next_c;
+                str_len += 2;
+                i++;
+            }
+        }
+        else
+        {
+            str = realloc(str, str_len + 1);
+            str[str_len] = c;
+            str_len++;
+        }
+    }
+    if (str != NULL)
+    {
+        count++;
+        strings = realloc(strings, count * sizeof(char *));
+        strings[count - 1] = str;
+    }
+    *n_strings = count;
+    return strings;
+}
+char *ArrowSerialize(const char *strings[], size_t count)
+{
+    size_t i, j, k, len;
+    char *buffer;
+    const char escape_char = '\x1f';
+
+    // Compute the total length of the serialized string
+    len = 0;
+    for (i = 0; i < count; i++)
+    {
+        len += strlen(strings[i]);
+        for (j = 0; j < strlen(strings[i]); j++)
+        {
+            if (strings[i][j] == '\n')
+            {
+                len++;
+            }
+        }
+    }
+
+    // Allocate a buffer to hold the serialized string
+    buffer = (char *)malloc(len + count + 1);
+    if (buffer == NULL)
+    {
+        return NULL;
+    }
+
+    // Serialize each string into the buffer
+    k = 0;
+    for (i = 0; i < count; i++)
+    {
+        for (j = 0; j < strlen(strings[i]); j++)
+        {
+            if (strings[i][j] == escape_char)
+            {
+                printf("but that makes no sense\n");
+                buffer[k++] = escape_char;
+            }
+            buffer[k++] = strings[i][j];
+        }
+        if (i < count - 1)
+        {
+            buffer[k++] = escape_char;
+        }
+    }
+    buffer[k] = '\0';
+
+    return buffer;
+}
+
+int StringToInt(const char *string)
+{
+    return atoi(string);
 }
