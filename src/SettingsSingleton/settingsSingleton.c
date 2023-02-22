@@ -38,7 +38,14 @@ static int SetSetting(char *key, char *value)
     {
         Settings.productionMode = StringToBool(value);
     }
-
+    else if (strcasecmp(key, "devport") == 0)
+    {
+        Settings.devPort = StringToInt(value);
+    }
+    else if (strcasecmp(key, "devsocketport") == 0)
+    {
+        Settings.devSocketPort = StringToInt(value);
+    }
     else
     {
         return 0;
