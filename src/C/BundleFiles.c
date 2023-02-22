@@ -55,10 +55,10 @@ void BundleFile(struct Node *GraphNode)
                 FileContents = ReplaceSectionOfString(
                     FileContents,
                     GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                    GetShiftedAmount(CurrentEdge->EndRefPos + 3, ShiftLocations), InsertText);
+                    GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
                 // totalAmountShifted += strlen(InsertText) - (InsertEnd - GraphNode->Dependencies[i].StartRefPos);
 
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - ((InsertEnd + 3) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - ((InsertEnd + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
             else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
             {
@@ -80,9 +80,9 @@ void BundleFile(struct Node *GraphNode)
                             RemoveSectionOfString(
                                 FileContents,
                                 GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                GetShiftedAmount(CurrentEdge->EndRefPos + 3, ShiftLocations));
+                                GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
                             // totalAmountShifted -= (GraphNode->Dependencies[i].EndRefPos - GraphNode->Dependencies[i].StartRefPos + 1);
-                            AddShiftNum(CurrentEdge->StartRefPos, ((CurrentEdge->EndRefPos + 3) - CurrentEdge->StartRefPos) * -1, &ShiftLocations, &ShiftLocationsLength);
+                            AddShiftNum(CurrentEdge->StartRefPos, ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos) * -1, &ShiftLocations, &ShiftLocationsLength);
                             FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
                             AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString), &ShiftLocations, &ShiftLocationsLength);
                             // totalAmountShifted += strlen(InsertString);
@@ -159,8 +159,8 @@ void BundleFile(struct Node *GraphNode)
                         AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
                         InsertText = RemoveSubstring(InsertText, "export default ");
                         InsertText = RemoveSubstring(InsertText, "export ");
-                        FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
-                        AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+                        FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 2, ShiftLocations));
+                        AddShiftNum(CurrentEdge->EndRefPos + 2, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
                     }
                 }
             }
