@@ -18,9 +18,9 @@ struct Stack
 
 enum
 {
-    STACK_INT,
-    STACK_CHAR,
-    STACK_VERTEX
+    STACK_INT,   // Used for representing a int data type in a stack
+    STACK_CHAR,  // Used for representing a char data type in a stack
+    STACK_VERTEX // Used for representing a vertex (struct Node) data type in a stack
 };
 
 void StackpushV(struct Stack *stack, struct Node *Value);
@@ -31,10 +31,10 @@ bool StackIsEmpty(struct Stack *stack);
 bool StackIsFull(struct Stack *stack);
 struct Stack *CreateStack(unsigned int Capacity, unsigned int type);
 
+void *Stackpop(struct Stack *stack); // Gets the top value from stack and removes it from stack
+
 #define Stackpush(stack, Value) _Generic(Value, struct Node * \
                                          : StackpushV, int    \
                                          : StackpushI)(stack, Value) // Allows overloading of Stackpush function
-/*#define Stackpop(stack) _Generic(stack.array, struct Node * * \
-                                 : StackpopV, int *           \
-                                 : StackpopI)(stack) // Allows overloading of Stackpush function*/
+
 #endif // !STACK_H

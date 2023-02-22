@@ -34,7 +34,11 @@ bool StackIsEmpty(struct Stack *stack)
 void StackpushV(struct Stack *stack, struct Node *Value)
 {
     if (StackIsFull(stack))
+    {
+        CreateWarning("Tried to push value to stack, but stack is full");
         return;
+    }
+
     stack->array.VertexArray[++stack->top] = Value;
 }
 void StackpushI(struct Stack *stack, int Value)
@@ -60,4 +64,23 @@ void StackpopV(struct Stack *stack) // Need to make overload for this function
     }
     stack->top--;
     return;
+}
+void *Stackpop(struct Stack *stack) // Gets the top value from stack and removes it from stack
+{
+    if (StackIsEmpty(stack))
+    {
+        CreateWarning("Tried to pop value from empty stack\n");
+        return NULL;
+    }
+    switch (stack->Type)
+    {
+    case STACK_VERTEX:
+        return (void *)stack->array.VertexArray[stack->top--];
+        break;
+    case STACK_INT:
+        return (void *)stack->array.IntArray[stack->top--];
+        break;
+    }
+    CreateWarning("Invalid stack type %s\n", stack->Type);
+    return NULL;
 }
