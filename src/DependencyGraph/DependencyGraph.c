@@ -16,6 +16,77 @@
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "../C/Stack.h"
 
+void VertexRecursiveSearch(struct Node *Vertex, struct Stack *stack, bool FindDependencies)
+{
+    Vertex->RebuildChecked = true;
+    if (FindDependencies)
+    {
+        printf("Finding dependencies, not dependents\n");
+        struct Edge *currentEdge = Vertex->edge;
+        while (currentEdge != NULL)
+        {
+            if (!Vertex->RebuildChecked)
+            {
+                Stackpush(stack, currentEdge->vertex);
+                VertexRecursiveSearch(currentEdge->vertex, stack, true);
+
+                Vertex->RebuildChecked = true;
+            }
+            currentEdge = currentEdge->next;
+        }
+    }
+    else
+    {
+        struct HiddenEdge *currentEdge = Vertex->HiddenEdge;
+        while (currentEdge != NULL)
+        {
+            printf("looking at %s, %i\n", currentEdge->ConnectedNode->path, currentEdge->ConnectedNode->RebuildChecked);
+            if (!currentEdge->ConnectedNode->RebuildChecked)
+            {
+                printf("Rebuilding: %s\n", currentEdge->ConnectedNode->path);
+
+                VertexRecursiveSearch(currentEdge->ConnectedNode, stack, false);
+                printf("About to push %s to stack\n", currentEdge->ConnectedNode->path);
+
+                Vertex->RebuildChecked = true;
+            }
+
+            currentEdge = currentEdge->next;
+        }
+        Stackpush(stack, Vertex);
+    }
+}
+
+struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxStackSize, int *Number)
+{
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX);
+    VertexRecursiveSearch(Vertex, stack, false);
+    struct Node **Dependents = malloc(sizeof(struct Node *) * (stack->top + 1));
+    int DependentCount = 0;
+    while (!StackIsEmpty(stack))
+    {
+        Dependents[DependentCount++] = Stackpop(stack);
+        Dependents[DependentCount - 1]->RebuildChecked = false;
+    }
+    *Number = DependentCount;
+    return Dependents;
+}
+
+struct Node **FindAllDependenciesOfVertex(struct Node *Vertex, size_t MaxStackSize, int *Number)
+{
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX);
+    VertexRecursiveSearch(Vertex, stack, true);
+    struct Node **Dependencies = malloc(sizeof(struct Node *) * (stack->top + 1));
+    int DependencyCount = 0;
+    while (!StackIsEmpty(stack))
+    {
+        Dependencies[DependencyCount++] = Stackpop(stack);
+        Dependencies[DependencyCount - 1]->RebuildChecked = false;
+    }
+    *Number = DependencyCount;
+    return Dependencies;
+}
+
 void topological_sort_dfs(struct Node *node, struct Stack *stack)
 {
     node->visited = true;
@@ -48,8 +119,7 @@ void topological_sort(Graph *graph)
     int pos = graph->VerticesNum - 1;
     while (!StackIsEmpty(stack))
     {
-        graph->SortedArray[pos--] = stack->array.VertexArray[stack->top];
-        StackpopV(stack);
+        graph->SortedArray[pos--] = Stackpop(stack);
     }
 }
 
@@ -287,6 +357,7 @@ struct Node *create_vertex(char *path, int filetype, Edge *edge)
     vertex->VertexPos = -1;
     vertex->Bundled = false;
     vertex->visited = false;
+    vertex->RebuildChecked = false;
 
     return vertex;
 }
