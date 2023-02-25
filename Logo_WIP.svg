@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 500 500" width="500" height="500" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <filter id="drop-shadow-filter-0" color-interpolation-filters="sRGB" x="-500%" y="-500%" width="1000%" height="1000%" bx:preset="drop-shadow 1 -1 0 1 0.47 rgba(255,128,0,1)">
+      <title>Drop shadow</title>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1"/>
+      <feOffset dx="-1" dy="0"/>
+      <feComponentTransfer result="offsetblur">
+        <feFuncA id="spread-ctrl" type="linear" slope="0.94"/>
+      </feComponentTransfer>
+      <feFlood flood-color="rgba(255,128,0,1)"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient gradientUnits="userSpaceOnUse" x1="257.384" y1="167.825" x2="257.384" y2="265.051" id="gradient-0" spreadMethod="pad" gradientTransform="matrix(0.842814, 0, -0.00382, 0.767559, 43.106409, 51.589214)">
+      <stop offset="0" style="stop-color: rgba(181, 0, 127, 1)"/>
+      <stop offset="1" style="stop-color: rgba(79, 0, 55, 1)"/>
+    </linearGradient>
+  </defs>
+  <ellipse style="stroke: rgb(0, 0, 0);" cx="250.545" cy="250.236" rx="248.542" ry="249.702"/>
+  <g transform="matrix(-7.55528, -6.967606, 6.290123, -6.820655, 227.364029, 396.476471)" style="">
+    <g style="" transform="matrix(2.508024, -0.741163, 0.012691, 2.543132, -21.727558, -15.007075)">
+      <path fill="none" d="M0 0h24v24H0z"/>
+    </g>
+  </g>
+  <g transform="matrix(-17.934803, -13.19122, 15.617113, -11.976843, 375.586823, 423.870361)" style="">
+    <g>
+      <path d="M 12 16 L 6 10 L 11.753 11.772 L 18 10 L 12 16 Z" style="vector-effect: non-scaling-stroke; stroke-width: 4px; stroke: rgb(218, 76, 90); fill: rgb(26, 26, 26);"/>
+    </g>
+  </g>
+  <g transform="matrix(-14.180548, -11.631678, 14.459332, -16.659843, 213.588058, 615.007935)" style="filter: url(#drop-shadow-filter-0);">
+    <g>
+      <path d="M 13 12 L 20.622 9.244 L 12 20 L 3.467 9.511 L 11 12 L 9.667 3.378 L 12.089 4.534 L 14.511 3.378 L 13 12 Z" style="vector-effect: non-scaling-stroke; stroke-width: 7px; stroke: rgb(212, 92, 83); fill: rgb(21, 21, 21);"/>
+    </g>
+  </g>
+  <path style="stroke: rgb(218, 121, 79); stroke-width: 5px; vector-effect: non-scaling-stroke; fill: url(#gradient-0); fill-rule: nonzero; paint-order: fill;" d="M 254 180.405 L 264.786 180.405 L 268.683 194.24 C 271.021 194.792 273.275 195.55 275.407 196.499 L 290.33 188.987 L 297.926 195.164 L 288.589 207.218 C 289.754 208.949 290.681 210.778 291.353 212.672 L 308.421 215.885 L 308.378 224.619 L 291.278 227.832 C 290.586 229.728 289.641 231.556 288.459 233.286 L 297.676 245.341 L 290.019 251.518 L 275.171 244.006 C 273.029 244.955 270.768 245.714 268.424 246.266 L 264.389 260.101 L 253.603 260.101 L 249.705 246.266 C 247.368 245.714 245.112 244.955 242.981 244.006 L 228.059 251.518 L 220.462 245.341 L 229.798 233.286 C 228.634 231.556 227.708 229.728 227.035 227.832 L 209.966 224.619 L 210.011 215.885 L 227.11 212.672 C 227.802 210.778 228.746 208.949 229.928 207.218 L 220.712 195.164 L 228.369 188.987 L 243.218 196.499 C 245.358 195.55 247.62 194.792 249.965 194.24 L 254 180.405 Z M 259.265 205.914 C 245.636 205.914 237.058 217.863 243.826 227.422 C 246.967 231.858 252.797 234.59 259.122 234.59 C 272.752 234.59 281.329 222.642 274.562 213.084 C 271.421 208.648 265.59 205.914 259.265 205.914" transform="matrix(0.996295, 0.086001, -0.086001, 0.996295, 19.902328, -21.474924)"/>
+</svg>
