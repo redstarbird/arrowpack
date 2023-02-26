@@ -16,4 +16,6 @@
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 
+void BundleFile(struct Node *GraphNode);
+
 #endif // !BUNDLEFILES_H

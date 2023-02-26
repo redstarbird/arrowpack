@@ -51,14 +51,14 @@ void BundleFile(struct Node *GraphNode)
         {
             if (DependencyFileType == HTMLFILETYPE_ID)
             {
-                int InsertEnd = CurrentEdge->EndRefPos + 1;
+
                 FileContents = ReplaceSectionOfString(
                     FileContents,
                     GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
                     GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations), InsertText);
                 // totalAmountShifted += strlen(InsertText) - (InsertEnd - GraphNode->Dependencies[i].StartRefPos);
 
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - ((InsertEnd + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
+                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations, &ShiftLocationsLength);
             }
             else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
             {
@@ -156,11 +156,11 @@ void BundleFile(struct Node *GraphNode)
                             }
                         }
                         RemoveSectionOfString(FileContents, startlocation, endlocation);
-                        AddShiftNum(CurrentEdge->StartRefPos, (endlocation - startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
+                        AddShiftNum(CurrentEdge->StartRefPos, ((endlocation)-startlocation) * -1, &ShiftLocations, &ShiftLocationsLength);
                         InsertText = RemoveSubstring(InsertText, "export default ");
                         InsertText = RemoveSubstring(InsertText, "export ");
-                        FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 2, ShiftLocations));
-                        AddShiftNum(CurrentEdge->EndRefPos + 2, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+                        FileContents = InsertStringAtPosition(FileContents, InsertText, GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
+                        AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
                     }
                 }
             }
@@ -669,7 +669,7 @@ void BundleFile(struct Node *GraphNode)
     {
         FileContents = RemoveSubstring(FileContents, "</include>");
     }
-
+    printf("saving file contents %s to %s\n", FileContents, GraphNode->path);
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents); // Saves final file contents
     free(FileContents);
     ColorGreen();
@@ -730,7 +730,9 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
 
     for (FilesBundled = 0; FilesBundled < graph->VerticesNum; FilesBundled++)
     {
+        printf("About to check\n");
         struct Node *FileNode = graph->SortedArray[FilesBundled];
+        printf("Checking edges of file: %s\n", FileNode->path);
         if (count_edges(FileNode) == 0)
         {
             char *TempExitPath = strdup(FileNode->path);
