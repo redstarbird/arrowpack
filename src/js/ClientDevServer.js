@@ -26,7 +26,7 @@ function extractBody(html) {
     return html.substring(bodyStart, bodyEnd);
 }
 
-const ws = new WebSocket("ws://localhost:8080");
+const ws = new WebSocket("ws://" + location.hostname + ":8080");
 
 ws.onopen = (event) => {
     console.log("opened websocket, sending data " + dirname);
@@ -35,7 +35,9 @@ ws.onopen = (event) => {
 
 ws.onmessage = (event) => {
     console.log(event.data);
-    ReplaceDocument(extractHead(event.data), extractBody(event.data));
+    if (event.data.includes("string")) { window.location.reload(); } else {
+        ReplaceDocument(extractHead(event.data), extractBody(event.data));
+    }
 }
 window.addEventListener('beforeunload', function () {
     ws.close();
