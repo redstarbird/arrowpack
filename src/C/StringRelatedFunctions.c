@@ -152,23 +152,32 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
         }
         else
         {
+            char *TempPath;
             if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
-
-            char *TempPath = strdup(BasePath); // Very messy code
-            int TempPathLength = strlen(TempPath);
-            TempPath = realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
-            char *TempPath2 = strdup(path);
-            if (TempPath2[0] == '.' && TempPath2[1] == '/')
+            if (StringStartsWith(path, PREPROCESS_DIR))
             {
-                strcat(TempPath, TempPath2 + 2);
+                return path;
+                // TempPath = ReplaceSectionOfString(path, 0, 30, Settings.entry);
             }
             else
             {
-                strcat(TempPath, TempPath2);
+                TempPath = strdup(BasePath); // Very messy code
+                int TempPathLength = strlen(TempPath);
+                TempPath = realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
+                char *TempPath2 = strdup(path);
+                if (TempPath2[0] == '.' && TempPath2[1] == '/')
+                {
+                    strcat(TempPath, TempPath2 + 2);
+                }
+                else
+                {
+                    strcat(TempPath, TempPath2);
+                }
             }
+            printf("Returning %s, %s %s, %s\n", TempPath, BasePath, path, Settings.entry);
             return TempPath;
         }
     }
@@ -213,8 +222,9 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     BasePath[LastPathChar] = '\0';
     if (IsPreprocessDir(filename))
     {
-        BasePath = ReplaceSectionOfString(BasePath, 0, 29, Settings.entry);
+        BasePath = ReplaceSectionOfString(BasePath, 0, 30, Settings.entry);
     }
+
     return BasePath;
 }
 

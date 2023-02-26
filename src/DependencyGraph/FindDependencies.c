@@ -295,9 +295,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
 
                         CreateFileWrite(filename, TempFileContents);
 
-                        ShiftRegexMatches(&JSDependencies, StartLocation - 1, strlen(NewSRCAttr));
-                        ShiftRegexMatches(&HTMLIncludeMatches, StartLocation - 1, strlen(NewSRCAttr));
-                        ShiftRegexMatches(&CSSDependencies, StartLocation - 1, strlen(NewSRCAttr));
+                        ShiftRegexMatches(&JSDependencies, StartLocation - 1, strlen(NewSRCAttr) + 2);
+                        ShiftRegexMatches(&HTMLIncludeMatches, StartLocation - 1, strlen(NewSRCAttr) + 2);
+                        ShiftRegexMatches(&CSSDependencies, StartLocation - 1, strlen(NewSRCAttr) + 2);
 
                         ShiftRegexMatches(&JSDependencies, StartLocation + 1, -1 * (EndLocation - StartLocation));
                         ShiftRegexMatches(&CSSDependencies, StartLocation + 1, -1 * (EndLocation - StartLocation));

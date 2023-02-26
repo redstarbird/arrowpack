@@ -65,8 +65,9 @@ struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxSta
     int DependentCount = 0;
     while (!StackIsEmpty(stack))
     {
-        Dependents[DependentCount++] = Stackpop(stack);
-        Dependents[DependentCount - 1]->RebuildChecked = false;
+        Dependents[DependentCount] = Stackpop(stack);
+        Dependents[DependentCount]->RebuildChecked = false;
+        DependentCount++;
     }
     *Number = DependentCount;
     return Dependents;
