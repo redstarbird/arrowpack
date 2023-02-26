@@ -2,6 +2,11 @@
 
 A web bundling application that makes your website faster and easier to maintain
 
+<img align="center" width="300" height="300" src="https://github.com/redstarbird/arrowpack/blob/main/Logo_WIP.svg">
+
+**Temporary WIP logo**
+
+
 ## Version 0.0.0
 
 ### This project does not fully work yet as the MVP has not been completed yet
