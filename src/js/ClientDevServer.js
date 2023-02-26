@@ -35,7 +35,7 @@ ws.onopen = (event) => {
 
 ws.onmessage = (event) => {
     console.log(event.data);
-    if (event.data.includes("string")) { window.location.reload(); } else {
+    if (event.data.includes("script")) { window.location.reload(); } else {
         ReplaceDocument(extractHead(event.data), extractBody(event.data));
     }
 }
