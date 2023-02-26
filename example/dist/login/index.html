@@ -20,17 +20,21 @@ h1 {
 				color: rgb(46, 34, 45);
 			}
 		</style>
+
 		<!--<script src="invalidpath.js"></script><p>This is for testing whether arrowpack will properly ignore comments</p><include src="../includes/HelloWorld.html">-->
 	</head>
 	<body>
-		<nav><h2>Navbar is here!</h2><h1>Hello World!</h1>
+		<nav>
+	<link rel="stylesheet" href="../CSS/NavbarStyles.css" />
+	<h2>Navbar is here123!</h2>
 </nav>
 
-		<script >export default function TestESMImports() {    console.log("Ecmascript imports are working");}helloworldify_ARROWPACK
+		<script >function TestESMImports() {    console.log("Ecmascript imports are working");}let ESMTest =TestESMImports;
+
 console.log("Logging user in...");
 
 ESMTest();</script>
-		<script  >function Test() {    console.log("Test!");}function MakeSnakeCaseA4(str) {    Test();    str = str.replace(/ /g, '_');        str = str.replace(/[A-Z]/g, function (char) {        return '_' + char.toLowerCase();    });    return str;}let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCaseA4 };
+		<script  >function Test() {    console.log("Test!");}function MakeSnakeCase(str) {    Test();    str = str.replace(/ /g, '_');        str = str.replace(/[A-Z]/g, function (char) {        return '_' + char.toLowerCase();    });    return str;}let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };
 			const SnakeCaseModule = JSMakeSnakeCase_ARROWPACK;
 
 			function UpdateH1() {

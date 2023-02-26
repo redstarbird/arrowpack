@@ -1,3 +1,3 @@
-export default function TestESMImports() {
+function TestESMImports() {
     console.log("Ecmascript imports are working");
 }
