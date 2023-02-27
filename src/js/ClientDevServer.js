@@ -34,10 +34,10 @@ ws.onopen = (event) => {
 };
 
 ws.onmessage = (event) => {
-    console.log(event.data);
-    if (event.data.includes("script")) { window.location.reload(); } else {
+    window.location.reload();
+    /*if (event.data.includes("script")) { window.location.reload(); } else {
         ReplaceDocument(extractHead(event.data), extractBody(event.data));
-    }
+    }*/
 }
 window.addEventListener('beforeunload', function () {
     ws.close();
