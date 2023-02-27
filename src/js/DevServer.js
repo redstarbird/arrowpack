@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require("fs");
 const path = require('path');
 const WebSocket = require("ws");
+const url = require('url');
 
 let wss;
 const connections = new Map();
@@ -11,7 +12,10 @@ function StartServer(Settings) {
     const ScriptInjectData = "<script type=\"module\">" + fs.readFileSync(path.join(__dirname, "ClientDevServer.js")) + "</script>"
     const server = http.createServer(
         (req, res) => {
-            var filePath = path.join(cwd, Settings.getValue("exit"), req.url);
+            const parsedURL = url.parse(req.url);
+            var filePath = path.join(cwd, Settings.getValue("exit"), parsedURL.pathname)
+            if (parsedURL.query) { filePath += path.sep; }
+
             var fileExtension = path.extname(filePath);
             var contentType;
 
