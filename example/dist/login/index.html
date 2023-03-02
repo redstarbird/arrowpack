@@ -29,9 +29,11 @@ h1 {
 	<h2>Navbar is here123!</h2>
 </nav>
 
-		<script >function TestESMImports() {    console.log("Ecmascript imports are working");}let ESMTest =TestESMImports;
+		<script >function TestESMImports() {    console.log("Ecmascript imports are working");}const GRAVITY = 9.8;function TestGRAVITY() {    console.log("Gravity is: " + GRAVITY + "!");    return GRAVITY === 9.8;}let GRAVY=GRAVITY;let ESMTest=TestESMImports;
 
-console.log("Logging user in...");
+if (TestGRAVITY()) {
+    console.log("Logging user in with regular earth gravity: " + GRAVY + "...");
+}
 
 ESMTest();</script>
 		<script  >function Test() {    console.log("Test!");}function MakeSnakeCase(str) {    Test();    str = str.replace(/ /g, '_');        str = str.replace(/[A-Z]/g, function (char) {        return '_' + char.toLowerCase();    });    return str;}let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };

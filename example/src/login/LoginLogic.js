@@ -1,5 +1,7 @@
-import ESMTest from "../JS/ESMTest";
+import ESMTest, { GRAVITY as GRAVY, TestGRAVITY } from "../JS/ESMTest";
 
-console.log("Logging user in...");
+if (TestGRAVITY()) {
+    console.log("Logging user in with regular earth gravity: " + GRAVY + "...");
+}
 
 ESMTest();

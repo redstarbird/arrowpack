@@ -200,14 +200,16 @@ void BundleFile(struct Node *GraphNode)
                 int FullExportsArrayLength = 0;
                 char *NewModuleExportsName = NULL;
                 int ImportedFunctionNameLength = 0;
-                struct ImportedESM *ImportedFunctionNames = malloc(sizeof(struct ImportedESM));
+                struct ImportedESM *ImportedFunctionNames = malloc(sizeof(struct ImportedESM)); // Used to keep track of imported functions tht need to have a unique name
                 ImportedFunctionNames[0].IsArrayEnd = true;
                 bool ImportDefault = false;
                 bool ImportNamed = false;
                 bool ImportAll = false;
                 bool ImportAllAlias = false; // Tracks how/what needs to be imported for ES modules
                 struct RegexMatch *FunctionNames = GetAllRegexMatches(InsertText, "function [^(]*", 9, 1);
+                struct RegexMatch *VariableName = GetAllRegexMatches(InsertText, "const [^;]*", 6, 1);
                 IteratePointer = &FunctionNames[0];
+
                 for (int i = 0; i < strlen(IteratePointer->Text); i++)
                 {
                     if (IsEndOfJSName(IteratePointer->Text[i]))
@@ -223,7 +225,7 @@ void BundleFile(struct Node *GraphNode)
                     if (HasRegexMatch(ReferenceText, "import\\s+\\*")) // Detects if the import is importing all imports
                     {
                         ImportAll = true;
-                        if (HasRegexMatch(ReferenceText, "import\\s+*\\s+as")) // Checks if the import is using an alias
+                        if (HasRegexMatch(ReferenceText, "import\\s+\\*\\s+as")) // Checks if the import is using an alias
                         {
                             ImportAllAlias = true;
                         }
@@ -241,7 +243,7 @@ void BundleFile(struct Node *GraphNode)
 
                             for (int i = LastOccurenceOfChar(ReferenceText, '{'); i <= EndLocation; i++) // Loops through named imports to find the names and their aliases
                             {
-                                if (AfterAs)
+                                if (AfterAs) // Checks for the start of the alias if "as" has been found before
                                 {
                                     if (!IsEndOfJSName(ReferenceText[i]))
                                     {
@@ -250,15 +252,15 @@ void BundleFile(struct Node *GraphNode)
                                         CurrentVariableStart = i;
                                     }
                                 }
-                                else if (InAlias)
+                                else if (InAlias) // Checks for end of alias if currently searching for end
                                 {
                                     if (IsEndOfJSName(ReferenceText[i]))
                                     {
-                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, i, CurrentVariableStart);
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, CurrentVariableStart, i - 1);
                                         InAlias = false;
                                     }
                                 }
-                                else if (!InVariable)
+                                else if (!InVariable) // Checks if it has reached to start of a variable
                                 {
                                     if (!IsEndOfJSName(ReferenceText[i]))
                                     {
@@ -275,19 +277,21 @@ void BundleFile(struct Node *GraphNode)
                                     {
                                         InVariable = false;
                                         // ImportedFunctionNames[ImportedFunctionNameLength] = malloc(sizeof(char) * (2 + i - CurrentVariableStart));
-                                        if (i - CurrentVariableStart == 2)
+                                        if (i - CurrentVariableStart == 2) // Checks for "as" to indicate an alias
                                         {
                                             if (ReferenceText[CurrentVariableStart] == 'a' && ReferenceText[CurrentVariableStart + 1] == 's') // detects if alias is used for previous variable
                                             {
                                                 AfterAs = true;
                                                 InVariable = false;
+                                                ImportedFunctionNameLength--;
                                             }
                                         }
                                         if (!AfterAs)
                                         {
-                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(ReferenceText, CurrentVariableStart, i);
-                                            ImportedFunctionNames->IsDefault = false;
-                                            ImportedFunctionNames->IsArrayEnd = false;
+                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(ReferenceText, CurrentVariableStart, i - 1);
+                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = NULL;
+                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].IsDefault = false;
+                                            ImportedFunctionNames[ImportedFunctionNameLength - 1].IsArrayEnd = false;
                                         }
                                     }
                                 }
@@ -301,7 +305,7 @@ void BundleFile(struct Node *GraphNode)
                             ImportDefault = true;
                         }
 
-                        if (ImportDefault) // If a default import is present then find the name and alias
+                        if (ImportDefault) // If a default import is present then find it's name and alias
                         {
                             if (ImportDefault || ImportAll)
                             {
@@ -334,7 +338,7 @@ void BundleFile(struct Node *GraphNode)
                                         {
                                             if (IsEndOfJSName(ReferenceText[i]))
                                             {
-                                                ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i);
+                                                ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i - 3);
                                             }
                                         }
                                     }
@@ -371,7 +375,7 @@ void BundleFile(struct Node *GraphNode)
                                         ImportedFunctionNames[ImportedFunctionNameLength - 1].name = getSubstring(InsertText, DefaultExport->EndIndex + 10, DefaultExportNameEnd);
                                         ImportedFunctionNames[ImportedFunctionNameLength - 1].IsArrayEnd = false;
                                         ImportedFunctionNames[ImportedFunctionNameLength - 1].IsDefault = true;
-                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i);
+                                        ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i - 1);
                                         NameFound = true;
                                         StartLocation = -1;
                                     }
@@ -574,6 +578,8 @@ void BundleFile(struct Node *GraphNode)
                     }
                     IteratePointer++;
                 }
+                FileContents = RemoveSubstring(FileContents, "export default ");
+                FileContents = RemoveSubstring(FileContents, "export ");
                 if (ISESModule) // Bundles the files together if they are ES modules
                 {
 
@@ -589,8 +595,7 @@ void BundleFile(struct Node *GraphNode)
                             }
                             else
                             {
-                                FileContents = RemoveSubstring(FileContents, "export default ");
-                                FileContents = RemoveSubstring(FileContents, "export ");
+                                NewDefinition = malloc(sizeof(char) * (10 + strlen(ESMIteratePointer->alias) + strlen(ESMIteratePointer->name)));
                             }
 
                             strcpy(NewDefinition, "let ");
@@ -645,7 +650,6 @@ void BundleFile(struct Node *GraphNode)
                     RemoveSingleLineComments(InsertText);
                     RemoveCharFromString(InsertText, '\n');
                 }
-
                 if (ISESModule)
                 {
                     RemoveSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations), GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
@@ -669,7 +673,6 @@ void BundleFile(struct Node *GraphNode)
     {
         FileContents = RemoveSubstring(FileContents, "</include>");
     }
-    printf("saving file contents %s to %s\n", FileContents, GraphNode->path);
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents); // Saves final file contents
     free(FileContents);
     ColorGreen();
@@ -730,9 +733,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
 
     for (FilesBundled = 0; FilesBundled < graph->VerticesNum; FilesBundled++)
     {
-        printf("About to check\n");
         struct Node *FileNode = graph->SortedArray[FilesBundled];
-        printf("Checking edges of file: %s\n", FileNode->path);
         if (count_edges(FileNode) == 0)
         {
             char *TempExitPath = strdup(FileNode->path);
