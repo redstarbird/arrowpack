@@ -1,12 +1,13 @@
 #include "Stack.h"
 
-struct Stack *CreateStack(unsigned int Capacity, unsigned int type)
+struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variable)
 {
     size_t TypeSize = 0;
 
     struct Stack *stack = (struct Stack *)malloc(sizeof(struct Stack));
     stack->capacity = Capacity;
     stack->top = -1;
+    stack->Variable = Variable;
     switch (type)
     {
     case STACK_INT:
@@ -35,8 +36,16 @@ void StackpushV(struct Stack *stack, struct Node *Value)
 {
     if (StackIsFull(stack))
     {
-        CreateWarning("Tried to push value to stack, but stack is full");
-        return;
+        if (stack->Variable)
+        {
+            stack->capacity *= 2;
+            stack->array.VertexArray = realloc(stack->array.VertexArray, stack->capacity * sizeof(struct Node *));
+        }
+        else
+        {
+            CreateWarning("Tried to push value to stack, but stack is full");
+            return;
+        }
     }
 
     stack->array.VertexArray[++stack->top] = Value;
@@ -44,7 +53,18 @@ void StackpushV(struct Stack *stack, struct Node *Value)
 void StackpushI(struct Stack *stack, int Value)
 {
     if (StackIsFull(stack))
-        return;
+    {
+        if (stack->Variable)
+        {
+            stack->capacity *= 2;
+            stack->array.IntArray = realloc(stack->array.IntArray, stack->capacity * sizeof(int));
+        }
+        else
+        {
+            CreateWarning("Tried to push value to stack, but stack is full");
+            return;
+        }
+    }
     stack->array.IntArray[++stack->top] = Value;
 }
 int StackpopI(struct Stack *stack) // Need to make overload for this function

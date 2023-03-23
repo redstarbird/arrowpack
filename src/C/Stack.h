@@ -9,6 +9,7 @@ struct Stack
     unsigned int Type;
     int top;
     unsigned capacity;
+    bool Variable;
     union
     {
         int *IntArray;
@@ -29,7 +30,7 @@ void StackpopV(struct Stack *stack);
 int StackpopI(struct Stack *stack);
 bool StackIsEmpty(struct Stack *stack);
 bool StackIsFull(struct Stack *stack);
-struct Stack *CreateStack(unsigned int Capacity, unsigned int type);
+struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variable);
 
 void *Stackpop(struct Stack *stack); // Gets the top value from stack and removes it from stack
 
