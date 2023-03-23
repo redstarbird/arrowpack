@@ -32,13 +32,13 @@
 		"arrowpack": "src/ArrowPack.js"
 	},
 	"dependencies": {
+		"arrowargs": "^0.0.2",
 		"boxen": ">=7.0",
 		"chalk": "^4.1.2",
 		"chokidar": "^3.5.3",
 		"codependency": "^2.1.0",
 		"helloworldify": "^1.0.0",
 		"jshint": "^2.13.5",
-		"ws": "^8.12.1",
-		"yargs": "^17.6.2"
+		"ws": "^8.12.1"
 	}
 }

@@ -18,7 +18,7 @@ const { ArrowDeserialize } = require("./js/StringConversion.cjs");
 
 var StartTime = performance.now();
 
-const argv = require("yargs/yargs")(process.argv.slice(2))
+const argv = require("arrowargs")(process.argv.slice(2))
 	.option("c", {
 		alias: "config-path",
 		describe: "Path to config file if not in working directory",
