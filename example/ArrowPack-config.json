@@ -4,5 +4,7 @@
 	"autoClear": false,
 	"largeProject": false,
 	"bundleCSSInHTML": true,
-	"productionMode": false
+	"productionMode": false,
+	"addBaseTag": true,
+	"faviconPath": "favicon.ico"
 }

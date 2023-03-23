@@ -5,7 +5,8 @@ struct SettingsSingleton Settings = {
     .exit = "dist",
     .autoClear = false,
     .largeProject = false,
-    .bundleCSSInHTML = true}; // Initialises global settings structure
+    .bundleCSSInHTML = true,
+    .addBaseTag = false}; // Initialises global settings structure
 
 static bool LastStringWasKey;
 static size_t LastKeyLength = 0;
@@ -45,6 +46,14 @@ static int SetSetting(char *key, char *value)
     else if (strcasecmp(key, "devsocketport") == 0)
     {
         Settings.devSocketPort = StringToInt(value);
+    }
+    else if (strcasecmp(key, "addBaseTag") == 0)
+    {
+        Settings.addBaseTag = StringToBool(value);
+    }
+    else if (strcasecmp(key, "faviconPath") == 0)
+    {
+        Settings.faviconPath = value;
     }
     else
     {

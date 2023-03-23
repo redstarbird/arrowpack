@@ -672,6 +672,40 @@ void BundleFile(struct Node *GraphNode)
     if (GraphNode->FileType == HTMLFILETYPE_ID)
     {
         FileContents = RemoveSubstring(FileContents, "</include>");
+        if (Settings.addBaseTag)
+        {
+            struct RegexMatch *HeadTagResults = GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);
+            if (!HeadTagResults[0].IsArrayEnd)
+            {
+                char *BasePath = GetBasePath(GraphNode->path);
+                char *BaseTag = malloc(strlen(BasePath) + 18);
+                strcpy(BaseTag, "<base href=\"/");
+                strcat(BaseTag, BasePath + strlen(Settings.entry));
+                strcat(BaseTag, "\">");
+                FileContents = InsertStringAtPosition(FileContents, BaseTag, HeadTagResults[0].EndIndex);
+                if (Settings.faviconPath[0] != '\0' && Settings.faviconPath != NULL)
+                {
+                    struct RegexMatch *FaviconTagResults = GetRegexMatch(FileContents, "<link\\s*rel\\s*=\"?icon\"?[^>]*");
+                    if (FaviconTagResults == NULL)
+                    {
+                        char *FaviconLink = malloc(100 + strlen(Settings.faviconPath));
+                        strcpy(FaviconLink, "<link rel=\"icon\" type=\"image/x-icon\" href=\"/");
+                        if (StringStartsWith(Settings.faviconPath, Settings.entry))
+                        {
+                            strcat(FaviconLink, Settings.faviconPath + strlen(Settings.entry));
+                        }
+                        else
+                        {
+                            strcat(FaviconLink, Settings.faviconPath);
+                        }
+                        strcat(FaviconLink, "\">");
+                        FileContents = InsertStringAtPosition(FileContents, FaviconLink, HeadTagResults[0].EndIndex);
+                    }
+                }
+                free(BaseTag);
+                free(BasePath);
+            }
+        }
     }
     CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents); // Saves final file contents
     free(FileContents);

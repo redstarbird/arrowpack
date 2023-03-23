@@ -8,13 +8,15 @@ typedef struct SettingsSingleton
 {
     char *entry;
     char *exit;
+    char *faviconPath;
     bool autoClear;
     bool largeProject;
     bool bundleCSSInHTML;
     bool productionMode;
+    bool addBaseTag;
     int devPort;
     int devSocketPort;
-} SettingsSingleton; // need to implement
+} SettingsSingleton;
 
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
 
