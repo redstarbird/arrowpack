@@ -59,7 +59,7 @@ void VertexRecursiveSearch(struct Node *Vertex, struct Stack *stack, bool FindDe
 
 struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxStackSize, int *Number)
 {
-    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX);
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true);
     VertexRecursiveSearch(Vertex, stack, false);
     struct Node **Dependents = malloc(sizeof(struct Node *) * (stack->top + 1));
     int DependentCount = 0;
@@ -75,7 +75,7 @@ struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxSta
 
 struct Node **FindAllDependenciesOfVertex(struct Node *Vertex, size_t MaxStackSize, int *Number)
 {
-    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX);
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true);
     VertexRecursiveSearch(Vertex, stack, true);
     struct Node **Dependencies = malloc(sizeof(struct Node *) * (stack->top + 1));
     int DependencyCount = 0;
@@ -107,7 +107,7 @@ void topological_sort_dfs(struct Node *node, struct Stack *stack)
 
 void topological_sort(Graph *graph)
 {
-    struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX); // Initialises a stack to store the sorted nodes
+    struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX, false); // Initialises a stack to store the sorted nodes
     graph->SortedArray = malloc(sizeof(struct Node *) * graph->VerticesNum);
 
     for (int i = 0; i < graph->VerticesNum; i++)
