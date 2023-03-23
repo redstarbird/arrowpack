@@ -33,7 +33,6 @@
 	},
 	"dependencies": {
 		"arrowargs": "^0.0.2",
-		"boxen": ">=7.0",
 		"chalk": "^4.1.2",
 		"chokidar": "^3.5.3",
 		"codependency": "^2.1.0",
