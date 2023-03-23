@@ -85,10 +85,10 @@ char **SplitStringByChar(char *str, const char delimiter)
 
 char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePath) // Turns a relative path into full path
 {
-    char *tempHolder; // Buffer to hold the absolute path
+    char *NewPath; // Buffer to hold the absolute path
     char *path = strdup(PATH);
 
-    if (containsCharacter(path, '\\'))
+    if (containsCharacter(path, '\\')) // Turn \ in path on windows into / for compatibility with other functions
     {
         for (int i = 0; i < strlen(path); i++)
         {
@@ -100,11 +100,10 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
     }
     if (path[0] == '/')
     {
-        tempHolder = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
-        strcpy(tempHolder, Settings.entry);
-        strcat(tempHolder, path + 1);
-
-        return tempHolder;
+        NewPath = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
+        strcpy(NewPath, Settings.entry);
+        strcat(NewPath, path + 1);
+        return NewPath;
     }
     else
     {
@@ -117,20 +116,19 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
                 ThrowFatalError("Error no base path specified for path: %s\n", path);
             }
 
-            char *BasePathCopy = strdup(BasePath);
-            // Create a copy of the path variable so it doesn't get overwritten by strtok()
+            char *NewPath = strdup(BasePath); // Create a copy of the BasePath variable so it doesn't get overwritten by strtok()
 
             int PathSeperatorsFound = 0;
             int LocationFound = -1;
-            int BasePathLength = strlen(BasePathCopy);
-            if (BasePathCopy[BasePathLength - 1] == '/')
+            int BasePathLength = strlen(BasePath);
+            if (NewPath[BasePathLength - 1] == '/')
             {
-                BasePathCopy[BasePathLength - 1] = '\0';
+                NewPath[BasePathLength - 1] = '\0';
                 BasePathLength--;
             }
             for (int i = BasePathLength; i > 0; i--)
             {
-                if (BasePathCopy[i] == '/')
+                if (NewPath[i] == '/')
                 {
                     PathSeperatorsFound++;
                     if (PathSeperatorsFound == MatchesNum)
@@ -142,17 +140,15 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             }
 
             path = RemoveSubstring(path, "../");
-            // BasePathCopy = ReplaceSectionOfString(BasePathCopy, LocationFound + 1, strlen(BasePathCopy), path);
-            BasePathCopy = realloc(BasePathCopy, strlen(BasePathCopy) + strlen(path) + 3);
+            NewPath = realloc(NewPath, strlen(NewPath) + strlen(path) + 3);
 
-            BasePathCopy[LocationFound + 1] = '\0';
-            BasePathCopy[LocationFound] = '/';
-            strcat(BasePathCopy, path);
-            return BasePathCopy;
+            NewPath[LocationFound + 1] = '\0';
+            NewPath[LocationFound] = '/';
+            strcat(NewPath, path);
+            return NewPath;
         }
         else
         {
-            char *TempPath;
             if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
@@ -160,28 +156,25 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
             if (StringStartsWith(path, PREPROCESS_DIR))
             {
                 return path;
-                // TempPath = ReplaceSectionOfString(path, 0, 30, Settings.entry);
             }
             else
             {
-                TempPath = strdup(BasePath); // Very messy code
-                int TempPathLength = strlen(TempPath);
-                TempPath = realloc(TempPath, (TempPathLength + strlen(path) + 1) * sizeof(char));
+                NewPath = malloc((strlen(BasePath) + strlen(path) + 1) * sizeof(char));
+                strcpy(NewPath, BasePath);
                 char *TempPath2 = strdup(path);
                 if (TempPath2[0] == '.' && TempPath2[1] == '/')
                 {
-                    strcat(TempPath, TempPath2 + 2);
+                    strcat(NewPath, TempPath2 + 2);
                 }
                 else
                 {
-                    strcat(TempPath, TempPath2);
+                    strcat(NewPath, TempPath2);
                 }
             }
-            printf("Returning %s, %s %s, %s\n", TempPath, BasePath, path, Settings.entry);
-            return TempPath;
+            return NewPath;
         }
     }
-    return path; // Stops compiler from throwing exception
+    return path; // Stops compiler from complaining
 }
 
 bool IsPreprocessDir(const char *path)
