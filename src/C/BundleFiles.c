@@ -62,7 +62,7 @@ void BundleFile(struct Node *GraphNode)
             }
             else if (DependencyFileType == CSSFILETYPE_ID) // Bundle CSS into HTML file
             {
-                if (Settings.bundleCSSInHTML == true)
+                if (GetSetting("bundleCSSInHTML")->valueint == true)
                 {
                     char *InsertString;
                     struct RegexMatch *StyleResults = GetAllRegexMatches(FileContents, "<style[^>]*>", 0, 0);
@@ -645,7 +645,7 @@ void BundleFile(struct Node *GraphNode)
                         UsableExtraImports++;
                     }
                 }
-                if (Settings.productionMode == false) // Keeps line numbers the same by turning new import into one line
+                if (GetSetting("productionMode")->valueint == false) // Keeps line numbers the same by turning new import into one line
                 {
                     RemoveSingleLineComments(InsertText);
                     RemoveCharFromString(InsertText, '\n');
@@ -672,7 +672,7 @@ void BundleFile(struct Node *GraphNode)
     if (GraphNode->FileType == HTMLFILETYPE_ID)
     {
         FileContents = RemoveSubstring(FileContents, "</include>");
-        if (Settings.addBaseTag)
+        if (GetSetting("addBaseTag")->valueint)
         {
             struct RegexMatch *HeadTagResults = GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);
             if (!HeadTagResults[0].IsArrayEnd)
@@ -680,23 +680,23 @@ void BundleFile(struct Node *GraphNode)
                 char *BasePath = GetBasePath(GraphNode->path);
                 char *BaseTag = malloc(strlen(BasePath) + 18);
                 strcpy(BaseTag, "<base href=\"/");
-                strcat(BaseTag, BasePath + strlen(Settings.entry));
+                strcat(BaseTag, BasePath + strlen(GetSetting("entry")->valuestring));
                 strcat(BaseTag, "\">");
                 FileContents = InsertStringAtPosition(FileContents, BaseTag, HeadTagResults[0].EndIndex);
-                if (Settings.faviconPath[0] != '\0' && Settings.faviconPath != NULL)
+                if (GetSetting("faviconPath")->valuestring[0] != '\0' && GetSetting("faviconPath")->valuestring != NULL)
                 {
                     struct RegexMatch *FaviconTagResults = GetRegexMatch(FileContents, "<link\\s*rel\\s*=\"?icon\"?[^>]*");
                     if (FaviconTagResults == NULL)
                     {
-                        char *FaviconLink = malloc(100 + strlen(Settings.faviconPath));
+                        char *FaviconLink = malloc(100 + strlen(GetSetting("faviconPath")->valuestring));
                         strcpy(FaviconLink, "<link rel=\"icon\" type=\"image/x-icon\" href=\"/");
-                        if (StringStartsWith(Settings.faviconPath, Settings.entry))
+                        if (StringStartsWith(GetSetting("faviconPath")->valuestring, GetSetting("entry")->valuestring))
                         {
-                            strcat(FaviconLink, Settings.faviconPath + strlen(Settings.entry));
+                            strcat(FaviconLink, GetSetting("faviconPath")->valuestring + strlen(GetSetting("entry")->valuestring));
                         }
                         else
                         {
-                            strcat(FaviconLink, Settings.faviconPath);
+                            strcat(FaviconLink, GetSetting("faviconPath")->valuestring);
                         }
                         strcat(FaviconLink, "\">");
                         FileContents = InsertStringAtPosition(FileContents, FaviconLink, HeadTagResults[0].EndIndex);

@@ -92,9 +92,9 @@ def Build():
         ExportedFunctions=("cJSON_Delete","cJSON_IsArray","cJson_IsInvalid","cJSON_IsNumber","cJSON_IsString","cJSON_Parse",),
         SourceFiles=("src/C/cJSON/cJSON.c", "src/DependencyGraph/DependencyGraph.c", "./src/C/StringRelatedFunctions.c",
         "./src/Regex/RegexFunctions.c", "./src/DependencyGraph/FindDependencies.c","./src/SettingsSingleton/settingsSingleton.c", 
-         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c", "./src/Minifiers/HTMLMinifier.c", "./src/C/FileTypesHandler.c", "./src/C/Stack.c", "./src/C/BundleFiles.c", "./src/C/ProgressBar.c", "./src/C/StringShiftHandler.c", "./src/Minifiers/JSMinifier.c"),
+         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c", "./src/Minifiers/HTMLMinifier.c", "./src/C/FileTypesHandler.c", "./src/C/Stack.c", "./src/C/BundleFiles.c", "./src/C/ProgressBar.c", "./src/C/StringShiftHandler.c", "./src/Minifiers/JSMinifier.c", "./src/Transformers/Transform.c"),
         Modularize=True,
-        ExportedRuntimeMethods=("ccall",),
+        ExportedRuntimeMethods=("ccall","addFunction","lengthBytesUTF8","stringToUTF8", "UTF8ToString"),
         ForceFS=True,
         ),
     )
@@ -144,6 +144,7 @@ def Build():
             
             Dev = ""
             if options["dev"] == True:
+                print("Dev mode is enabled")
                 Dev = "--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -fsanitize=address -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
                 optimizations = ""
 
@@ -152,7 +153,7 @@ def Build():
             # Command to compile pcre2 library: emconfigure ./configure --disable-pcre2-8 --enable-pcre2-16 --disable-jit --with-heap-limit=2000000 && emmake make && emmake install
 
             #command = f"emcc -O3 --no-entry {ExportedFunctions} {value['entry']} -o {key} -s WASM=1"
-            command = f"emcc {optimizations}--no-entry -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -o {value.output}"
+            command = f"emcc {optimizations}--no-entry -sALLOW_TABLE_GROWTH -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -o {value.output}"
 
             print("\n\n\n" + command + "\n\n\n")
             

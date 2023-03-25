@@ -105,7 +105,7 @@ void topological_sort_dfs(struct Node *node, struct Stack *stack)
     Stackpush(stack, node);
 }
 
-void topological_sort(Graph *graph)
+void EMSCRIPTEN_KEEPALIVE topological_sort(Graph *graph)
 {
     struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX, false); // Initialises a stack to store the sorted nodes
     graph->SortedArray = malloc(sizeof(struct Node *) * graph->VerticesNum);
@@ -402,6 +402,18 @@ int count_edges(struct Node *vertex)
     return count;
 }
 
+void RemoveEdges(struct Node *vertex)
+{
+    struct Edge *currentEdge = vertex->edge;
+    struct Edge *previousEdge;
+    while (currentEdge != NULL)
+    {
+        previousEdge = currentEdge;
+        currentEdge = currentEdge->next;
+        free(previousEdge);
+    }
+}
+
 void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 {
     bool DependencyFound = false;
@@ -432,7 +444,7 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
             }
             if (!DependencyFound)
             {
-                if (!StringStartsWith(IteratePointer->Text, Settings.entry))
+                if (!StringStartsWith(IteratePointer->Text, GetSetting("entry")->valuestring))
                 {
                     ColorMagenta();
                     printf("Creating new node: %s\n", IteratePointer->Text);
@@ -503,14 +515,6 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
     {
         CreateDependencyEdges(DependencyGraph->Vertexes[TempNum], &DependencyGraph);
         TempNum++;
-    }
-
-    topological_sort(DependencyGraph);
-
-    for (int i = 0; i < DependencyGraph->VerticesNum; i++)
-    {
-        struct Node *node = DependencyGraph->SortedArray[i];
-        printf("Ordered graph node: %s\n", node->path);
     }
 
     return DependencyGraph;

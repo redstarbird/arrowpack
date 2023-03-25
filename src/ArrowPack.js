@@ -16,6 +16,7 @@ const ArrowSerializer = require("./js/StringConversion.cjs");
 const { ArrowDeserialize } = require("./js/StringConversion.cjs");
 
 
+
 var StartTime = performance.now();
 
 const argv = require("arrowargs")(process.argv.slice(2))
@@ -26,10 +27,12 @@ const argv = require("arrowargs")(process.argv.slice(2))
 	}).option("dev", { alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false })
 	.help().argv;
 
-var CONFIG_FILE_NAME = "ArrowPack-config.json";
-if (argv.c) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME); }
+var CONFIG_FILE_NAME = "arrowpack.config.js";
+if (argv.c) { if (fs.lstatSync(argv.c).isDirectory()) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME); } else { CONFIG_FILE_NAME = argv.c; } }
 var rawconfigData = null;
-if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = fs.readFileSync(CONFIG_FILE_NAME, "utf8"); }
+if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = require(path.join(process.cwd(), CONFIG_FILE_NAME)); }
+if (!argv.c.endsWith("/")) { argv.c += "/"; }
+if (argv.c) { rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
 const Settings = new settingsSingleton(rawconfigData);
 
 process.on("SIGTERM", () => {
@@ -47,10 +50,41 @@ function DeletePreprocessDir() {
 	});
 }
 
+const PluginsCache = {
+	"transformers": {},
+	"validators": {},
+	"resolvers": {},
+	"postProcessors": {}
+};
+
+
+function JSTransformFiles(EncodedOriginalContents, PluginPath) {
+	const OriginalFileContents = CFunctions.UTF8ToString(EncodedOriginalContents);
+	PluginPath = CFunctions.UTF8ToString(PluginPath);
+
+	if (!PluginsCache[PluginPath]) {
+		try {
+			PluginsCache[PluginPath] = require(PluginPath);
+		} catch (error) {
+			throw "Error loading plugin: " + PluginPath + "\n\n" + error;
+		}
+	}
+	const Transformer = PluginsCache[PluginPath];
+	const FileContents = Transformer(OriginalFileContents);
+	if (FileContents === OriginalFileContents) {
+		return null;
+	}
+	var lengthBytes = CFunctions.lengthBytesUTF8(FileContents) + 1;
+	var stringOnWasmHeap = CFunctions._malloc(lengthBytes);
+	CFunctions.stringToUTF8(FileContents, stringOnWasmHeap, lengthBytes);
+	return stringOnWasmHeap;
+}
+
+
 let CFunctions;
 let StructsPointer;
 
-(async () => {
+(async () => { // Dev server code
 	CFunctions = await CFunctionFactory();
 
 	if (argv.dev === true) {
@@ -73,6 +107,7 @@ let StructsPointer;
 		});
 	} Bundle();
 })();
+
 
 
 function Bundle() {
@@ -111,7 +146,7 @@ function Bundle() {
 
 		CFunctions._CheckWasm();
 		CFunctions._InitFileTypes();
-		for (let k in Settings.settings) {
+		/*for (let k in Settings.settings) {
 			if (CFunctions.ccall(
 				"SendSettingsString",
 				"number",
@@ -132,8 +167,10 @@ function Bundle() {
 			}
 			console.log(chalk.bold.blue(Settings.settings[k]));
 			// Also gives time to apply settings
-		}
-		var Success;
+		}*/const StringifiedJSON = JSON.stringify(Settings.settings)
+		console.log(StringifiedJSON);
+		var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); if (Success !== 1) { throw "Error setting up Wasm settings"; } console.log("Setup settings");
+		console.log("Success: " + Success);
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
 		StructsPointer = CFunctions.ccall(
 			"CreateGraph",
@@ -141,7 +178,16 @@ function Bundle() {
 			["string", "number"],
 			[WrappedWalkedFiles, WalkedFiles.length]
 		);
+		Success = false;
+		const TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iii");
+		Success = CFunctions.ccall(
+			"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
+		)
 
+		if (Success !== 1) { throw "Error transforming files!"; }
+		Success = false;
+		CFunctions._topological_sort(StructsPointer);
+		Success = 0;
 		Success = CFunctions.ccall(
 			"BundleFiles",
 			"number",
@@ -181,6 +227,3 @@ function Bundle() {
 			});*/
 	}
 }
-
-
-

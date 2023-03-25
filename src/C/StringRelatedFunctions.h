@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <emscripten.h>
 #include <stdlib.h>
+#include <glob.h>
+#include <fnmatch.h>
 #include "../Regex/RegexFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "IntFunctions.h"
@@ -64,5 +66,7 @@ char **ArrowDeserialize(const char *serialized, int *n_strings);
 char *ArrowSerialize(const char *strings[], size_t count);
 
 int StringToInt(const char *string);
+
+bool MatchGlob(const char *FilePath, const char *GlobPattern);
 
 #endif // !STRINGFUNCTIONS_H

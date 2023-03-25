@@ -25,6 +25,7 @@ bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string, char character) 
     }
     return false;
 }
+
 char *GetFileExtension(const char *path) // Returns the file extension for the given path without the dot char
 {
     unsigned int pathLen = strlen(path);
@@ -32,7 +33,7 @@ char *GetFileExtension(const char *path) // Returns the file extension for the g
     unsigned int lastFullStop = LastOccurenceOfChar(path, '.');
     if (lastFullStop == -1)
     {
-        return NULL;
+        return strdup(path);
     }
     lastFullStop++;             // Stops fullstop character being included
     const int length = pathLen; // gets length of file ext
@@ -100,8 +101,8 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
     }
     if (path[0] == '/')
     {
-        NewPath = malloc(sizeof(char) * (strlen(path) + strlen(Settings.entry)) + 1);
-        strcpy(NewPath, Settings.entry);
+        NewPath = malloc(sizeof(char) * (strlen(path) + strlen(GetSetting("entry")->valuestring)) + 1);
+        strcpy(NewPath, GetSetting("entry")->valuestring);
         strcat(NewPath, path + 1);
         return NewPath;
     }
@@ -149,7 +150,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
         }
         else
         {
-            if (strstr(path, Settings.entry) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
+            if (strstr(path, GetSetting("entry")->valuestring) != NULL || BasePath[0] == '\0') // path is already full path (might accidentally include paths with entry name in folder path)path o
             {
                 return path;
             }
@@ -193,7 +194,7 @@ char *EMSCRIPTEN_KEEPALIVE GetTrueBasePath(const char *filename)
     {
         return "";
     }
-    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(Settings.entry));
+    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(GetSetting("entry")->valuestring));
 
     memcpy(BasePath, filename, LastPathChar);
 
@@ -208,14 +209,14 @@ char *EMSCRIPTEN_KEEPALIVE GetBasePath(const char *filename)
     {
         return "";
     }
-    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(Settings.entry));
+    char *BasePath = (char *)malloc((LastPathChar + 1) * sizeof(char) + strlen(GetSetting("entry")->valuestring));
 
     memcpy(BasePath, filename, LastPathChar);
 
     BasePath[LastPathChar] = '\0';
     if (IsPreprocessDir(filename))
     {
-        BasePath = ReplaceSectionOfString(BasePath, 0, 30, Settings.entry);
+        BasePath = ReplaceSectionOfString(BasePath, 0, 30, GetSetting("entry")->valuestring);
     }
 
     return BasePath;
@@ -299,21 +300,21 @@ char *EntryToExitPath(const char *path)
     char *PathCopy = strdup(path);
     if (strncasecmp(PathCopy, "node_modules/", 13) == 0)
     {
-        return ReplaceSectionOfString(PathCopy, 0, 13, Settings.exit);
+        return ReplaceSectionOfString(PathCopy, 0, 13, GetSetting("exit")->valuestring);
     }
     if (strncasecmp(PathCopy, PREPROCESS_DIR, 29) == 0)
     {
-        return ReplaceSectionOfString(PathCopy, 0, 30, Settings.exit);
+        return ReplaceSectionOfString(PathCopy, 0, 30, GetSetting("exit")->valuestring);
     }
     else
     {
-        return ReplaceSectionOfString(PathCopy, 0, strlen(Settings.entry), Settings.exit);
+        return ReplaceSectionOfString(PathCopy, 0, strlen(GetSetting("entry")->valuestring), GetSetting("exit")->valuestring);
     }
 }
 
 char *EntryToPreprocessPath(char *path)
 {
-    return ReplaceSectionOfString(path, 0, strlen(Settings.entry) - 1, PREPROCESS_DIR);
+    return ReplaceSectionOfString(path, 0, strlen(GetSetting("entry")->valuestring) - 1, PREPROCESS_DIR);
 }
 void StringFormatInsert(char *string, const char *InsertString)
 {
@@ -601,4 +602,27 @@ char *ArrowSerialize(const char *strings[], size_t count)
 int StringToInt(const char *string)
 {
     return atoi(string);
+}
+
+bool MatchGlob(const char *FilePath, const char *GlobPattern)
+{
+
+    int status;
+    status = fnmatch(GlobPattern, FilePath, 0);
+    if (status == 0)
+    {
+        // The filename matches the glob pattern
+        return true;
+    }
+    else if (status == FNM_NOMATCH)
+    {
+        // The filename does not match the glob pattern
+        return false;
+    }
+    else
+    {
+        // An error occurred
+        ThrowFatalError("Error matching glob!\n");
+    }
+    return false;
 }

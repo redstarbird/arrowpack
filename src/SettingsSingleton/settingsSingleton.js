@@ -4,7 +4,25 @@ const fs = require("fs");
 
 class settingsSingleton {
 	constructor(json) {
-		this.settings = { entry: "src/", exit: "public/", autoClear: false, largeProject: false, bundleCSSInHTML: true, productionMode: true, devPort: 8080, devSocketPort: 8081, addBaseTag: false, faviconPath: "" };
+		this.settings = {
+			entry: "src/",
+			exit: "public/",
+			autoClear: false,
+			largeProject: false,
+			bundleCSSInHTML: true,
+			productionMode: true,
+			devPort: 8080,
+			devSocketPort: 8081,
+			addBaseTag: false,
+			faviconPath: "",
+			transformers: {},
+			resolvers: [],
+			validators: {},
+			postProcessors: {},
+			INTERNAL_CWD: process.cwd(),
+			INTERNAL_CONFIG_DIR: "",
+			INTERNAL_FULL_CONFIG_PATH: ""
+		};
 
 		/*if (fs.existsSync("./lib")) {
 			this.settings.entry = "lib";
@@ -16,7 +34,7 @@ class settingsSingleton {
 		}
 
 		if (json !== undefined && json !== null) {
-			json = JSON.parse(json);
+			// json = JSON.parse(json);
 			for (var key in json) {
 				if (this.settings[key] !== undefined) {
 					this.settings[key] = json[key];
@@ -30,6 +48,7 @@ class settingsSingleton {
 				this.settings[AddFileSeperatorToEnd[i]] += "/";
 			}
 		}
+		console.log(this.settings);
 	}
 	getValue(key, required) { // Will throw an error if the key is not present and required is true
 		if (this.settings[key] !== undefined) { return this.settings[key]; } else { if (required === true) { throw "Error: could not find required key :("; } else { return null; } }

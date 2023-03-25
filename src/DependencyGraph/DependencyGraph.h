@@ -59,6 +59,7 @@ void add_vertex(Graph *graph, struct Node *vertex);
 
 struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxStackSize, int *Number);
 struct Node **FindAllDependenciesOfVertex(struct Node *Vertex, const size_t MaxStackSize, int *Number);
-void topological_sort(Graph *graph);
-
+void EMSCRIPTEN_KEEPALIVE topological_sort(Graph *graph);
+void RemoveEdges(struct Node *);
+RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTypeID, struct Graph **DependencyGraph);
 #endif

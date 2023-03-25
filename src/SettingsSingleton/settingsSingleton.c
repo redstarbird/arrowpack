@@ -1,17 +1,11 @@
 #include "settingsSingleton.h"
 
-struct SettingsSingleton Settings = {
-    .entry = "src",
-    .exit = "dist",
-    .autoClear = false,
-    .largeProject = false,
-    .bundleCSSInHTML = true,
-    .addBaseTag = false}; // Initialises global settings structure
+struct SettingsSingleton Settings; // Initialises global settings structure
 
 static bool LastStringWasKey;
 static size_t LastKeyLength = 0;
 static char *LastKey;
-
+/*
 static int SetSetting(char *key, char *value)
 { // Returns 1 if successful, 0 otherwise
     if (strcasecmp(key, "entry") == 0)
@@ -79,4 +73,16 @@ int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
     }
     LastStringWasKey = !LastStringWasKey;
     return 1; // Allows javascript to know when the function has been completed
+}*/
+
+bool EMSCRIPTEN_KEEPALIVE InitSettings(char *JSON)
+{
+    printf("JSON: %s\n", JSON);
+    Settings.Settings = cJSON_Parse(JSON);
+    return true;
+}
+
+cJSON EMSCRIPTEN_KEEPALIVE *GetSetting(char *SettingName)
+{
+    return cJSON_GetObjectItemCaseSensitive(Settings.Settings, SettingName);
 }
