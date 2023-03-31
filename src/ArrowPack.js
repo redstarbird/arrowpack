@@ -14,10 +14,28 @@ const { mkdirIfNotExists } = require("./js/DirFunctions.js");
 const chokidar = require('chokidar');
 const ArrowSerializer = require("./js/StringConversion.cjs");
 const { ArrowDeserialize } = require("./js/StringConversion.cjs");
-
-
+const { createRequire } = require("module");
+const { exit } = require("process");
+const { performance } = require('perf_hooks');
 
 var StartTime = performance.now();
+
+function requireModule(modulePath, exportName) {
+	try {
+		const imported = require(modulePath);
+		return exportName ? imported[exportName] : imported;
+	} catch (err) {
+		return err.code;
+	}
+}
+
+function ObjectIsEmpty(object) {
+	for (var Property in object) {
+		if (object.hasOwnProperty(Property))
+			return false;
+	}
+	return true;
+}
 
 const argv = require("arrowargs")(process.argv.slice(2))
 	.option("c", {
@@ -31,8 +49,8 @@ var CONFIG_FILE_NAME = "arrowpack.config.js";
 if (argv.c) { if (fs.lstatSync(argv.c).isDirectory()) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME); } else { CONFIG_FILE_NAME = argv.c; } }
 var rawconfigData = null;
 if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = require(path.join(process.cwd(), CONFIG_FILE_NAME)); }
-if (!argv.c.endsWith("/")) { argv.c += "/"; }
-if (argv.c) { rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
+console.log(rawconfigData);
+if (argv.c) { if (!argv.c.endsWith("/")) { argv.c += "/"; } rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
 const Settings = new settingsSingleton(rawconfigData);
 
 process.on("SIGTERM", () => {
@@ -50,13 +68,8 @@ function DeletePreprocessDir() {
 	});
 }
 
-const PluginsCache = {
-	"transformers": {},
-	"validators": {},
-	"resolvers": {},
-	"postProcessors": {}
-};
 
+const PluginsCache = {};
 
 function JSTransformFiles(EncodedOriginalContents, PluginPath) {
 	const OriginalFileContents = CFunctions.UTF8ToString(EncodedOriginalContents);
@@ -72,6 +85,7 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath) {
 	const Transformer = PluginsCache[PluginPath];
 	const FileContents = Transformer(OriginalFileContents);
 	if (FileContents === OriginalFileContents) {
+
 		return null;
 	}
 	var lengthBytes = CFunctions.lengthBytesUTF8(FileContents) + 1;
@@ -80,6 +94,49 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath) {
 	return stringOnWasmHeap;
 }
 
+async function JSValidateFiles(FileContents, PluginPath, FilePath) {
+	PluginPath = CFunctions.UTF8ToString(PluginPath);
+	FilePath = CFunctions.UTF8ToString(FilePath);
+	console.log("JS validating\n");
+	FileContents = CFunctions.UTF8ToString(FileContents);
+	let imported = false;
+	if (!PluginsCache[PluginPath]) {
+		console.log("Not in cache!\n");
+		try {
+			console.log("trying!");
+			await (async () => {
+				console.log("async!\n");
+				PluginsCache[PluginPath] = (await import(PluginPath)).default;
+				imported = true;
+				console.log(PluginsCache[PluginPath]);
+			})();
+
+		} catch (error) {
+			throw "Error loading plugin: " + PluginPath + "\n\n" + error;
+		}
+	} else { imported = true; }
+
+	const Validator = PluginsCache[PluginPath];
+	await (async () => {
+		const Results = await Validator.Validate(FileContents, FilePath); if (Results.warnings) {
+			if (Results.warnings.length > 0) {
+				for (let i = 0; i < Results.warnings.length; i++) {
+					console.log("Warning: " + Results.warnings[i]);
+				}
+			}
+		}
+		if (Results.errors) {
+			if (Results.errors.length > 0) {
+				for (let i = 0; i < Results.errors.length; i++) {
+					console.log("Error: " + Results.errors[i]);
+				}
+				process.exit(1);
+			}
+		}
+		return null;
+	})();
+	return null;
+}
 
 let CFunctions;
 let StructsPointer;
@@ -125,13 +182,11 @@ function Bundle() {
 
 	var WalkedFiles = temp.Files;
 	var WalkedDirs = temp.Directories;
-	console.log(WalkedDirs);
+
 	if (WalkedDirs) {
 		WalkedDirs.forEach(Dir => {
-			console.log(chalk.red(Dir));
 			var tempDir = Settings.getValue("exit") + Dir.substring(Settings.getValue("entry").length);
 
-			console.log(chalk.yellowBright(tempDir));
 			DirFunctions.mkdirIfNotExists(tempDir);
 			//DirFunctions.mkdirIfNotExists(Dir);
 		});
@@ -140,7 +195,7 @@ function Bundle() {
 	var AbsoluteFilesCharLength = 0;
 	var WrappedWalkedFiles = "";
 	if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one string because passing array of strings from JS to C is complicated
-		WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; console.log(chalk.bold.blue(FilePath)); AbsoluteFilesCharLength += FilePath.length; });
+		WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; AbsoluteFilesCharLength += FilePath.length; });
 
 
 
@@ -168,7 +223,7 @@ function Bundle() {
 			console.log(chalk.bold.blue(Settings.settings[k]));
 			// Also gives time to apply settings
 		}*/const StringifiedJSON = JSON.stringify(Settings.settings)
-		console.log(StringifiedJSON);
+
 		var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); if (Success !== 1) { throw "Error setting up Wasm settings"; } console.log("Setup settings");
 		console.log("Success: " + Success);
 		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
@@ -177,14 +232,23 @@ function Bundle() {
 			"number",
 			["string", "number"],
 			[WrappedWalkedFiles, WalkedFiles.length]
-		);
-		Success = false;
-		const TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iii");
-		Success = CFunctions.ccall(
-			"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
-		)
+		); if (!ObjectIsEmpty(Settings.settings.validators)) {
+			Success = false;
+			const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
+			Success = CFunctions.ccall(
+				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, ValidateJSFunctionPointer, 2]
+			)
 
-		if (Success !== 1) { throw "Error transforming files!"; }
+		} let TransformJSFunctionPointer = Success;
+		if (!ObjectIsEmpty(Settings.settings.transformers)) {
+			Success = false;
+			TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
+			Success = CFunctions.ccall(
+				"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
+			)
+			if (Success !== 1) { throw "Error transforming files!"; }
+		}
+
 		Success = false;
 		CFunctions._topological_sort(StructsPointer);
 		Success = 0;
@@ -195,6 +259,12 @@ function Bundle() {
 			[StructsPointer]
 		);
 
+		if (!ObjectIsEmpty(Settings.settings.postProcessors)) {
+			Success = false;
+			Success = CFunctions.ccall(
+				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, TransformJSFunctionPointer, 3]
+			);
+		}
 		if (Success === 1 || Success === 0) {
 
 			//CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason

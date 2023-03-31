@@ -16,6 +16,19 @@ int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character)
     return LastOccurence;
 }
 
+int NumOfCharOccurences(const char *text, const char character)
+{
+    int Occurences = 0;
+    for (unsigned int i = 0; i < strlen(text); i++)
+    {
+        if (text[i] == character)
+        {
+            Occurences++;
+        }
+    }
+    return Occurences;
+}
+
 bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string, char character) // Checks if string contains a certain character
 {
     for (int i = 0; i < strlen(string); i++)
@@ -584,7 +597,6 @@ char *ArrowSerialize(const char *strings[], size_t count)
         {
             if (strings[i][j] == escape_char)
             {
-                printf("but that makes no sense\n");
                 buffer[k++] = escape_char;
             }
             buffer[k++] = strings[i][j];
@@ -604,25 +616,200 @@ int StringToInt(const char *string)
     return atoi(string);
 }
 
-bool MatchGlob(const char *FilePath, const char *GlobPattern)
+static void expandBraces(char *pattern, char *buffer, size_t buffer_size)
 {
+    // Find the position of the first brace in the pattern
+    char *brace = strchr(pattern, '{');
 
-    int status;
-    status = fnmatch(GlobPattern, FilePath, 0);
-    if (status == 0)
+    if (brace == NULL)
     {
-        // The filename matches the glob pattern
-        return true;
+        // No brace expansion needed
+        strncpy(buffer, pattern, buffer_size);
+        return;
     }
-    else if (status == FNM_NOMATCH)
+
+    // Copy the part of the pattern before the brace into a buffer
+    char *prefix = strndup(pattern, brace - pattern);
+
+    // Find the position of the closing brace
+    char *endbrace = strchr(brace, '}');
+
+    if (endbrace == NULL)
     {
-        // The filename does not match the glob pattern
-        return false;
+        ThrowFatalError("Invalid brace expression\n");
     }
-    else
+
+    // Copy the part of the pattern after the closing brace into another buffer
+    char *suffix = strdup(endbrace + 1);
+
+    // Calculate the maximum length of the expanded pattern
+    size_t max_pattern_len = 0;
+    char *value = strtok(brace + 1, ",");
+    while (value != NULL)
     {
-        // An error occurred
-        ThrowFatalError("Error matching glob!\n");
+        unsigned int ValueLength = strlen(value);
+        if (value[ValueLength - 1] == '}')
+        {
+            value[ValueLength - 1] = '\0';
+        }
+        // Construct the new pattern by substituting the value inside the braces
+        char *new_pattern = NULL;
+        if (asprintf(&new_pattern, "%s%s%s|", prefix, value, suffix) == -1)
+        {
+            ThrowFatalError("Memory allocation failed for expanding braces\n");
+        }
+
+        // Recursively expand any remaining braces
+        char *expanded_pattern = (char *)malloc(buffer_size * sizeof(char));
+        expandBraces(new_pattern, expanded_pattern, buffer_size);
+
+        // Add the expanded pattern to the buffer
+        size_t len = strlen(expanded_pattern);
+        if (len > 0)
+        {
+            if (max_pattern_len > 0)
+            {
+                max_pattern_len++;
+            }
+            max_pattern_len += len;
+        }
+
+        strcat(buffer, expanded_pattern);
+
+        free(new_pattern);
+        free(expanded_pattern);
+
+        // Move to the next value inside the braces
+        value = strtok(NULL, ",");
     }
+
+    free(prefix);
+    free(suffix);
+
+    if (max_pattern_len > buffer_size)
+    {
+        ThrowFatalError("Expanded glob pattern is too long\n");
+    }
+}
+
+bool MatchGlob(const char *STRING, const char *PATTERN)
+{
+    char *string = strdup(STRING);
+    char *pattern = strdup(PATTERN);
+    /*
+        int status;
+
+        if (containsCharacter(GlobPattern, '{'))
+        {
+            unsigned int BraceExpansions = NumOfCharOccurences(GlobPattern, '{');
+            unsigned int ExpansionStringsNum[BraceExpansions];
+            char **ExpansionString = malloc(BraceExpansions * sizeof(char *));
+            bool InExpansion = false;
+            unsigned int CurrentExpansion = 0;
+            size_t CurrentExpansionSize = 2;
+            unsigned int CurrentSubExpansion = 0;
+            unsigned int LastSubExpansionStart = 0;
+            for (int i = 0; i < strlen(GlobPattern); i++)
+            {
+                if (InExpansion)
+                {
+                    bool FoundEnd = GlobPattern[i] == '}';
+                    if (GlobPattern[i] == ',' || FoundEnd)
+                    {
+
+                        if (CurrentSubExpansion + 2 >= CurrentExpansionSize)
+                        {
+                            if (FoundEnd)
+                            {
+                                CurrentExpansionSize++;
+                                InExpansion = false;
+                            }
+                            else
+                            {
+                                CurrentExpansionSize *= 2;
+                            }
+                            ExpansionString[CurrentExpansion] = realloc(ExpansionString[CurrentExpansion], CurrentExpansionSize * sizeof(char));
+                            ExpansionString[CurrentExpansion][CurrentSubExpansion] = *getSubstring((char *)GlobPattern, LastSubExpansionStart, i - 1);
+                            printf("Expansion thing thing thing: %s\n", ExpansionString[CurrentExpansion][CurrentSubExpansion]);
+                        }
+                    }
+                }
+                else
+                {
+                    if (GlobPattern[i] == '{')
+                    {
+                        InExpansion = true;
+                        CurrentSubExpansion = 0;
+                        CurrentExpansionSize = 2;
+                        CurrentExpansion++;
+                    }
+                }
+            }
+
+            exit(0);
+        }
+        else
+        {
+            status = fnmatch(GlobPattern, FilePath, 0);
+            if (status == 0) // The filename matches the glob pattern
+            {
+
+                return true;
+            }
+            else if (status == FNM_NOMATCH) // The filename does not match the glob pattern
+            {
+
+                return false;
+            }
+            else // An error occurred
+            {
+
+                ThrowFatalError("Error matching glob!\n");
+            }
+        }
+
+        return false;*/
+
+    // Determine the maximum length of the expanded pattern
+    int max_pattern_len = strlen(pattern) + 1;
+
+    for (int i = 0; i < strlen(pattern); i++)
+    {
+        if (pattern[i] == '{')
+        {
+
+            char *endbrace = strchr(pattern + i, '}');
+
+            if (endbrace == NULL)
+            {
+                ThrowFatalError("Invalid brace expansion: %s\n", pattern);
+            }
+
+            max_pattern_len += (endbrace - pattern) * 10;
+        }
+    }
+
+    // Expand any braces in the pattern
+    char *expanded_pattern = (char *)malloc(max_pattern_len * sizeof(char));
+    memset(expanded_pattern, 0, max_pattern_len);
+    expandBraces(pattern, expanded_pattern, max_pattern_len);
+
+    // Loop over each expanded pattern
+    char *pat = strtok(expanded_pattern, "|");
+
+    while (pat != NULL)
+    {
+        // Check if the string matches the current pattern
+        if (fnmatch(pat, string, 0) == 0)
+        {
+            return true;
+        }
+
+        // Move to the next expanded pattern
+        pat = strtok(NULL, "|");
+    }
+
+    free(expanded_pattern);
+
     return false;
 }

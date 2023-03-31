@@ -1,6 +1,6 @@
 #include "Transform.h"
 // extern void JSTransform(char *FileName);
-bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*functionPTR)(char *, char *))
+bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*functionPTR)(char *, char *, char *))
 {
     // int test = EM_ASM_INT({ return Module.exports.JSTransform($0); }, "hello world!");
     //  JSTransform("hello world!");
@@ -29,7 +29,7 @@ bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*
                     char *ExtensionPath = malloc(strlen(CJSONElement2->valuestring) + strlen(GetSetting("INTERNAL_FULL_CONFIG_PATH")->valuestring) + 2);
                     strcpy(ExtensionPath, GetSetting("INTERNAL_FULL_CONFIG_PATH")->valuestring);
                     strcat(ExtensionPath, CJSONElement2->valuestring);
-                    char *TempBuffer = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath);
+                    char *TempBuffer = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath, DependencyGraph->Vertexes[i]->path);
                     if (TempBuffer != NULL)
                     {
                         if (NewFileContents != NULL)

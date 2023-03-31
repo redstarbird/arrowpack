@@ -69,4 +69,6 @@ int StringToInt(const char *string);
 
 bool MatchGlob(const char *FilePath, const char *GlobPattern);
 
+int NumOfCharOccurences(const char *text, const char character);
+
 #endif // !STRINGFUNCTIONS_H

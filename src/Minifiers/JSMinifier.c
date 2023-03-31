@@ -8,5 +8,4 @@ void RemoveSingleLineComments(char *Text)
     {
         RemoveSectionOfString(Text, SingleLineCommentLocations[i].StartIndex, SingleLineCommentLocations[i].EndIndex);
     }
-    printf("Removed single line comments: %s\n", Text);
 }
