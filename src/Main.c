@@ -53,7 +53,7 @@ char *EMSCRIPTEN_KEEPALIVE RebuildFiles(struct Graph *DependencyGraph, char *Enc
                 DependencyGraph->Vertexes[i]->edge = NULL;
                 if (StringStartsWith(DependencyGraph->Vertexes[i]->path, PREPROCESS_DIR))
                 {
-                    DependencyGraph->Vertexes[i]->path = ReplaceSectionOfString(DependencyGraph->Vertexes[i]->path, 0, 30, Settings.entry);
+                    DependencyGraph->Vertexes[i]->path = ReplaceSectionOfString(DependencyGraph->Vertexes[i]->path, 0, 30, GetSetting("entry")->valuestring);
                 }
                 CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
                 struct Edge *NewTempEdge = DependencyGraph->Vertexes[i]->edge;
