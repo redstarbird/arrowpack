@@ -48,7 +48,6 @@ class settingsSingleton {
 				this.settings[AddFileSeperatorToEnd[i]] += "/";
 			}
 		}
-		console.log(this.settings);
 	}
 	getValue(key, required) { // Will throw an error if the key is not present and required is true
 		if (this.settings[key] !== undefined) { return this.settings[key]; } else { if (required === true) { throw "Error: could not find required key :("; } else { return null; } }

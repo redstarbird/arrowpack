@@ -526,9 +526,6 @@ void BundleFile(struct Node *GraphNode)
                             }
                             else if (strncmp(FileContents + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
                             {
-                                ColorGreen();
-                                printf("Resolving name collision: %s\n", FileContents + i);
-                                ColorNormal();
                                 FunctionDuplicateFound = true;
                                 break;
                             }
@@ -751,9 +748,6 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
         }
         FileContents = RemoveSubstring(FileContents, "export default ");
         FileContents = RemoveSubstring(FileContents, "export ");
-        ColorGreen();
-        printf("Post processed: %s", FileContents);
-        ColorNormal();
         CreateFileWrite(ExitPath, FileContents);
     }
     free(shiftLocations);

@@ -77,7 +77,6 @@ int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
 
 bool EMSCRIPTEN_KEEPALIVE InitSettings(char *JSON)
 {
-    printf("JSON: %s\n", JSON);
     Settings.Settings = cJSON_Parse(JSON);
     return true;
 }
