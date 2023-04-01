@@ -1,6 +1,6 @@
 {
 	"name": "arrowpack",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "A unique web bundler that focuses on HTML files and website speed and simplicity",
 	"keywords": [
 		"web"
@@ -26,13 +26,14 @@
 	"scripts": {
 		"test": "node ./__tests__/ArrowPack.test.js",
 		"build": "python3 ./Build.py",
+		"lines": "node ./Scripts/TotalLinesOfCode.js",
 		"prepublishOnly": "npm run build"
 	},
 	"bin": {
 		"arrowpack": "src/ArrowPack.js"
 	},
 	"dependencies": {
-		"arrowargs": "^0.0.2",
+		"arrowargs": "^0.0.3",
 		"chalk": "^4.1.2",
 		"chokidar": "^3.5.3",
 		"codependency": "^2.1.0",
