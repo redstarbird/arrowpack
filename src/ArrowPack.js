@@ -48,11 +48,31 @@ const argv = require("arrowargs")(process.argv.slice(2))
 var CONFIG_FILE_NAME = "arrowpack.config.js";
 if (argv.c) { if (fs.lstatSync(argv.c).isDirectory()) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME); } else { CONFIG_FILE_NAME = argv.c; } }
 var rawconfigData = null;
-if (fs.existsSync(CONFIG_FILE_NAME)) { rawconfigData = require(path.join(process.cwd(), CONFIG_FILE_NAME)); }
+if (!fs.existsSync(CONFIG_FILE_NAME)) {
+	var CJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".cjs";
+	var EMJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".mjs";
+	if (fs.existsSync(CJSName)) {
+		CONFIG_FILE_NAME = CJSName;
+	} else if (fs.existsSync(EMJSName)) {
+		CONFIG_FILE_NAME = EMJSName;
+	} else { CONFIG_FILE_NAME = ""; }
+}
+if (CONFIG_FILE_NAME !== "") {
+	CONFIG_FILE_NAME = path.join(process.cwd(), CONFIG_FILE_NAME);
+	/*if (CONFIG_FILE_NAME.endsWith(".mjs")) {
+		rawconfigData = await(async () => { (await import(CONFIG_FILE_NAME)) })();
+	}*/
+	rawconfigData = require(CONFIG_FILE_NAME);
+} else {
+	rawconfigData = {};
+}
+
+
+
 console.log(rawconfigData);
 if (argv.c) { if (!argv.c.endsWith("/")) { argv.c += "/"; } rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
 const Settings = new settingsSingleton(rawconfigData);
-
+process.exit(0);
 process.on("SIGTERM", () => {
 	print("Exiting due to SIGTERM, deleting temp directory...");
 	DeletePreprocessDir();
