@@ -4,12 +4,12 @@ A web bundling application that makes your website faster and easier to maintain
 
 <img align="center" width="300" height="300" src="https://github.com/redstarbird/arrowpack/blob/main/Logo_WIP.svg">
 
-**Temporary WIP logo**
+**WIP logo**
 
 
-## Version 0.0.0
+## Version 0.2.1
 
-### This project does not fully work yet as the MVP has not been completed yet
+### This project is still in early beta and breaking changes may occur!
 
 **Features required for MVP:**
 
@@ -18,7 +18,7 @@ A web bundling application that makes your website faster and easier to maintain
 | HTML Includes              | ✅          |
 | CSS Bundling               | ✅          |
 | HTML/CSS Minifier          | ❌          |
-| Javascript Module Bundler  | ❌          |
+| Javascript Module Bundler  | ✅          |
 | Node.JS modules on browser | ❌          |
 | Arrowpack website          | ❌          |
 | Documentation              | ❌          |
