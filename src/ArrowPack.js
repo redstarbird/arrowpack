@@ -72,7 +72,7 @@ if (CONFIG_FILE_NAME !== "") {
 console.log(rawconfigData);
 if (argv.c) { if (!argv.c.endsWith("/")) { argv.c += "/"; } rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
 const Settings = new settingsSingleton(rawconfigData);
-process.exit(0);
+
 process.on("SIGTERM", () => {
 	print("Exiting due to SIGTERM, deleting temp directory...");
 	DeletePreprocessDir();

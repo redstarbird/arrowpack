@@ -52,7 +52,7 @@ function StartServer(Settings) {
             }
             var redirect = false;
             if (fileExtension === "") {
-                if (!filePath.endsWith("/")) {
+                if (!req.url.endsWith("/")) {
                     redirect = true;
                 }
                 filePath = path.join(filePath, "index.html");
