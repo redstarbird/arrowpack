@@ -1,4 +1,4 @@
-# This file is WIP and is not the most stable. It is also very messy code
+# This script is used to easily compile the entire arrowpack project, it is still a WIP
 import os
 import platform
 import shutil
