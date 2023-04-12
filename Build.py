@@ -42,7 +42,7 @@ def Build():
         GoBuildFile("Build/FileHandler.wasm", "src/go/FileHandler/FileHandler.go")  # Not currently being used
     )
     
-    CBuildFiles = ( # The object with all of the C config files
+    AllCBuildFiles = ( # The object with all of the C config files
         CBuildFiles(
         "Build/CFunctions.js", # Where to save the output file to
         "src/Main.c", # The C entry file
@@ -67,7 +67,7 @@ def Build():
                     runCommand(f"tinygo build -opt=2 -o {key} -target wasm {value}")
                     time.sleep(0.1)
         
-        for value in CBuildFiles:
+        for value in AllCBuildFiles:
             ExportedFunctions = "" 
                 
             if value.ExportedFunctions != None: # Puts the exported functions in the format used by the compile command
@@ -105,13 +105,10 @@ def Build():
             Dev = ""
             if options["dev"] == True:
                 print("Dev mode is enabled")
-                Dev = """--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -fsanitize=address 
-                -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 """ # Sets up the debug options
-                optimizations = "" # Removes optimisations when in dev mode
+                Dev = "--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -fsanitize=address -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
+                optimizations = ""
 
-            command = f"""emcc {optimizations}--no-entry -sALLOW_TABLE_GROWTH -sENVIRONMENT=node 
-                {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS}
-                -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -o {value.output}""" # Puts the compile command together
+            command = f"emcc {optimizations}--no-entry -sALLOW_TABLE_GROWTH -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -o {value.output}" 
 
             print("\n\n\n" + command + "\n\n\n")
 
