@@ -40,5 +40,6 @@ function countLines(directoryPath, excludeList) {
 
 }
 
-// Example usage
-console.log(`Total: ${countLines('./', ['node_modules', '.git', 'cJSON', '.vs', 'Build', "OldFiles"])}`);
+console.log(`Total: ${countLines('./',
+    ['node_modules', '.git', 'cJSON', '.vs', 'Build', "OldFiles"] // Directories to ignore
+)}`); // Prints the total lines of code

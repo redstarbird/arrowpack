@@ -1,5 +1,5 @@
 "use strict";
-// This files compies the contents of the .gitignore file to the end of the .npmignore file
+// This files compies the contents of the .gitignore file to the end of the .npmignore file (not currently used)
 const fs = require("fs");
 
 

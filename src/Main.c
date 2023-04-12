@@ -11,24 +11,23 @@ char *EMSCRIPTEN_KEEPALIVE RebuildFiles(struct Graph *DependencyGraph, char *Enc
 {
     printf("Rebuilding...\n");
 
-    char **Files = ArrowDeserialize(EncodedFiles, &FilesNum);
+    char **Files = ArrowDeserialize(EncodedFiles, &FilesNum); // Deserialises the array of file paths that have changed
     char **ChangedFiles;
     if (DependencyGraph == NULL)
     {
         // Need to implement
     }
 
-    struct Graph *TempGraph = malloc(sizeof(struct Graph));
+    struct Graph *TempGraph = malloc(sizeof(struct Graph)); // Allocates a new temporary dependency graph
     TempGraph->VerticesNum = 0;
-
     TempGraph->Vertexes = malloc(sizeof(struct Node *) * DependencyGraph->VerticesNum);
-    int CurrentVertexNum = 0;
+
     bool FileFound = false;
     for (int i = 0; i < DependencyGraph->VerticesNum; i++) // Finds the vertices for each file that has been modified
     {
-        for (int j = 0; j < FilesNum; j++)
+        for (int j = 0; j < FilesNum; j++) // Loops through each file that has changed to find it in the graph
         {
-            if (strcasecmp(DependencyGraph->Vertexes[i]->path, Files[j]) == 0 || strcasecmp(EntryToPreprocessPath(Files[j]), DependencyGraph->Vertexes[i]->path) == 0)
+            if (strcasecmp(DependencyGraph->Vertexes[i]->path, Files[j]) == 0 || strcasecmp(EntryToPreprocessPath(Files[j]), DependencyGraph->Vertexes[i]->path) == 0) // Checks if the search vertex is the file that has changed
             {
                 FileFound = true;
                 int TempVertexNum = 0;
