@@ -6,7 +6,6 @@ import sys
 import subprocess
 import time
 import re
-import requests # for checking internet connection
 
 
 wsl = False
@@ -114,16 +113,16 @@ def Build():
 
             runCommand(command)
 
-    def checkInstalled(program, autoInstall=False, required=True):
+    def checkInstalled(program, autoInstall=False, required=False):
         if required and not autoInstall:
             assert(shutil.which(program)) != None
         return shutil.which(program)
 
-    def checkInternetConnection(): # Checks if device has internet connection by sending a https request (needed when autoInstall is enabled)
-            try:
-                requests.head("https://www.google.com",timeout=3) # Send request to check Internet connection
-            except requests.ConnectionError:
-                raise Exception("Error: An internet connection is required")
+    #def checkInternetConnection(): # Checks if device has internet connection by sending a https request (needed when autoInstall is enabled)
+    #        try:
+    #            requests.head("https://www.google.com",timeout=3) # Send request to check Internet connection
+    #        except requests.ConnectionError:
+    #            raise Exception("Error: An internet connection is required")
             
     if platform.system() == "Windows":
         if checkInstalled("wsl"): # checks if WSL is installed
@@ -148,7 +147,8 @@ def Build():
             global wsl
             wsl = True
             BuildLinux()
-
+        else:
+             BuildLinux()
     elif platform.system() == "Darwin":
             print("Building on mac is not supported currently")
     elif platform.system() == "Linux":
