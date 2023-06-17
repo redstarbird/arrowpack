@@ -1,3 +1,4 @@
+/* This file contains very basic functions for using colours in the terminal */
 #include "TextColors.h"
 
 void ColorRed() { printf("\x1b[31m"); }

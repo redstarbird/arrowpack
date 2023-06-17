@@ -1,3 +1,4 @@
+/* This file is for extra C specific functions and is not currently used */
 #include "CFunctions.h"
 
 char *GetCommandOutput(const char *command)

@@ -1,3 +1,4 @@
+/* This file contains all of the functions used for strings */
 #include "StringRelatedFunctions.h"
 
 // Returns the index of the last occurence of a character or -1 if the character isn't present
@@ -335,7 +336,7 @@ char *EntryToPreprocessPath(char *path)
     return ReplaceSectionOfString(path, 0, strlen(GetSetting("entry")->valuestring) - 1, PREPROCESS_DIR); // Replaces entry string with preprocess
 }
 
-/* Removes all doccurences of a given subtring from a string */
+/* Removes all occurences of a given subtring from a string */
 char *RemoveSubstring(char *string, const char *substring)
 {
     // Check for NULL input
@@ -445,7 +446,7 @@ bool StringContainsSubstring(const char *string, const char *substring)
     }
 
     // Check if the substring is an empty string
-    if (strlen(substring) == 0)
+    if (strlen(substring) == 0 || strlen(string) == 0)
     {
         return false;
     }
@@ -469,6 +470,7 @@ char *IntToString(int Integer)
         IntStringLength++;
         Temp2 *= 10;
     }
+    printf("String length: %d\n", IntStringLength);
     char *String = malloc(sizeof(char) * (IntStringLength + 1)); // Allocates the string using the length calculated earlier
     char *ptr = &String[0];
     int count = 0, temp;
@@ -478,15 +480,15 @@ char *IntToString(int Integer)
         *ptr++ = '-';    // Add negative sign to start of string
         count++;
     }
-    for (temp = Integer; temp > 0; temp /= 10, ptr++) // Get to the end of the string and null terminate
-    {
-        *ptr = '\0';
-    }
+    for (temp = Integer; temp > 0; temp /= 10, ptr++)
+        ;
+    *ptr = '\0';
     for (temp = Integer; temp > 0; temp /= 10) // Divide integer by 10 each loop
     {
         *--ptr = temp % 10 + '0'; // Add the character code of the number to the string
         count++;
     }
+    printf("String %s\n", String);
     return String;
 }
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
 
+var Total = 0;
 // This function takes the path to a directory as an argument, along with an array of directory names to exclude, and prints the total number of lines of code in all the files in that directory and its subdirectories, excluding the directories in the exclude list
 function countLines(directoryPath, excludeList) {
     // Read the contents of the directory
@@ -27,19 +28,16 @@ function countLines(directoryPath, excludeList) {
                 console.log(`${filePath}: ${lines.length}`);
 
                 // Add the number of lines in the file to the total number of lines
-                totalLines += lines.length;
+                Total += lines.length;
             }
         } else if (fs.statSync(filePath).isDirectory() && !excludeList.includes(fileName)) {
             // If the file is a directory, and it is not in the exclude list, recursively count the lines of code in the directory
-            totalLines += countLines(filePath, excludeList);
+            countLines(filePath, excludeList);
         }
     }
 
     // Return the total number of lines
-    return totalLines;
-
 }
-
-console.log(`Total: ${countLines('./',
-    ['node_modules', '.git', 'cJSON', '.vs', 'Build', "OldFiles"] // Directories to ignore
-)}`); // Prints the total lines of code
+countLines('./',
+    ['node_modules', '.git', 'cJSON', '.vs', 'Build', "OldFiles"]); // Directories to ignore
+console.log(`Total: ${Total}`); // Prints the total lines of code

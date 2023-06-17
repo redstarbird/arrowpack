@@ -1,3 +1,4 @@
+/* This file contains basic integer functions */
 #include "IntFunctions.h"
 
 int min(int x, int y)

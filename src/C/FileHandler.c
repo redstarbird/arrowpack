@@ -1,3 +1,4 @@
+/* This file is responsible for all of the file handling functions */
 #include "FileHandler.h"
 #include <emscripten.h>
 
@@ -66,7 +67,7 @@ char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
     long int length = ftell(filePTR); // get length of file
     fseek(filePTR, 0, SEEK_SET);      // go back to start of file
 
-    char *buffer = malloc(length + 1); // This is where it crashes
+    char *buffer = malloc(length + 1);
     if (buffer == NULL)
     {
         printf("Error creating buffer\n");

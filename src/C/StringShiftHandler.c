@@ -1,3 +1,4 @@
+/* This file is for handling shifts in strings when saved indexes of strings are incorrect because a substring has been inserted or removed which shifts the entire string */
 #include "StringShiftHandler.h"
 
 int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)

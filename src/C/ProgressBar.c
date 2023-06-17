@@ -1,3 +1,4 @@
+/* This file is used for creating progress bars */
 #include "ProgressBar.h"
 #define PROGRESS_BAR_LENGTH 50
 
