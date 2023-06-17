@@ -10,9 +10,6 @@ module.exports = {
 	transformers: {
 		"*.html": ["extensions/transformer.js"]
 	},
-	validators: {
-		"*.js": ["@arrowpack/jshint"]
-	},
 	postProcessors: {
 		"*": ["./extensions/minifyHTML.js"]
 	},

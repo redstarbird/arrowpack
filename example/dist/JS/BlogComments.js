@@ -12,5 +12,5 @@ function LogComments(params) {
 }
 
 LogComments(Comments);
-
+module.exports = { LogComments: LogComments };
 

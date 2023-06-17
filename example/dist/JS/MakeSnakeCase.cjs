@@ -5,7 +5,8 @@ function MakeSnakeCase(str) {
     Test();
     str = str.replace(/ /g, '_');
 
-        str = str.replace(/[A-Z]/g, function (char) {
+    // Replace uppercase characters with lowercase versions preceded by an underscore using the MakeSnakeCase function
+    str = str.replace(/[A-Z]/g, function (char) {
         return '_' + char.toLowerCase();
     });
 
