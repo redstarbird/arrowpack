@@ -45,7 +45,7 @@ Based of off [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
     -   Improved file type handling [Details](https://github.com/redstarbird/arrowpack/commit/d57d5b47690fff276c8c511b9490843ea5a89bb9)
     -   Support relative paths using ../ [Details](https://github.com/redstarbird/arrowpack/commit/e51013459316e7c51c7d379944d1abc3ced814d1)
-    -   More consistent are useful errors [Details](https://github.com/redstarbird/arrowpack/commit/4baa8790a976eed50c361e27169944552bbb50b1)
+    -   More consistent and useful errors [Details](https://github.com/redstarbird/arrowpack/commit/4baa8790a976eed50c361e27169944552bbb50b1)
     -   Ignore dependencies inside of comments [Details](https://github.com/redstarbird/arrowpack/commit/d422d3d9fbea29c78fe8de2a3e34e6ab9b5f742e)
     -   Added live realoading development server [Details](https://github.com/redstarbird/arrowpack/commit/c426bbafe79df9c241845782c5c350c2b56201b8)
 
