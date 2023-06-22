@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 "use strict";
-// js wrapper for arrowpack for NPM
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
 const DirFunctions = require("./js/DirFunctions");
-// const wasm_exec = require("../Build/wasm_exec.js");
 const CFunctionFactory = require("../Build/CFunctions.js");
-// const go = new Go();
 const Sleep = require("../src/js/Sleep");
 const { mkdirIfNotExists } = require("./js/DirFunctions.js");
 const chokidar = require('chokidar');
@@ -18,7 +15,7 @@ const { createRequire } = require("module");
 const { exit } = require("process");
 const { performance } = require('perf_hooks');
 
-var StartTime = performance.now();
+var StartTime = performance.now(); // Track the start time to track bundle time
 
 function requireModule(modulePath, exportName) {
 	try {
@@ -29,6 +26,7 @@ function requireModule(modulePath, exportName) {
 	}
 }
 
+// Returns whether an object is empty or not
 function ObjectIsEmpty(object) {
 	for (var Property in object) {
 		if (object.hasOwnProperty(Property))
@@ -37,7 +35,7 @@ function ObjectIsEmpty(object) {
 	return true;
 }
 
-const argv = require("arrowargs")(process.argv.slice(2))
+const argv = require("arrowargs")(process.argv.slice(2)) // Handle command line arguments
 	.option("c", {
 		alias: "config-path",
 		describe: "Path to config file if not in working directory",
@@ -45,7 +43,9 @@ const argv = require("arrowargs")(process.argv.slice(2))
 	}).option("dev", { alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false })
 	.help().argv;
 
-var CONFIG_FILE_NAME = "arrowpack.config.js";
+
+// Get configuration file path
+var CONFIG_FILE_NAME = "arrowpack.config.js"; //
 if (argv.c) { if (fs.lstatSync(argv.c).isDirectory()) { CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME); } else { CONFIG_FILE_NAME = argv.c; } }
 var rawconfigData = null;
 if (!fs.existsSync(CONFIG_FILE_NAME)) {
@@ -57,45 +57,28 @@ if (!fs.existsSync(CONFIG_FILE_NAME)) {
 		CONFIG_FILE_NAME = EMJSName;
 	} else { CONFIG_FILE_NAME = ""; }
 }
+
+// Get configuration file data
 if (CONFIG_FILE_NAME !== "") {
 	CONFIG_FILE_NAME = path.join(process.cwd(), CONFIG_FILE_NAME);
-	/*if (CONFIG_FILE_NAME.endsWith(".mjs")) {
-		rawconfigData = await(async () => { (await import(CONFIG_FILE_NAME)) })();
-	}*/
 	rawconfigData = require(CONFIG_FILE_NAME);
 } else {
 	rawconfigData = {};
 }
 
-
-
-console.log(rawconfigData);
+// Configure internal settings
 if (argv.c) { if (!argv.c.endsWith("/")) { argv.c += "/"; } rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c, rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c) }
-const Settings = new settingsSingleton(rawconfigData);
-
-process.on("SIGTERM", () => {
-	print("Exiting due to SIGTERM, deleting temp directory...");
-	DeletePreprocessDir();
-})
-process.on("exit", () => { DeletePreprocessDir(); });
-process.on("SIGINT", () => { var DelResult = DeletePreprocessDir(); process.exit(DelResult); });
-function DeletePreprocessDir() {
-	fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
-
-		if (err) { console.error(err); } else {
-			console.log("Sucessfully removed temporary preprocess directory");
-		} return 0;
-	});
-}
+const Settings = new settingsSingleton(rawconfigData); // Initialize settings singleton
 
 
-const PluginsCache = {};
+const PluginsCache = {}; // Caches used plugins so they don't need to be reloaded every time they are used
 
+// Function for transforming files that is called from C code
 function JSTransformFiles(EncodedOriginalContents, PluginPath) {
 	const OriginalFileContents = CFunctions.UTF8ToString(EncodedOriginalContents);
 	PluginPath = CFunctions.UTF8ToString(PluginPath);
 
-	if (!PluginsCache[PluginPath]) {
+	if (!PluginsCache[PluginPath]) { // Make sure that the plugin is in the cache
 		try {
 			PluginsCache[PluginPath] = require(PluginPath);
 		} catch (error) {
@@ -103,29 +86,28 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath) {
 		}
 	}
 	const Transformer = PluginsCache[PluginPath];
-	const FileContents = Transformer(OriginalFileContents);
-	if (FileContents === OriginalFileContents) {
-
+	const FileContents = Transformer(OriginalFileContents); // Run the transformation on the file contents
+	if (FileContents === OriginalFileContents) { // Don't waste time encoding strings if the file contents haven't changed
 		return null;
 	}
+	// Encode string into UTF8 encoding
 	var lengthBytes = CFunctions.lengthBytesUTF8(FileContents) + 1;
 	var stringOnWasmHeap = CFunctions._malloc(lengthBytes);
 	CFunctions.stringToUTF8(FileContents, stringOnWasmHeap, lengthBytes);
-	return stringOnWasmHeap;
+	return stringOnWasmHeap; // Return the encoded string
 }
 
+// Function for validating files
 async function JSValidateFiles(FileContents, PluginPath, FilePath) {
+	// Decode UTF8 string into JS string
 	PluginPath = CFunctions.UTF8ToString(PluginPath);
 	FilePath = CFunctions.UTF8ToString(FilePath);
-	console.log("JS validating\n");
 	FileContents = CFunctions.UTF8ToString(FileContents);
+
 	let imported = false;
-	if (!PluginsCache[PluginPath]) {
-		console.log("Not in cache!\n");
+	if (!PluginsCache[PluginPath]) { // Ensure the plugin is in the cache
 		try {
-			console.log("trying!");
 			await (async () => {
-				console.log("async!\n");
 				PluginsCache[PluginPath] = (await import(PluginPath)).default;
 				imported = true;
 				console.log(PluginsCache[PluginPath]);
@@ -138,14 +120,15 @@ async function JSValidateFiles(FileContents, PluginPath, FilePath) {
 
 	const Validator = PluginsCache[PluginPath];
 	await (async () => {
-		const Results = await Validator.Validate(FileContents, FilePath); if (Results.warnings) {
+		const Results = await Validator.Validate(FileContents, FilePath); // Run validator
+		if (Results.warnings) { // Check for warnings
 			if (Results.warnings.length > 0) {
 				for (let i = 0; i < Results.warnings.length; i++) {
 					console.log("Warning: " + Results.warnings[i]);
 				}
 			}
 		}
-		if (Results.errors) {
+		if (Results.errors) { // Check for errors
 			if (Results.errors.length > 0) {
 				for (let i = 0; i < Results.errors.length; i++) {
 					console.log("Error: " + Results.errors[i]);
@@ -164,103 +147,86 @@ let StructsPointer;
 (async () => { // Dev server code
 	CFunctions = await CFunctionFactory();
 
-	if (argv.dev === true) {
+	if (argv.dev === true) { // Check if dev server is enabled
 		console.log("Entering dev mode");
 		const DevServer = require("./js/DevServer.js");
 		DevServer.StartServer(Settings);
 
-		const watcher = chokidar.watch(Settings.getValue("entry"));
-		watcher.on("change", (FilePath) => {
+		const watcher = chokidar.watch(Settings.getValue("entry")); // Watch file system of CWD
+		watcher.on("change", (FilePath) => { // Wait for files to be changed
 			console.log("File " + FilePath + " has changed, rebuilding...");
 			var StartTime = performance.now();
-			var RebuiltFiles = CFunctions.ccall(
+			var RebuiltFiles = CFunctions.ccall( // Call C function to rebuild files
 				"RebuildFiles",
 				"string",
 				["number", "string", "number"],
 				[StructsPointer, FilePath, 1]);
-			RebuiltFiles = ArrowDeserialize(RebuiltFiles);
-			DevServer.SendUpdatedPage(RebuiltFiles, Settings);
+			RebuiltFiles = ArrowDeserialize(RebuiltFiles); // Deserialise serialised string of changed files
+			DevServer.SendUpdatedPage(RebuiltFiles, Settings); // Send the updated pages to clients
 			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
 		});
 	} Bundle();
 })();
 
-
-
+// Main function for bundling files
 function Bundle() {
 	var temp;
 
+	// Find all files in CWD and all subdirectories
 	if (Settings.getValue("largeProject") === false) {
 		temp = DirFunctions.RecursiveWalkDir(Settings.getValue("entry")); // eventually add pluginAPI event here
-	} else {
+	} else { // Use Wasm module to recusively find all files (doesn't currently work)
 		let RecursiveWalkDirWASM = fs.readFileSync("../Build/RecursiveWalkDir.wasm"); const { WebAssembly } = require("wasi");
 		let compiledWalkDirWASM = WebAssembly.compile(wasm);
 		let InstanceWalkDirWASM = WebAssembly.instantiate(compiledWalkDirWASM);
 		const { InstanceWalkDirWASMExports } = instance;
 		temp = InstanceWalkDirWASMExports.walk_dir(Settings.getValue("entry"));
 	}
-
 	var WalkedFiles = temp.Files;
 	var WalkedDirs = temp.Directories;
 
+	// Create exit directories for all entry directories
 	if (WalkedDirs) {
 		WalkedDirs.forEach(Dir => {
 			var tempDir = Settings.getValue("exit") + Dir.substring(Settings.getValue("entry").length);
 
 			DirFunctions.mkdirIfNotExists(tempDir);
-			//DirFunctions.mkdirIfNotExists(Dir);
 		});
 	}
-	DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
+
+	DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR"); // Create temporary directory for temp files
+
 	var AbsoluteFilesCharLength = 0;
 	var WrappedWalkedFiles = "";
-	if (WalkedFiles && WalkedFiles.length > 0) { // Paths are wrapped into one string because passing array of strings from JS to C is complicated
-		WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; AbsoluteFilesCharLength += FilePath.length; });
+	if (WalkedFiles && WalkedFiles.length > 0) {
+		WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; AbsoluteFilesCharLength += FilePath.length; }); // Paths are wrapped into one string because passing array of strings from JS to C is complicated
 
+		CFunctions._CheckWasm(); // Check that Wasm has been initialized correctly
+		CFunctions._InitFileTypes(); // Initialize file types structs
 
+		const StringifiedJSON = JSON.stringify(Settings.settings) // Convert settings to a JSON string
 
-		CFunctions._CheckWasm();
-		CFunctions._InitFileTypes();
-		/*for (let k in Settings.settings) {
-			if (CFunctions.ccall(
-				"SendSettingsString",
-				"number",
-				["string"],
-				[k]
-			) != 1) {
-				throw "Error sending Wasm settings string: " + k;
-			}
-			console.log(chalk.bold.blue(k));
-			// Gives time to apply settings
-			if (CFunctions.ccall(
-				"SendSettingsString",
-				"number",
-				["string"],
-				[Settings.settings[k].toString()]
-			) != 1) {
-				throw "Error sending Wasm settings string: " + Settings.settings[k];
-			}
-			console.log(chalk.bold.blue(Settings.settings[k]));
-			// Also gives time to apply settings
-		}*/const StringifiedJSON = JSON.stringify(Settings.settings)
+		var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); // Initialize settings on the Wasm side
+		if (Success !== 1) { throw "Error setting up Wasm settings"; }
 
-		var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); if (Success !== 1) { throw "Error setting up Wasm settings"; } console.log("Setup settings");
-		console.log("Success: " + Success);
-		// StructsPointer = CFunctions._CreateTree(allocateUTF8(WrappedWalkedFiles), WalkedFiles.length, AbsoluteFilesCharLength); // Need to get this working eventually for faster speed but couldn't work out allocateUTF8
-		StructsPointer = CFunctions.ccall(
+		StructsPointer = CFunctions.ccall( // Find all dependencies and create the dependency graph
 			"CreateGraph",
 			"number",
 			["string", "number"],
 			[WrappedWalkedFiles, WalkedFiles.length]
-		); if (!ObjectIsEmpty(Settings.settings.validators)) {
+		);
+
+		if (!ObjectIsEmpty(Settings.settings.validators)) { // Run validators on the Wasm side if any exist
 			Success = false;
 			const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
 			Success = CFunctions.ccall(
 				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, ValidateJSFunctionPointer, 2]
 			)
 
-		} let TransformJSFunctionPointer = Success;
-		if (!ObjectIsEmpty(Settings.settings.transformers)) {
+		}
+		let TransformJSFunctionPointer = Success;
+
+		if (!ObjectIsEmpty(Settings.settings.transformers)) { // Run transformers on the Wasm side if any exist
 			Success = false;
 			TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
 			Success = CFunctions.ccall(
@@ -270,50 +236,52 @@ function Bundle() {
 		}
 
 		Success = false;
-		CFunctions._topological_sort(StructsPointer);
+		CFunctions._topological_sort(StructsPointer); // Sort the dependency graph topologically
+
 		Success = 0;
-		Success = CFunctions.ccall(
+		Success = CFunctions.ccall( // Bundle all the files in the graph
 			"BundleFiles",
 			"number",
 			["number"],
 			[StructsPointer]
 		);
 
-		if (!ObjectIsEmpty(Settings.settings.postProcessors)) {
+		if (!ObjectIsEmpty(Settings.settings.postProcessors)) { // Run the post processors on the Wasm side if any exist
 			Success = false;
 			Success = CFunctions.ccall(
 				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, TransformJSFunctionPointer, 3]
 			);
 		}
-		if (Success === 1 || Success === 0) {
 
-			//CFunctions.ccall("PrintTimeTaken", "void", ["number", "number"], [StartTime, performance.now()]); // Not working for some reason
-			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
-			if (argv.dev) { console.log("Dev server running..."); } else {
+		if (Success === 1 || Success === 0) {
+			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n")); // Print the bundle time
+
+			if (argv.dev) {
+				console.log("Dev server running...");
+			}
+			else {
 				DeletePreprocessDir();
 			}
 
 		}
-
-
-		// console.log("\n\nBuild completed in" + (EndTime - StartTime) / 1000 + " seconds!\n\n\n"); // Need to get Wasm code to run this because Wasm code seems to be non-blocking
-		/*
-			WebAssembly.instantiateStreaming(DependencyTreeWasmBuffer, DependencyTreeMemory).then((instance) => {
-				StructsPointer = instance.ccall(
-					"CreateTree",
-					"number",
-					["string", "number", "string"],
-					[WrappedWalkedFiles, WalkedFiles.length, settings.getValue("entry"), settings.getValue("exit")]
-				)
-			});
-		
-			var GoWASMFileHandler;
-			const goWASM = fs.readFileSync("../Build/FileHandler.wasm");
-		
-			WebAssembly.instantiate(goWASM, go.importObject).then(function (obj) {
-				GoWASMFileHandler = obj.instance;
-				go.run(GoWASMFileHandler);
-				GoWASMFileHandler.exports.HandleFiles(StructsPointer, settings.getValue("entry"));
-			});*/
+	} else {
+		console.log(chalk.yellowBright("Could not find any files to be bundled")); // No files were found in the entry directory
 	}
+}
+
+// Clean up the preprocess directory on exit
+process.on("SIGTERM", () => { // Delete the preprocess directory on sigterm
+	print("Exiting due to SIGTERM, deleting temp directory...");
+	DeletePreprocessDir();
+})
+process.on("exit", () => { DeletePreprocessDir(); }); // Delete the preprocess directory on exit
+process.on("SIGINT", () => { var DelResult = DeletePreprocessDir(); process.exit(DelResult); }); // Delete the preprocess directory on force stop from user
+
+function DeletePreprocessDir() { // Function to delete the preprocess directory
+	fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
+
+		if (err) { console.error(err); return 1; } else {
+			console.log("Sucessfully removed temporary preprocess directory");
+		} return 0;
+	});
 }

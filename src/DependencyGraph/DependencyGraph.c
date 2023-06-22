@@ -16,124 +16,114 @@
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "../C/Stack.h"
 
+// Recursively finds all dependents of a given vertex including nested dependents
 void VertexRecursiveSearch(struct Node *Vertex, struct Stack *stack, bool FindDependencies)
 {
-    Vertex->RebuildChecked = true;
-    if (FindDependencies)
+    Vertex->RebuildChecked = true; // Mark current vertex as found
+    if (FindDependencies)          // For finding dependencies
     {
         printf("Finding dependencies, not dependents\n");
         struct Edge *currentEdge = Vertex->edge;
-        while (currentEdge != NULL)
+        while (currentEdge != NULL) // Loop through all edges
         {
-            if (!Vertex->RebuildChecked)
+            if (!Vertex->RebuildChecked) // Check that the current vertex hasn't already been found
             {
-                Stackpush(stack, currentEdge->vertex);
-                VertexRecursiveSearch(currentEdge->vertex, stack, true);
+                Stackpush(stack, currentEdge->vertex);                   // Push the vertex to the stack
+                VertexRecursiveSearch(currentEdge->vertex, stack, true); // Recursively search dependencies of the new vertex
 
-                Vertex->RebuildChecked = true;
+                Vertex->RebuildChecked = true; // Mark vertex as found
             }
-            currentEdge = currentEdge->next;
+            currentEdge = currentEdge->next; // Go to the next edge
         }
     }
-    else
+    else // For finding dependents
     {
         struct HiddenEdge *currentEdge = Vertex->HiddenEdge;
-        while (currentEdge != NULL)
+        while (currentEdge != NULL) // Loop through all hidden edges
         {
-            printf("looking at %s, %i\n", currentEdge->ConnectedNode->path, currentEdge->ConnectedNode->RebuildChecked);
-            if (!currentEdge->ConnectedNode->RebuildChecked)
+            if (!currentEdge->ConnectedNode->RebuildChecked) // Check the vertex hasn't already been found
             {
-                printf("Rebuilding: %s\n", currentEdge->ConnectedNode->path);
-
-                VertexRecursiveSearch(currentEdge->ConnectedNode, stack, false);
-                printf("About to push %s to stack\n", currentEdge->ConnectedNode->path);
-
-                Vertex->RebuildChecked = true;
+                VertexRecursiveSearch(currentEdge->ConnectedNode, stack, false); // Recursively search dependents of the vertex
+                Vertex->RebuildChecked = true;                                   // Mark vertex as found
             }
-
-            currentEdge = currentEdge->next;
+            currentEdge = currentEdge->next; // Go to next edge
         }
-        Stackpush(stack, Vertex);
+        Stackpush(stack, Vertex); // Push the vertex to the stack
     }
 }
 
+// Returns all dependents of a given vertex including nested dependents
 struct Node **FindAllDependentsOfVertex(struct Node *Vertex, const size_t MaxStackSize, int *Number)
 {
-    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true);
-    VertexRecursiveSearch(Vertex, stack, false);
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true); // Create a new stack
+    VertexRecursiveSearch(Vertex, stack, false);                         // Recursively add all dependents of the vertex to the stack in order
     struct Node **Dependents = malloc(sizeof(struct Node *) * (stack->top + 1));
     int DependentCount = 0;
-    while (!StackIsEmpty(stack))
+    while (!StackIsEmpty(stack)) // Add vertices from the stack to the array
     {
         Dependents[DependentCount] = Stackpop(stack);
         Dependents[DependentCount]->RebuildChecked = false;
         DependentCount++;
     }
-    *Number = DependentCount;
+    *Number = DependentCount; // Set the number of dependents
     return Dependents;
 }
 
+// Returns all dependencies of a vertex
 struct Node **FindAllDependenciesOfVertex(struct Node *Vertex, size_t MaxStackSize, int *Number)
 {
-    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true);
-    VertexRecursiveSearch(Vertex, stack, true);
+    struct Stack *stack = CreateStack(MaxStackSize, STACK_VERTEX, true); // Create a new stack
+    VertexRecursiveSearch(Vertex, stack, true);                          // Recursively add all dependencies of the vertex to the stack in ordere
     struct Node **Dependencies = malloc(sizeof(struct Node *) * (stack->top + 1));
     int DependencyCount = 0;
-    while (!StackIsEmpty(stack))
+    while (!StackIsEmpty(stack)) // Add all vertices from the stack to the array
     {
         Dependencies[DependencyCount++] = Stackpop(stack);
         Dependencies[DependencyCount - 1]->RebuildChecked = false;
     }
-    *Number = DependencyCount;
+    *Number = DependencyCount; // Set the number of dependencies
     return Dependencies;
 }
 
+// Recursive function for recursively traversing and topologically sorting dependencies
 void topological_sort_dfs(struct Node *node, struct Stack *stack)
 {
-    node->visited = true;
+    node->visited = true; // Mark the current node as visited
 
     struct Edge *edge = node->edge;
-    while (edge != NULL)
+    while (edge != NULL) // Loop through all edges (dependencies) of node
     {
         struct Node *Vertex = edge->vertex;
-        if (!Vertex->visited)
+        if (!Vertex->visited) // Check the current vertex hasn't already been visited
         {
-            topological_sort_dfs(Vertex, stack);
+            topological_sort_dfs(Vertex, stack); // Recursively sort the current vertex
         }
-        edge = edge->next;
+        edge = edge->next; // Go to the next edge
     }
-    Stackpush(stack, node);
+    Stackpush(stack, node); // Push the current node to the stack
 }
 
+// Topologically sorts a given graph so dependencies are sorted in the order they need to be processed
 void EMSCRIPTEN_KEEPALIVE topological_sort(Graph *graph)
 {
     struct Stack *stack = CreateStack(graph->VerticesNum, STACK_VERTEX, false); // Initialises a stack to store the sorted nodes
     graph->SortedArray = malloc(sizeof(struct Node *) * graph->VerticesNum);
 
-    for (int i = 0; i < graph->VerticesNum; i++)
+    for (int i = 0; i < graph->VerticesNum; i++) // Loop through the vertices in the graph
     {
-        if (!graph->Vertexes[i]->visited)
+        if (!graph->Vertexes[i]->visited) // Sort through each vertex
         {
             topological_sort_dfs(graph->Vertexes[i], stack);
         }
     }
     int pos = graph->VerticesNum - 1;
-    while (!StackIsEmpty(stack))
+    while (!StackIsEmpty(stack)) // Go through the stack and add the nodes to the dependency graph
     {
         graph->SortedArray[pos--] = Stackpop(stack);
     }
 }
 
-char *entryPath; // global variable for entry (base) path
-
-/*if (pathLen < charLen) {return false;}
-unsigned short int o = 0;
-for (unsigned int i = charLen; i >= 0; i--) {
-    if (path[*pathLen-i] !=  extension[o]) {return false;}
-    o++;
-}
-return true;*/
-
+// Unused old function
 struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
 {
 
@@ -179,11 +169,12 @@ struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules
     return rule;
 }
 
+// Finds all dependencies of a given file
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTypeID, struct Graph **DependencyGraph)
 {
     char *Path = vertex->path;
     char *FileExtension = GetFileExtension(Path);
-    switch (FileTypeID)
+    switch (FileTypeID) // Run the sort function for a given file type
     {
     case HTMLFILETYPE_ID:
         return FindHTMLDependencies(vertex, DependencyGraph);
@@ -201,17 +192,18 @@ RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTy
         break;
     }
 
-    struct RegexMatch *temp = malloc(sizeof(RegexMatch)); // just here temporarily so compiler doesnt throw an error
-    temp->IsArrayEnd = true;
-    return temp;
+    struct RegexMatch *empty = malloc(sizeof(RegexMatch));
+    empty->IsArrayEnd = true;
+    return empty; // Return an empty array if dependencies can't be found
 }
 
+// Common function for invalid files
 void EMSCRIPTEN_KEEPALIVE FatalInvalidFile(const char *filename)
-{ // Throws a fatal error with the given filename
+{
     ThrowFatalError("Fatal error: %s is invalid\n", filename);
 }
 
-struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file
+struct FileRule *InitFileRules() // Gets file rules from FileTypes.json file (no longer needed)
 {
 
     char *rawJSON = ReadDataFromFile("src/FileTypes.json"); // string containing raw JSON from FileTypes.json file
@@ -335,9 +327,13 @@ Edge *create_edge(struct Node *vertex, int StartRefPos, int EndRefPos)
     return edge;
 }
 
+// Creates a new hidden edge
 struct HiddenEdge *CreateHiddenEdge(struct Edge *edge, struct Node *HiddenNode)
 {
+    // Allocate memory for the hidden edge
     struct HiddenEdge *hidden_edge = malloc(sizeof(struct HiddenEdge));
+
+    // Initialize the fields of the hidden edge
     hidden_edge->edge = edge;
     hidden_edge->next = NULL;
     hidden_edge->ConnectedNode = HiddenNode;
@@ -388,6 +384,7 @@ void add_vertex(Graph *graph, struct Node *vertex)
     graph->Vertexes[graph->VerticesNum - 1] = vertex;
 }
 
+// Returns the number of edges a vertex has
 int count_edges(struct Node *vertex)
 {
     int count = 0;
@@ -402,6 +399,7 @@ int count_edges(struct Node *vertex)
     return count;
 }
 
+// Removes all edges connected to a vertex
 void RemoveEdges(struct Node *vertex)
 {
     struct Edge *currentEdge = vertex->edge;
@@ -414,17 +412,17 @@ void RemoveEdges(struct Node *vertex)
     }
 }
 
+// Finds all dependencies of the given vertex and creates edges between the vertex and it's dependencies
 void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 {
     bool DependencyFound = false;
     ColorGreen();
     printf("Finding dependencies for file: %s\n", vertex->path);
     ColorNormal();
-    struct RegexMatch *Dependencies = GetDependencies(vertex, vertex->FileType, DependencyGraph); // Gets dependencies as strings
-    if (Dependencies[0].IsArrayEnd == false)                                                      // Checks if dependencies have been found
+    struct RegexMatch *Dependencies = GetDependencies(vertex, vertex->FileType, DependencyGraph); // Gets dependencies
+    if (Dependencies[0].IsArrayEnd == false)                                                      // Checks if any dependencies have been found
     {
-        if (Dependencies == NULL)
-
+        if (Dependencies == NULL) // No dependency resolution available for given file type
         {
             (*DependencyGraph)->VerticesNum--;
             return;
@@ -442,17 +440,17 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
                     break;
                 }
             }
-            if (!DependencyFound)
+            if (!DependencyFound) // Dependency found is not in Graph so needs to be added
             {
                 if (!StringStartsWith(IteratePointer->Text, GetSetting("entry")->valuestring))
                 {
                     ColorMagenta();
                     printf("Creating new node: %s\n", IteratePointer->Text);
                     ColorNormal();
-                    add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));
-                    add_edge(vertex, (*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], IteratePointer->StartIndex, IteratePointer->EndIndex);
+                    add_vertex(*DependencyGraph, create_vertex(IteratePointer->Text, GetFileTypeID(IteratePointer->Text), NULL));                              // Create the new vertex
+                    add_edge(vertex, (*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], IteratePointer->StartIndex, IteratePointer->EndIndex); // Add new vertex as a dependency
                     DependencyFound = true;
-                    CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph);
+                    CreateDependencyEdges((*DependencyGraph)->Vertexes[(*DependencyGraph)->VerticesNum - 1], DependencyGraph); // Find dependencies of new dependency
                 }
                 else
                 {
@@ -462,15 +460,13 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
             DependencyFound = false;
             IteratePointer++;
         }
-
-        // free(Dependencies); this code was causing errors for some reason need to fix because it is probably causing memory leaks
     }
     printf("\n\nFile has %s %i dependencies\n", vertex->path, count_edges(vertex));
 }
 
-struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength) // Main function for creating dependency Graph
+// Main function for creating dependency Graph
+struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength)
 {
-
     printf("Creating dependency Graph!\n");
     int CurrentWrappedArrayIndex = 0;
     int lastNewElement = 0;
@@ -478,9 +474,9 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
 
     char **paths = malloc((ArrayLength - 1) * (sizeof(char *) + 1)); // Allocates memory for array of strings
 
-    while (ElementsUnwrapped < ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Paths are wrapped into one string because passing array of strings from JS to C is complicated
+    while (ElementsUnwrapped < ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Unwraps all paths from single string from JS
     {
-        if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character thing
+        if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character
         {
             paths[ElementsUnwrapped] = (char *)malloc(CurrentWrappedArrayIndex - lastNewElement + 1);
 
@@ -496,6 +492,7 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLen
 
         CurrentWrappedArrayIndex++;
     }
+
     size_t GraphSize = (int)sizeof(struct Node) * ArrayLength;
 
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph

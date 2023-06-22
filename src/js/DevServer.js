@@ -5,21 +5,23 @@ const WebSocket = require("ws");
 const url = require('url');
 
 let wss;
-const connections = new Map();
+const connections = new Map(); // Creates a map to store connections and corresponding pages
 const cwd = process.cwd();
 
+// Starts the dev server
 function StartServer(Settings) {
-    const ScriptInjectData = "<script type=\"module\">" + fs.readFileSync(path.join(__dirname, "ClientDevServer.js")) + "</script>"
-    const server = http.createServer(
+    const ScriptInjectData = "<script type=\"module\">" + fs.readFileSync(path.join(__dirname, "ClientDevServer.js")) + "</script>" // Websocket reloading script for the client
+
+    const server = http.createServer( // Creates the HTTP server to serve the webpages
         (req, res) => {
             const parsedURL = url.parse(req.url);
-            var filePath = path.join(cwd, Settings.getValue("exit"), parsedURL.pathname)
-            if (parsedURL.query) { filePath += path.sep; }
+            var filePath = path.join(cwd, Settings.getValue("exit"), parsedURL.pathname) // Find the path to the file`
+            if (parsedURL.query) { filePath += path.sep; } // Adds support for query strings
 
-            var fileExtension = path.extname(filePath);
+            var fileExtension = path.extname(filePath); // Get the file extension
             var contentType;
 
-            switch (fileExtension) {
+            switch (fileExtension) { // Find the content header for the requested file
                 case ".js":
                     contentType = "text/javascript";
                     break;
@@ -50,6 +52,7 @@ function StartServer(Settings) {
                 default:
                     contentType = "text/plain";
             }
+
             var redirect = false;
             if (fileExtension === "") {
                 if (!req.url.endsWith("/")) {
@@ -58,7 +61,7 @@ function StartServer(Settings) {
                 filePath = path.join(filePath, "index.html");
             }
 
-            if (redirect) {
+            if (redirect) { // Redirect to make sure the path ends with a trailing foward slash
                 res.writeHead(302, { "Location": req.url + "/" });
                 res.end();
             } else {
@@ -69,11 +72,11 @@ function StartServer(Settings) {
                     } else {
 
                         if (contentType === "text/html") {
-                            var InsertLocation = data.indexOf("</body>");
-                            data = data.slice(0, InsertLocation) + ScriptInjectData + data.slice(InsertLocation);
+                            var InsertLocation = data.indexOf("</body>"); // Finds the end of the body section
+                            data = data.slice(0, InsertLocation) + ScriptInjectData + data.slice(InsertLocation); // Insert the websocket reloading script
                         }
 
-                        res.writeHead(200, { 'Content-Type': contentType, "Cache-Control": "no-store, no-cache", "Expires": "0" });
+                        res.writeHead(200, { 'Content-Type': contentType, "Cache-Control": "no-store, no-cache", "Expires": "0" }); // Send http response
                         res.end(data);
                     }
                 });
@@ -82,17 +85,15 @@ function StartServer(Settings) {
     );
     wss = new WebSocket.Server({ server });
 
-
-
     wss.on("connection", (ws) => {
         console.log("Connection established");
         ws.once("message", (message) => {
-            message = path.join(Settings.getValue("entry"), message.toString());
+            message = path.join(Settings.getValue("entry"), message.toString()); // Get file path client is on
 
-            connections.set(ws, message);
+            connections.set(ws, message); // Store connection with connected path
         }); ws.on("close", () => {
             console.log("Connection closed");
-            connections.delete(ws);
+            connections.delete(ws); // Delete websocket from map
         });
     });
 
@@ -101,22 +102,23 @@ function StartServer(Settings) {
     });
 }
 
+// Sends the updated page to any clients on said page
 function SendUpdatedPage(filePath, Settings) {
     console.log("Sending updated page...");
     const OpenedFiles = new Map();
-    for (const [key, value] of connections.entries()) {
-        for (i = 0; i < filePath.length; i++) {
-            if (filePath[i].startsWith("ARROWPACK_TEMP_PREPROCESS_DIR")) {
+    for (const [key, value] of connections.entries()) { // Loop through connections
+        for (i = 0; i < filePath.length; i++) { // Check each file path
+            if (filePath[i].startsWith("ARROWPACK_TEMP_PREPROCESS_DIR")) { // Change temp paths to exit paths
                 filePath[i] = Settings.getValue("entry") + filePath[i].slice(30);
             }
 
-            if (filePath[i] === value) {
+            if (filePath[i] === value) { // Check if the connection is to the given path
                 if (!OpenedFiles.has(filePath[i])) {
                     console.log(filePath[i]);
                     var FileContent = fs.readFileSync(Settings.getValue("exit") + filePath[i].slice(Settings.getValue("entry").length), "utf8");
                     OpenedFiles.set(filePath[i], FileContent);
                 }
-                key.send(OpenedFiles.get(filePath[i]));
+                key.send(OpenedFiles.get(filePath[i])); // Send the client the new page
             }
         }
     }

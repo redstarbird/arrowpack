@@ -1,6 +1,7 @@
 /* This file is for extra C specific functions and is not currently used */
 #include "CFunctions.h"
 
+// Runs a command line command and returns the output of the command
 char *GetCommandOutput(const char *command)
 {
     if (command == NULL)

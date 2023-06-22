@@ -1,3 +1,4 @@
+// Sleeps the program for a given amount of milliseconds
 function sleep(milliseconds) {
     const date = Date.now();
     let currentDate = null;

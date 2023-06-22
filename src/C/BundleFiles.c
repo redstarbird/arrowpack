@@ -344,21 +344,21 @@ void BundleFile(struct Node *GraphNode)
                                     {
                                         if (StartLocation == -1)
                                         {
-                                            if (!IsEndOfJSName(ReferenceText[i]))
+                                            if (!IsEndOfJSName(ReferenceText[i])) // Finds the start of the name of the default import alias
                                             {
                                                 StartLocation = i;
                                             }
                                         }
                                         else
                                         {
-                                            if (IsEndOfJSName(ReferenceText[i]))
+                                            if (IsEndOfJSName(ReferenceText[i])) // Finds the end of the name of the default import alias
                                             {
                                                 ImportedFunctionNames[ImportedFunctionNameLength - 1].alias = getSubstring(ReferenceText, StartLocation, i - 3);
                                             }
                                         }
                                     }
                                 }
-                                else if (!IsEndOfJSName(ReferenceText[i]) && NameFound) // Logic error
+                                else if (!IsEndOfJSName(ReferenceText[i]) && NameFound) // Checks for alias with default import
                                 {
                                     if (ReferenceText[i] == 'a' && ReferenceText[i + 1] == 's')
                                     {
@@ -370,7 +370,7 @@ void BundleFile(struct Node *GraphNode)
                                         break;
                                     }
                                 }
-                                else if (StartLocation != -1) // Start location of default name/alias has not been found
+                                else if (StartLocation != -1) // Start location of default name/alias has not yet been found
                                 {
                                     if (IsEndOfJSName(ReferenceText[i]))
                                     {
@@ -458,7 +458,7 @@ void BundleFile(struct Node *GraphNode)
 
                         IteratePointer++;
                     }
-                    IteratePointer = &FunctionNames[0];
+                    IteratePointer = &FunctionNames[0]; // Set iteration pointer to the first function name to loop over later
                 }
                 else // If the current dependency is a CommonJS module then this code is run to find the exports
                 {
@@ -512,49 +512,52 @@ void BundleFile(struct Node *GraphNode)
                         bool InString = false;
                         bool StringStartDoubleQuotes = false;
                         bool FunctionDuplicateFound = false;
-                        for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text); i++)
+                        for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text); i++) // Loop through each character in the file
                         {
-                            if (FileContents[i] == '\'' || FileContents[i] == '\"')
+                            if (FileContents[i] == '\'' || FileContents[i] == '\"') // Check for string quotes
                             {
-                                if (InString)
+                                if (InString) // In string and string end has been found
                                 {
-                                    if (StringStartDoubleQuotes)
+                                    if (StringStartDoubleQuotes) // Check if the quotes are the same as the start of the string
                                     {
                                         if (FileContents[i] == '\"')
                                         {
-                                            InString = false;
+                                            InString = false; // End of string has been found
                                         }
                                     }
                                     else
                                     {
                                         if (FileContents[i] == '\'')
                                         {
-                                            InString = false;
+                                            InString = false; // End of string has been found
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    InString = true;
-                                    StringStartDoubleQuotes = FileContents[i] == '\"';
+                                    InString = true;                                   // Start of string has been found
+                                    StringStartDoubleQuotes = FileContents[i] == '\"'; // Track the quotes used for the start of the string
                                 }
                             }
-                            else if (strncmp(FileContents + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
+                            else if (strncmp(FileContents + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString) // Check for a name collision
                             {
-                                FunctionDuplicateFound = true;
+                                FunctionDuplicateFound = true; // Name collision detected
                                 break;
                             }
                         }
-                        if (FunctionDuplicateFound)
+                        if (FunctionDuplicateFound) // File contains at least one name collision
                         {
-                            char *NewUnusedName = CreateUnusedName();
+                            char *NewUnusedName = CreateUnusedName(); // Create a new unique name
+
+                            // Reset variables
                             InString = false;
                             StringStartDoubleQuotes = false;
                             FunctionDuplicateFound = false;
+
                             int LoopLength = strlen(InsertText) - strlen(IteratePointer->Text) + 2;
-                            for (int i = 0; i < LoopLength; i++)
+                            for (int i = 0; i < LoopLength; i++) // Loop through the file
                             {
-                                if (InsertText[i] == '\'' || InsertText[i] == '\"')
+                                if (InsertText[i] == '\'' || InsertText[i] == '\"') // Check not in a string
                                 {
                                     if (InString)
                                     {
@@ -579,7 +582,7 @@ void BundleFile(struct Node *GraphNode)
                                         StringStartDoubleQuotes = InsertText[i] == '\"';
                                     }
                                 }
-                                else if (strncmp(InsertText + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString)
+                                else if (strncmp(InsertText + i, IteratePointer->Text, strlen(IteratePointer->Text)) == 0 && !InString) // Replace name collision with replacement name
                                 {
                                     InsertText = InsertStringAtPosition(InsertText, NewUnusedName, i + strlen(IteratePointer->Text));
                                     int InverseShiftAmount = GetInverseShiftedAmount(i + strlen(IteratePointer->Text), JSFileShiftLocations);
@@ -643,7 +646,7 @@ void BundleFile(struct Node *GraphNode)
                     strcat(ModuleObjectDefinition, NewModuleExportsName);
                     strcat(ModuleObjectDefinition, " = {};");
 
-                    if (FullExportsArrayLength > 0)
+                    if (FullExportsArrayLength > 0) // Add the new module object definition
                     {
                         InsertText = InsertStringAtPosition(InsertText, ModuleObjectDefinition, GetShiftedAmount(FinalElement->StartIndex, JSFileShiftLocations));
                         AddShiftNum(FinalElement->StartIndex, strlen(ModuleObjectDefinition), &JSFileShiftLocations, &JSShiftLocationsLength);

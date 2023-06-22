@@ -75,12 +75,14 @@ int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
     return 1; // Allows javascript to know when the function has been completed
 }*/
 
+// Initializes settings
 bool EMSCRIPTEN_KEEPALIVE InitSettings(char *JSON)
 {
     Settings.Settings = cJSON_Parse(JSON);
     return true;
 }
 
+// Returns a given setting
 cJSON EMSCRIPTEN_KEEPALIVE *GetSetting(char *SettingName)
 {
     return cJSON_GetObjectItemCaseSensitive(Settings.Settings, SettingName);

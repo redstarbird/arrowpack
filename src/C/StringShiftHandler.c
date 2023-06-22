@@ -1,7 +1,7 @@
 /* This file is for handling shifts in strings when saved indexes of strings are incorrect because a substring has been inserted or removed which shifts the entire string */
 #include "StringShiftHandler.h"
 
-int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
+int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations) // Returns the new shifted equivalent of a location
 {
     unsigned int i = 0;
     unsigned int ShiftNum = 0;
@@ -20,7 +20,7 @@ int GetShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
     return ShiftNum + Location;
 }
 
-int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
+int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLocations) // Returns the original of a shifted location
 {
     unsigned int i = 0;
     unsigned int ShiftNum = 0;
@@ -39,13 +39,11 @@ int GetInverseShiftedAmount(int Location, struct ShiftLocation *ShiftLocations)
     return Location - ShiftNum;
 }
 
+// Adds a new shift location to a shift locations list
 void AddShiftNum(int Location, int ShiftNum, struct ShiftLocation **ShiftLocations, int *ShiftLocationLength)
 {
     (*ShiftLocationLength)++;
     *ShiftLocations = realloc(*ShiftLocations, ((*ShiftLocationLength)) * sizeof(struct ShiftLocation));
-    // memcpy(NewShiftLocations, *ShiftLocations, ((*ShiftLocationLength) - 2) * sizeof(struct ShiftLocation));
-    // free(*ShiftLocations);
-    // *ShiftLocations = NewShiftLocations;
     unsigned int i = 0;
     while (1)
     {

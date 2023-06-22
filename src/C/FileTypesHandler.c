@@ -1,3 +1,4 @@
+// Contains the implementation of file type handling mainly file type IDs
 #include "FileTypesHandler.h"
 
 struct FileType *FileTypes;
@@ -17,7 +18,7 @@ static void SetShortName(char *stringToSet, char *ReplaceString)
     SetString(stringToSet, ReplaceString, 10);
 }
 
-int GetFileTypeID(const char *path)
+int GetFileTypeID(const char *path) // Returns the file type ID of the specified file path
 {
     char *FileExtension = GetFileExtension(path);
     if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0 || strcasecmp(FileExtension, "htmla") == 0)
@@ -39,7 +40,7 @@ int GetFileTypeID(const char *path)
     return -1;
 }
 
-void InitFileTypes() // Probably a better way to do this
+void InitFileTypes() // Initializes the file types struct array
 {
     printf("Setting up file types struct\n");
     unsigned int FileTypesNum = 5;

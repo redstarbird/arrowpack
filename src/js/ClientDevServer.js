@@ -2,8 +2,8 @@ let dirname = window.location.pathname;
 if (dirname.endsWith("/")) {
     dirname += "index.html";
 } else { dirname += "/index.html"; }
-console.log(dirname);
-// dirname = dirname.split('/').pop();
+
+
 function ReplaceDocument(NewHead, NewBody) {
     document.head.innerHTML = NewHead;
     document.body.innerHTML = NewBody;
@@ -26,19 +26,16 @@ function extractBody(html) {
     return html.substring(bodyStart, bodyEnd);
 }
 
-const ws = new WebSocket("ws://" + location.hostname + ":8080");
+const ws = new WebSocket("ws://" + location.hostname + ":8080"); // Connect to the server via the websocket
 
-ws.onopen = (event) => {
+ws.onopen = (event) => { // Tell the server what page the client is on when connected
     console.log("opened websocket, sending data " + dirname);
     ws.send(dirname);
 };
 
-ws.onmessage = (event) => {
+ws.onmessage = (event) => { // Reload the page when the server sends a message
     window.location.reload();
-    /*if (event.data.includes("script")) { window.location.reload(); } else {
-        ReplaceDocument(extractHead(event.data), extractBody(event.data));
-    }*/
 }
-window.addEventListener('beforeunload', function () {
+window.addEventListener('beforeunload', function () { // Close the websocket connection on page close
     ws.close();
 });

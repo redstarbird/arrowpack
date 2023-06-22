@@ -2,6 +2,7 @@
 #include "FileHandler.h"
 #include <emscripten.h>
 
+// Copy a file from one place to another
 void CopyFile(char *FileToCopy, char *FileToCopyTo)
 {
     ColorGreen();
@@ -31,6 +32,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     fclose(output);
 }
 
+// Creates a new file and writes data to it
 void CreateFileWrite(char *path, char *text)
 {
     EnsureDirectory(GetTrueBasePath(path));
@@ -54,6 +56,7 @@ void CreateFile(char *path)
 {
 }
 
+// Reads data from a file and returns it as a string
 char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
 { // returns contents of file
     FILE *filePTR = fopen(path, "r");
@@ -81,16 +84,21 @@ char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
 
     return buffer;
 }
+
+// Checks whether a file exists
 bool FileExists(char *FilePath)
 {
     return access(FilePath, F_OK) == 0;
 }
 
+// Checks whether a directory exists
 bool DirectoryExists(const char *path)
 {
     struct stat sb;
     return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
 }
+
+// Makes sure that a directory exists, if it doesn't exist then it will be created
 void EnsureDirectory(const char *DirectoryPath)
 {
     char *Temp = strdup(DirectoryPath);
@@ -111,12 +119,12 @@ void EnsureDirectory(const char *DirectoryPath)
     }
     if (stat(ParentDir, &st) != 0)
     {
-        // parent directory does not exist, create it recursively
+        // Parent directory does not exist, create it recursively
         EnsureDirectory(ParentDir);
     }
     if (stat(DirectoryPath, &st) != 0)
     {
-        // directory does not exist, create it
+        // Directory does not exist, create it
         if (mkdir(DirectoryPath, 0700) != 0)
         {
             perror("Error creating directory");
@@ -124,7 +132,7 @@ void EnsureDirectory(const char *DirectoryPath)
     }
     else
     {
-        // directory exists, check if it is actually a directory
+        // Directory exists, check if it is actually a directory
         if (!S_ISDIR(st.st_mode))
         {
             fprintf(stderr, "%s is not a directory\n", DirectoryPath);

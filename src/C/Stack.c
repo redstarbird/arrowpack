@@ -1,6 +1,6 @@
 #include "Stack.h"
 
-struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variable)
+struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variable) // Creates and initializes a new stack
 {
     size_t TypeSize = 0;
 
@@ -23,16 +23,16 @@ struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variabl
     return stack;
 }
 
-bool StackIsFull(struct Stack *stack)
+bool StackIsFull(struct Stack *stack) // Returns whether a given stack is full
 {
     return stack->top == stack->capacity - 1;
 }
 
-bool StackIsEmpty(struct Stack *stack)
+bool StackIsEmpty(struct Stack *stack) // Returns whether a given stack is empty
 {
     return stack->top == -1;
 }
-void StackpushV(struct Stack *stack, struct Node *Value)
+void StackpushV(struct Stack *stack, struct Node *Value) // Push a value onto a stack of vertices
 {
     if (StackIsFull(stack))
     {
@@ -50,7 +50,7 @@ void StackpushV(struct Stack *stack, struct Node *Value)
 
     stack->array.VertexArray[++stack->top] = Value;
 }
-void StackpushI(struct Stack *stack, int Value)
+void StackpushI(struct Stack *stack, int Value) // Push a value onto a stack of integers
 {
     if (StackIsFull(stack))
     {

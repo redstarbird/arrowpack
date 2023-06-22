@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 
+// The settings singleton containing settings and configuration
 class settingsSingleton {
 	constructor(json) {
 		this.settings = {
@@ -27,13 +28,13 @@ class settingsSingleton {
 		/*if (fs.existsSync("./lib")) {
 			this.settings.entry = "lib";
 		}*/
-		if (fs.existsSync("./dist")) {
+		if (fs.existsSync("./dist")) { // Try to automatically detect exit directory
 			this.settings.exit = "dist/";
 		} else if (fs.existsSync("./build")) {
 			this.settings.exit = "build/";
 		}
 
-		if (json !== undefined && json !== null) {
+		if (json !== undefined && json !== null) { // Apply settings from config file
 			// json = JSON.parse(json);
 			for (var key in json) {
 				if (this.settings[key] !== undefined) {

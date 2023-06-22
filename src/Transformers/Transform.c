@@ -2,9 +2,6 @@
 // extern void JSTransform(char *FileName);
 bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*functionPTR)(char *, char *, char *))
 {
-    // int test = EM_ASM_INT({ return Module.exports.JSTransform($0); }, "hello world!");
-    //  JSTransform("hello world!");
-    // printf("Received %i!\n", test);
     cJSON *CJSONElement = NULL;
     cJSON *CJSONElement2 = NULL;
     printf("CWD: %s\n", GetSetting("INTERNAL_CWD")->valuestring);
@@ -12,25 +9,25 @@ bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*
     strcpy(TempTransformerPath, GetSetting("INTERNAL_FULL_CONFIG_PATH")->valuestring);
     strcat(TempTransformerPath, "/");
     strcat(TempTransformerPath, "example/extensions/transformer.js");
-    for (int i = 0; i < DependencyGraph->VerticesNum; i++)
+    for (int i = 0; i < DependencyGraph->VerticesNum; i++) // Loop through each file in the graph
     {
         CJSONElement = GetSetting("transformers")->child;
-        while (CJSONElement)
+        while (CJSONElement) // Loop through each transformer plugin
         {
-            printf("The key is %s\n", CJSONElement->string);
 
-            if (MatchGlob(DependencyGraph->Vertexes[i]->path, CJSONElement->string))
+            if (MatchGlob(DependencyGraph->Vertexes[i]->path, CJSONElement->string)) // Check if the file matches the glob pattern for the transformer
             {
-                printf("File path %s matches %s\n", DependencyGraph->Vertexes[i]->path, CJSONElement->string);
                 CJSONElement2 = CJSONElement->child;
                 char *NewFileContents = NULL;
-                while (CJSONElement2)
+                while (CJSONElement2) // Loop through each plugin for the glob pattern
                 {
+                    // Gets the path to the plugin file
                     char *ExtensionPath = malloc(strlen(CJSONElement2->valuestring) + strlen(GetSetting("INTERNAL_FULL_CONFIG_PATH")->valuestring) + 2);
                     strcpy(ExtensionPath, GetSetting("INTERNAL_FULL_CONFIG_PATH")->valuestring);
                     strcat(ExtensionPath, CJSONElement2->valuestring);
-                    char *TempBuffer = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath, DependencyGraph->Vertexes[i]->path);
-                    if (TempBuffer != NULL)
+
+                    char *TempBuffer = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath, DependencyGraph->Vertexes[i]->path); // Call the transformer
+                    if (TempBuffer != NULL)                                                                                                                             // Check that the file content has actually changed
                     {
                         if (NewFileContents != NULL)
                         {
@@ -40,46 +37,19 @@ bool EMSCRIPTEN_KEEPALIVE TransformFiles(struct Graph *DependencyGraph, char *(*
                     }
                     CJSONElement2 = CJSONElement2->next;
                 }
-                if (NewFileContents != NULL)
+                if (NewFileContents != NULL) // Save the transformed file contents
                 {
                     char *NewPreprocessPath = EntryToPreprocessPath(DependencyGraph->Vertexes[i]->path);
                     DependencyGraph->Vertexes[i]->edge = NULL;
 
-                    // char *FileExtension = GetFileExtension(DependencyGraph->SortedArray[i]->path);
-                    // NewPreprocessPath = realloc(NewPreprocessPath, strlen(NewPreprocessPath) + strlen(FileExtension) + 2);
-                    // strcat(NewPreprocessPath, ".");
-                    // strcat(NewPreprocessPath, FileExtension);
                     CreateFileWrite(NewPreprocessPath, NewFileContents);
                     DependencyGraph->Vertexes[i]->path = NewPreprocessPath;
                     CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
                 }
             }
-            else
-            {
-                printf("File path %s DOESNT MATCH!!!! %s\n", DependencyGraph->Vertexes[i]->path, CJSONElement->string);
-            }
             CJSONElement = CJSONElement->next;
         }
-        /*
-                cJSON_ObjectForEach(CJSONElement, )
-                {
-                    printf("CJSON KEY: %s\n", CJSONElement->valuestring);
-                    char *ReturnString = (char *)(*functionPTR)("hamburger743.543", CJSONElement->valuestring);
-                    printf("Received %s from JS\n", ReturnString);
-                };*/
     }
 
-    /*char *ReturnString = (char *)EM_ASM_PTR({
-        Module.exports.CJSfunction();
-        var TempStr = import($0)($1);
-        console.log(TempStr);
-        var str = "Hello World!\\0";
-        var lengthBytes = lengthBytesUTF8(str) + 1;
-        var stringOnWasmHeap = Module._malloc(lengthBytes);
-        stringToUTF8(str, stringOnWasmHeap, lengthBytes);
-        return stringOnWasmHeap;
-    },
-                                            TempTransformerPath, "Hamburger epic!");
-    printf("Returned string: %s\n", ReturnString);*/
     return true;
 }

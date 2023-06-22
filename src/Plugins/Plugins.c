@@ -1,15 +1,13 @@
 #include "Plugins.h"
-// extern void JSTransform(char *FileName);
+
+// Executes a plugin
 bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*functionPTR)(char *, char *, char *), int pluginIndex)
 {
-    // int test = EM_ASM_INT({ return Module.exports.JSTransform($0); }, "hello world!");
-    //  JSTransform("hello world!");
-    // printf("Received %i!\n", test);
     cJSON *CJSONElement = NULL;
     cJSON *CJSONElement2 = NULL;
-    for (int i = 0; i < DependencyGraph->VerticesNum; i++)
+    for (int i = 0; i < DependencyGraph->VerticesNum; i++) // Loop through each dependency in the graph
     {
-        switch (pluginIndex)
+        switch (pluginIndex) // Finds which plugin section to load from
         {
         case 1:
             CJSONElement = GetSetting("resolvers")->child;
@@ -25,10 +23,10 @@ bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*f
             break;
         }
 
-        while (CJSONElement)
+        while (CJSONElement) // Run every plugin in array
         {
 
-            if (MatchGlob(DependencyGraph->Vertexes[i]->path, CJSONElement->string))
+            if (MatchGlob(DependencyGraph->Vertexes[i]->path, CJSONElement->string)) // Check if the plugin glob matches the file
             {
                 CJSONElement2 = CJSONElement->child;
                 char *NewFileContents = NULL;
@@ -41,7 +39,7 @@ bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*f
 
                     char *FilePath;
 
-                    if (pluginIndex == 3)
+                    if (pluginIndex == 3) // File path will be the exit path for postprocessing plugins
                     {
                         FilePath = EntryToExitPath(DependencyGraph->Vertexes[i]->path);
                     }
@@ -50,43 +48,41 @@ bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*f
                         FilePath = DependencyGraph->Vertexes[i]->path;
                     }
 
-                    if (pluginIndex == 3)
+                    if (pluginIndex == 3) // Post processing plugins
                     {
-                        Result = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath, DependencyGraph->Vertexes[i]->path);
+                        Result = (char *)(*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path),
+                                                        ExtensionPath,
+                                                        DependencyGraph->Vertexes[i]->path); // Run the javascript plugin
+
                         if (Result != NULL)
                         {
                             if (NewFileContents != NULL)
                             {
                                 free(NewFileContents);
                             }
-                            NewFileContents = Result;
+                            NewFileContents = Result; // Set the new file contents
                         }
                     }
-                    else if (pluginIndex == 2)
+                    else if (pluginIndex == 2) // Validator plugins
                     {
-                        printf("running validators\n");
                         if ((*functionPTR)(ReadDataFromFile(DependencyGraph->Vertexes[i]->path), ExtensionPath, DependencyGraph->Vertexes[i]->path) != NULL)
                         {
                             ThrowFatalError("Internal error occured while runing validators\n");
                         }
                     }
-                    else
+                    else // Resolver plugins
                     {
                         CreateWarning("Resolvers not implemented yet\n");
                     }
                     CJSONElement2 = CJSONElement2->next;
                 }
-                if (pluginIndex == 3)
+                if (pluginIndex == 3) // Save post-processed file
                 {
                     if (NewFileContents != NULL)
                     {
 
                         DependencyGraph->Vertexes[i]->edge = NULL;
 
-                        // char *FileExtension = GetFileExtension(DependencyGraph->SortedArray[i]->path);
-                        // NewPreprocessPath = realloc(NewPreprocessPath, strlen(NewPreprocessPath) + strlen(FileExtension) + 2);
-                        // strcat(NewPreprocessPath, ".");
-                        // strcat(NewPreprocessPath, FileExtension);
                         CreateFileWrite(EntryToExitPath(DependencyGraph->Vertexes[i]->path), NewFileContents);
                         CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
                     }
@@ -94,13 +90,6 @@ bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*f
             }
             CJSONElement = CJSONElement->next;
         }
-        /*
-                cJSON_ObjectForEach(CJSONElement, )
-                {
-                    printf("CJSON KEY: %s\n", CJSONElement->valuestring);
-                    char *ReturnString = (char *)(*functionPTR)("hamburger743.543", CJSONElement->valuestring);
-                    printf("Received %s from JS\n", ReturnString);
-                };*/
     }
     return true;
 }

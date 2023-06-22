@@ -1,6 +1,7 @@
-// This file contains functions for gernerating warning messages and error messages
+// This file contains functions for generating warning messages and error messages
 #include "ProblemHandler.h"
 
+// Exits the program with a fatal error
 void ThrowFatalError(char *message, ...)
 {
     va_list args;
@@ -17,6 +18,7 @@ void ThrowFatalError(char *message, ...)
     exit(1);
 }
 
+// Prints and logs a warning message
 void CreateWarning(char *message, ...)
 {
     va_list args;

@@ -1,17 +1,18 @@
 #include "RegexFunctions.h"
 
+// Removes a regex match from an array and destroys it
 void RemoveRegexMatch(struct RegexMatch *match)
 {
     struct RegexMatch *LastMatch = match;
-    while (1)
+    while (1) // Go through the array from after the match
     {
         match++;
-        if (match->IsArrayEnd == true)
+        if (match->IsArrayEnd == true) // Stop at the end of the array
         {
             LastMatch->IsArrayEnd = true;
             break;
         }
-        else
+        else // Shift all data to the previous match
         {
             LastMatch->Text = match->Text;
             LastMatch->EndIndex = match->EndIndex;
@@ -21,18 +22,20 @@ void RemoveRegexMatch(struct RegexMatch *match)
     }
 }
 
+// Returns the length of a regex match array
 unsigned int RegexMatchArrayLength(struct RegexMatch *Array)
 {
     struct RegexMatch *IteratePointer = &Array[0];
     unsigned int ArrayLength = 0;
     while (IteratePointer->IsArrayEnd == false)
     {
-        // printf("loop\n");
         ArrayLength++;
         IteratePointer++;
     }
     return ArrayLength;
 }
+
+// Combines two regex match arrays together
 void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, struct RegexMatch **Array2)
 {
     // Check if Array2 is empty
@@ -77,6 +80,7 @@ void EMSCRIPTEN_KEEPALIVE CombineRegexMatchArrays(struct RegexMatch **Array1, st
     }
 }
 
+// Returns the number of times a pattern is matched in a string
 int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
 {
     const int N_MATCHES = 512;
@@ -110,6 +114,7 @@ int EMSCRIPTEN_KEEPALIVE GetNumOfRegexMatches(char *Text, const char *Pattern)
     return matchesCompleted;
 }
 
+// Gets the text of the first match of a pattern in a string
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch(char *Text, char *Pattern)
 {
     struct RegexMatch *Match = malloc(sizeof(struct RegexMatch) * 2);
@@ -126,7 +131,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch(char *Text, char *Pattern)
     };
 
     int error = regexec(&regexp, Text, N_MATCHES, match, flags);
-    if (error == 0)
+    if (error == 0) // Assigns variables in regex match struct is a match is found
     {
         Match[0].IsArrayEnd = false;
         Match[0].StartIndex = match[0].rm_so;
@@ -138,6 +143,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetRegexMatch(char *Text, char *Pattern)
     return NULL;
 }
 
+// Returns the text of all regex matches in a regex match array
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const char *Pattern, unsigned int StartPos, unsigned int EndPos)
 {
     const int N_MATCHES = 512;
@@ -164,7 +170,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
             matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 2) * RegexMatchesSize); // Reallocates memory for matches array
 
             matches[matchesCompleted].Text = getSubstring(TextStartPointer, (int)match[0].rm_so + StartPos, (int)match[0].rm_eo - EndPos); // Adds substring to matchs array
-
             matches[matchesCompleted].IsArrayEnd = false;
             matches[matchesCompleted].StartIndex = (unsigned int)match[0].rm_so + AmountShifted; // Saves start index so it doesn't need to be recalculated later
             matches[matchesCompleted].EndIndex = (unsigned int)match[0].rm_eo + AmountShifted;   // Does the same as above but for the end index
@@ -178,11 +183,11 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *GetAllRegexMatches(char *Text, const cha
         }
     }
     regfree(&regexp);
-    // matches = (struct RegexMatch *)realloc(matches, (matchesCompleted + 3) * RegexMatchesSize);
     matches[matchesCompleted].IsArrayEnd = true; // Allows array to be reliably iterated over
     return matches;
 }
 
+// Returns whether a string matches a given regular expression pattern
 bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
 {
     regex_t regexp;
@@ -197,14 +202,14 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern)
         ThrowFatalError("Could not compile regex pattern: %s", pattern); // Exits if an error occured during regex compilation
     }
 
-    Error = regexec(&regexp, text, 0, NULL, 0);
+    Error = regexec(&regexp, text, 0, NULL, 0); // Check for a match with the pattern
 
-    if (!Error)
+    if (!Error) // A regex match has been found
     {
         regfree(&regexp);
         return true;
     }
-    else if (Error == REG_NOMATCH)
+    else if (Error == REG_NOMATCH) // A regex match has not been found
     {
         regfree(&regexp);
         return false;
