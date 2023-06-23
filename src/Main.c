@@ -27,20 +27,24 @@ char *EMSCRIPTEN_KEEPALIVE RebuildFiles(struct Graph *DependencyGraph, char *Enc
     {
         for (int j = 0; j < FilesNum; j++) // Loops through each file that has changed to find it in the graph
         {
-            if (strcasecmp(DependencyGraph->Vertexes[i]->path, Files[j]) == 0 || strcasecmp(EntryToPreprocessPath(Files[j]), DependencyGraph->Vertexes[i]->path) == 0) // Checks if the search vertex is the file that has changed
+            if (strcasecmp(DependencyGraph->Vertexes[i]->path, Files[j]) == 0 ||
+                strcasecmp(EntryToPreprocessPath(Files[j]), DependencyGraph->Vertexes[i]->path) == 0) // Checks if the search vertex is the file that has changed
             {
                 FileFound = true;
+
                 int TempVertexNum = 0;
-                struct Node **TempVertexArray = FindAllDependentsOfVertex(DependencyGraph->Vertexes[i], DependencyGraph->VerticesNum, &TempVertexNum);
+                struct Node **TempVertexArray = FindAllDependentsOfVertex(DependencyGraph->Vertexes[i], DependencyGraph->VerticesNum, &TempVertexNum); // Gets all of the dependents of the changed file
                 TempGraph->SortedArray = TempVertexArray;
                 TempGraph->VerticesNum = TempVertexNum;
 
+                // Create array of paths of changed files
                 ChangedFiles = malloc(TempVertexNum * sizeof(char *));
                 for (int k = 0; k < TempVertexNum; k++)
                 {
                     ChangedFiles[k] = TempVertexArray[k]->path;
                 }
 
+                // Delete old edges from graph
                 struct Edge *OldTempEdge = DependencyGraph->Vertexes[i]->edge;
                 struct Edge *TempEdge = DependencyGraph->Vertexes[i]->edge;
                 while (TempEdge != NULL)
@@ -50,40 +54,48 @@ char *EMSCRIPTEN_KEEPALIVE RebuildFiles(struct Graph *DependencyGraph, char *Enc
                     OldTempEdge = TempEdge;
                 }
                 DependencyGraph->Vertexes[i]->edge = NULL;
+
+                // Make sure the original file is being looked at
                 if (StringStartsWith(DependencyGraph->Vertexes[i]->path, PREPROCESS_DIR))
                 {
                     DependencyGraph->Vertexes[i]->path = ReplaceSectionOfString(DependencyGraph->Vertexes[i]->path, 0, 30, GetSetting("entry")->valuestring);
                 }
-                CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
+
+                CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph); // Research dependencies for the changed file
+
                 struct Edge *NewTempEdge = DependencyGraph->Vertexes[i]->edge;
-                while (NewTempEdge != NULL)
+                while (NewTempEdge != NULL) // Loop through dependencies of vertex
                 {
-                    if (StringStartsWith(NewTempEdge->vertex->path, PREPROCESS_DIR))
+                    if (StringStartsWith(NewTempEdge->vertex->path, PREPROCESS_DIR)) // Rebuild dependencies in the preprocess directory
                     {
                         CreateDependencyEdges(NewTempEdge->vertex, &DependencyGraph);
                         BundleFile(NewTempEdge->vertex);
                     }
                     NewTempEdge = NewTempEdge->next;
                 }
-                // topological_sort(TempGraph);
-                BundleFiles(TempGraph);
+
+                BundleFiles(TempGraph); // Rebundle all changed files and dependents
             }
         }
     }
+
     char *FinalChangedFiles;
     if (FileFound)
     {
-        FinalChangedFiles = ArrowSerialize((const char **)ChangedFiles, TempGraph->VerticesNum);
+        FinalChangedFiles = ArrowSerialize((const char **)ChangedFiles, TempGraph->VerticesNum); // Serialise array of all changed files into a string to send to JS
     }
-    else
+    else // File is a new created file
     {
-        for (int i = 0; i < FilesNum; i++)
+        for (int i = 0; i < FilesNum; i++) //
         {
-            struct Node *NewVertex = create_vertex(Files[i], GetFileTypeID(Files[i]), NULL);
+            struct Node *NewVertex = create_vertex(Files[i], GetFileTypeID(Files[i]), NULL); // Create vertex for the new file
 
-            add_vertex(TempGraph, NewVertex);
-            topological_sort(TempGraph);
-            CreateDependencyEdges(NewVertex, &DependencyGraph);
+            add_vertex(TempGraph, NewVertex); // Add vertex to the temporary dependency graph
+
+            CreateDependencyEdges(NewVertex, &DependencyGraph); // Get dependencies for vertex
+
+            topological_sort(TempGraph); // Resort the dependency graph of changed files
+
             struct Edge *tempEdge = NewVertex->edge;
             while (tempEdge != NULL)
             {
@@ -94,14 +106,13 @@ char *EMSCRIPTEN_KEEPALIVE RebuildFiles(struct Graph *DependencyGraph, char *Enc
                 tempEdge = tempEdge->next;
             }
 
-            BundleFiles(TempGraph);
-            add_vertex(DependencyGraph, NewVertex);
-            topological_sort(DependencyGraph);
-            FinalChangedFiles = Files[i];
+            BundleFiles(TempGraph); // Bundle the changed files
+            add_vertex(DependencyGraph, NewVertex); // Add the vertex to the dependency graph (doesn't need to be resorted because the vertex is at the end of the graph and has no dependents yet)
+            FinalChangedFiles = Files[i]; // The only file changed is the new file
         }
     }
 
-    free(TempGraph);
+    free(TempGraph); // Free the temporary graph
     return FinalChangedFiles;
 }
 
