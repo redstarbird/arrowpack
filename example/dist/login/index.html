@@ -29,21 +29,8 @@ h1 {
 	<h2>Navbar is here123!</h2>
 </nav>
 
-		<script >function TestESMImports() {    console.log("Ecmascript imports are working");}const GRAVITY = 9.8;function TestGRAVITY() {    console.log("Gravity is: " + GRAVITY + "!");    return GRAVITY === 9.8;}let GRAVY=GRAVITY;let ESMTest=TestESMImports;
-
-if (TestGRAVITY()) {
-    console.log("Logging user in with regular earth gravity: " + GRAVY + "...");
-}
-
-ESMTest();</script>
-		<script  >function Test() {    console.log("Test!");}function MakeSnakeCase(str) {    Test();    str = str.replace(/ /g, '_');        str = str.replace(/[A-Z]/g, function (char) {        return '_' + char.toLowerCase();    });    return str;}let JSMakeSnakeCase_ARROWPACK = {};JSMakeSnakeCase_ARROWPACK = { SnakeCase: MakeSnakeCase };
-			const SnakeCaseModule = JSMakeSnakeCase_ARROWPACK;
-
-			function UpdateH1() {
-				var H1Element = document.getElementById("main-title");
-				H1Element.textContent = SnakeCaseModule.SnakeCase(H1Element.textContent);
-			}
-		</script>
+		<script src="./LoginLogic.js"></script>
+		<script src="ARROWPACK_TEMP_PREPROCESS_DIR/login/A1.js" >	</script>
 		<h1 id="main-title" onclick="UpdateH1()">Login to this example login page!</h1>
 	</body>
 </html>
