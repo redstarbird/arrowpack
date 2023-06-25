@@ -11,7 +11,7 @@ module.exports = {
 		"*.html": ["extensions/transformer.js"]
 	},
 	postProcessors: {
-		"*": ["./extensions/minifyHTML.js"]
+		//"*": ["./extensions/minifyHTML.js"]
 	},
 	resolvers: []
 }
