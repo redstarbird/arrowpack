@@ -465,41 +465,23 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 }
 
 // Main function for creating dependency Graph
-struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths, int ArrayLength)
+struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths)
 {
     printf("Creating dependency Graph!\n");
-    int CurrentWrappedArrayIndex = 0;
-    int lastNewElement = 0;
-    int ElementsUnwrapped = 0;
 
-    char **paths = malloc((ArrayLength - 1) * (sizeof(char *) + 1)); // Allocates memory for array of strings
+    int *ArrayLength = malloc(sizeof(int));
+    *ArrayLength = 0;
 
-    while (ElementsUnwrapped < ArrayLength && CurrentWrappedArrayIndex < strlen(Wrapped_paths)) // Unwraps all paths from single string from JS
-    {
-        if (Wrapped_paths[CurrentWrappedArrayIndex] == ':') // Checks for paths divider character
-        {
-            paths[ElementsUnwrapped] = (char *)malloc(CurrentWrappedArrayIndex - lastNewElement + 1);
+    printf("Wrapped paths: %s\n", Wrapped_paths);
+    char **paths = ArrowDeserialize(Wrapped_paths, ArrayLength);
 
-            for (int i = 0; i < CurrentWrappedArrayIndex - lastNewElement; i++)
-            {
-                paths[ElementsUnwrapped][i] = Wrapped_paths[lastNewElement + i];
-            }
-            paths[ElementsUnwrapped][CurrentWrappedArrayIndex - lastNewElement] = '\0';
-            lastNewElement = CurrentWrappedArrayIndex + 2;
-            ElementsUnwrapped++;
-            CurrentWrappedArrayIndex++;
-        }
-
-        CurrentWrappedArrayIndex++;
-    }
-
-    size_t GraphSize = (int)sizeof(struct Node) * ArrayLength;
+    size_t GraphSize = (int)sizeof(struct Node) * *ArrayLength;
 
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
     DependencyGraph->VerticesNum = 0;                             // Sets number of vertices in graph
 
     DependencyGraph->Vertexes = malloc(sizeof(struct Node));
-    for (unsigned int i = 0; i < ArrayLength; i++) // Sets up values for each element in the Graph
+    for (unsigned int i = 0; i < *ArrayLength; i++) // Sets up values for each element in the Graph
     {
 
         add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL));
