@@ -50,9 +50,9 @@ def Build():
         "./src/Regex/RegexFunctions.c", "./src/DependencyGraph/FindDependencies.c","./src/SettingsSingleton/settingsSingleton.c", 
         "./src/C/ProblemHandler.c", "./src/C/TextColors.c", "./src/C/FileHandler.c", "./src/C/IntFunctions.c", "./src/Minifiers/HTMLMinifier.c", 
         "./src/C/FileTypesHandler.c", "./src/C/Stack.c", "./src/C/BundleFiles.c", "./src/C/ProgressBar.c", "./src/C/StringShiftHandler.c", 
-        "./src/Minifiers/JSMinifier.c", "./src/Transformers/Transform.c", "./src/Plugins/Plugins.c"), # All of the C files
+        "./src/Minifiers/JSMinifier.c", "./src/Transformers/Transform.c", "./src/Plugins/Plugins.c", "./src/C/JSImportedFunctions.c"), # All of the C files
         Modularize=True,
-        ExportedRuntimeMethods=("ccall","addFunction","lengthBytesUTF8","stringToUTF8", "UTF8ToString"), # Exports the methods used by the JS code
+        ExportedRuntimeMethods=("ccall","addFunction","lengthBytesUTF8","stringToUTF8", "UTF8ToString", "stringToNewUTF8"), # Exports the methods used by the JS code
         ForceFS=True, # Allows file system operations
         ),
     )
@@ -107,7 +107,7 @@ def Build():
                 Dev = "--profiling -sRUNTIME_DEBUG=1 -fsanitize=undefined -fsanitize=address -sLLD_REPORT_UNDEFINED -g3 -sSTACK_OVERFLOW_CHECK=2 -sASSERTIONS=2 "
                 optimizations = ""
 
-            command = f"emcc {optimizations}--no-entry -sALLOW_TABLE_GROWTH -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -o {value.output}" 
+            command = f"emcc {optimizations}--no-entry --js-library src/js/JSCLibrary.js -sALLOW_TABLE_GROWTH -sENVIRONMENT=node {Dev}{value.filename}{SourceFiles} {Modularize}{ExportedRuntimeMethods}{ForceFS} -sBINARYEN=1 -sEXIT_RUNTIME=1 -sALLOW_MEMORY_GROWTH -sEXPORT_ALL=1  -o {value.output}" 
 
             print("\n\n\n" + command + "\n\n\n")
 
