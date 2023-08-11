@@ -12,6 +12,7 @@
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
 #include "../C/ProblemHandler.h"
 #include "DependencyGraph.h"
+#include "../C/JSImportedFunctions.h"
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos, unsigned int Endpos, struct RegexMatch *CommentLocations);
 

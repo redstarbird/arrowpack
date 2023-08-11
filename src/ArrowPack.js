@@ -168,6 +168,7 @@ let StructsPointer;
 	} Bundle();
 })();
 
+
 // Main function for bundling files
 function Bundle() {
 	var temp;
@@ -196,11 +197,9 @@ function Bundle() {
 
 	DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR"); // Create temporary directory for temp files
 
-	var AbsoluteFilesCharLength = 0;
-	var WrappedWalkedFiles = "";
 	if (WalkedFiles && WalkedFiles.length > 0) {
-		WalkedFiles.forEach(FilePath => { WrappedWalkedFiles += FilePath + "::"; AbsoluteFilesCharLength += FilePath.length; }); // Paths are wrapped into one string because passing array of strings from JS to C is complicated
 
+		var WrappedWalkedFiles = ArrowSerializer.ArrowSerialize(WalkedFiles);
 		CFunctions._CheckWasm(); // Check that Wasm has been initialized correctly
 		CFunctions._InitFileTypes(); // Initialize file types structs
 
@@ -212,8 +211,8 @@ function Bundle() {
 		StructsPointer = CFunctions.ccall( // Find all dependencies and create the dependency graph
 			"CreateGraph",
 			"number",
-			["string", "number"],
-			[WrappedWalkedFiles, WalkedFiles.length]
+			["string"],
+			[WrappedWalkedFiles]
 		);
 
 		if (!ObjectIsEmpty(Settings.settings.validators)) { // Run validators on the Wasm side if any exist

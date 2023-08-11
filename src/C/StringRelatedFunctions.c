@@ -111,7 +111,11 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
 {
     char *NewPath; // Buffer to hold the absolute path
     char *path = strdup(PATH);
-
+    printf("Path: %s, basepath: %s\n", path, BasePath);
+    if (StringStartsWith(PATH, "node_modules"))
+    {
+        return path;
+    }
     if (containsCharacter(path, '\\')) // Turn \ in path on windows into / for compatibility with other functions
     {
         for (int i = 0; i < strlen(path); i++)
@@ -516,7 +520,7 @@ char *AddPreprocessDIR(char *Path)
     return NewString;
 }
 
-/**
+/*
 
 ArrowDeserialize is a function that deserializes a string that has been serialized using the ArrowSerialize function from Javascript
 
@@ -528,6 +532,7 @@ ArrowDeserialize is a function that deserializes a string that has been serializ
 */
 char **ArrowDeserialize(const char *serialized, int *n_strings)
 {
+    printf("Deserialise: %s\n", serialized);
     // Define custom separator and escape characters
     const char separator = '\x1f';
     const char escape = '\x1e';

@@ -13,6 +13,7 @@
 #include "../Regex/RegexFunctions.h"
 #include "StringShiftHandler.h"
 #include "../Minifiers/JSMinifier.h"
+#include "./JSImportedFunctions.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);
 

@@ -365,10 +365,41 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindCSSDependencies(char *filename)
     return Dependencies;
 }
 
+char *NodeModuleEntryPoint(char *NodeModulePath)
+{
+    char *PackageJSONPath = malloc(strlen(NodeModulePath) + 18);
+    strcpy(PackageJSONPath, NodeModulePath);
+    strcat(PackageJSONPath, "/package.json");
+    if (FileExists(PackageJSONPath)) // Check if package.json exists
+    {
+        char *PackageJSONContent = ReadDataFromFile(PackageJSONPath); // Read package.json contents
+
+        cJSON *PackageJSON = cJSON_Parse(PackageJSONContent); // Parse the JSON with cJSON
+        if (PackageJSON == NULL)
+        {
+            ThrowFatalError("Error parsing package.json at %s\n", PackageJSONPath);
+        }
+
+        cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main"); // Use cJSON to find the entry point specified in package.json
+
+        // Creates path to entry point of the module
+        NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 2);
+        strcat(NodeModulePath, "/");
+        strcat(NodeModulePath, main_field->valuestring);
+
+        // Free allocated memory and set variables
+        free(PackageJSONContent);
+        free(PackageJSONPath);
+        cJSON_Delete(PackageJSON);
+        return NodeModulePath;
+    }
+    return NULL;
+}
+
 struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 {
     char *FileContents = ReadDataFromFile(filename);
-
+    char *FileBasePath = GetBasePath(filename);
     // Find comment locations for both types of JS comments
     struct RegexMatch *CommentLocations = GetAllRegexMatches(FileContents, "/\\*.*\\*/", 0, 0);
     struct RegexMatch *CommentLocations2 = GetAllRegexMatches(FileContents, "//.*\n", 0, 1);
@@ -377,9 +408,10 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
     CommentLocations2 = NULL;
 
     struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1, CommentLocations); // Get commonJS dependencies
-
+    printf("test123\n");
     if (CJSDependencies == NULL)
     {
+        printf("CJS null\n");
         return NULL;
     }
     struct RegexMatch *IteratePointer = &CJSDependencies[0];
@@ -427,13 +459,15 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         if (startLocation != -1 && endLocation != -1) // Dependency name has been found
         {
+            printf("resaltest2: %s\n", IteratePointer->Text);
             strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
             bool LocalFileFound = false;
 
             if (!StringEndsWith(IteratePointer->Text, ".cjs") && !StringEndsWith(IteratePointer->Text, ".js")) // Dependency name doesn't include file extension
             {
                 // Add .js file extensiom
-                char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(IteratePointer->Text));
+                printf("here: %s\n", IteratePointer->Text);
+                char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
                 int TempLength = strlen(TempCheckPath);
                 TempCheckPath = realloc(TempCheckPath, TempLength + 5);
                 strcat(TempCheckPath, ".js");
@@ -447,6 +481,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 else // Check if the file exists with a .cjs extension
                 {
                     strcpy(TempCheckPath + TempLength, ".cjs");
+                    printf("tset2\n");
                     char *RelativeCheckPath = TurnToFullRelativePath(TempCheckPath, GetBasePath(filename));
                     if (FileExists(RelativeCheckPath))
                     {
@@ -454,6 +489,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                         free(IteratePointer->Text);
                         IteratePointer->Text = RelativeCheckPath;
                     }
+                    printf("test3\n");
                 }
             }
 
@@ -463,54 +499,68 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 LocalFileFound = true;
                 IteratePointer->Text = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
             }
-            if (!LocalFileFound) // Local module not found, it may be in node_modules
+            if (!LocalFileFound) // Local module not found, it may be in node_modules or be a built-in node.js module
             {
-                if (DirectoryExists("node_modules")) // Check there is a node_modules directory
+                if (IsNodeBuiltin(IteratePointer->Text))
+                {
+                    EnsureNodeBuiltinBrowserModule(IteratePointer->Text);
+                    IteratePointer->Text = NodeModuleBrowserPackageName(IteratePointer->Text);
+                    printf("Iterate: %s\n", IteratePointer->Text);
+
+                    char *ModulePath = malloc(17 + strlen(IteratePointer->Text));
+                    strcpy(ModulePath, "node_modules/");
+                    strcat(ModulePath, IteratePointer->Text);
+                    ModulePath = NodeModuleEntryPoint(ModulePath);
+                    free(IteratePointer->Text);
+                    IteratePointer->Text = ModulePath;
+                    LocalFileFound = true;
+                }
+                else if (DirectoryExists("node_modules")) // Check there is a node_modules directory
                 {
                     // Create node_modules path of the module
-                    char *NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
-                    strcpy(NodeModulePath, "node_modules/");
-                    strcat(NodeModulePath, IteratePointer->Text);
-
-                    if (DirectoryExists(NodeModulePath)) // Check if the module exists in the node_modules directory
+                    char *NodeModulePath;
+                    if (StringStartsWith(FileBasePath, "node_modules"))
                     {
-                        // Create the package.json path of the module
-                        char *PackageJSONPath = malloc(strlen(NodeModulePath) + 18);
-                        strcpy(PackageJSONPath, NodeModulePath);
-                        strcat(PackageJSONPath, "/package.json");
 
-                        if (FileExists(PackageJSONPath)) // Check if package.json exists
+                        IteratePointer->Text += 2 * (IteratePointer->Text[0] == '.' && IteratePointer->Text[1] == '/');
+                        NodeModulePath = malloc(strlen(IteratePointer->Text) + strlen(FileBasePath) + 2);
+                        strcpy(NodeModulePath, FileBasePath);
+                        strcat(NodeModulePath, IteratePointer->Text);
+                        if (!StringEndsWith(NodeModulePath, ".js"))
                         {
-                            char *PackageJSONContent = ReadDataFromFile(PackageJSONPath); // Read package.json contents
-
-                            cJSON *PackageJSON = cJSON_Parse(PackageJSONContent); // Parse the JSON with cJSON
-                            if (PackageJSON == NULL)
-                            {
-                                ThrowFatalError("Error parsing package.json at %s\n", PackageJSONPath);
-                            }
-
-                            cJSON *main_field = cJSON_GetObjectItemCaseSensitive(PackageJSON, "main"); // Use cJSON to find the entry point specified in package.json
-
-                            // Creates path to entry point of the module
-                            NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + strlen(main_field->valuestring) + 2);
-                            strcat(NodeModulePath, "/");
-                            strcat(NodeModulePath, main_field->valuestring);
-
-                            // Free allocated memory and set variables
-                            free(PackageJSONContent);
-                            free(PackageJSONPath);
-                            free(IteratePointer->Text);
+                            printf("IteratePointer->Text: %s\n", IteratePointer->Text);
+                            NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + 4);
+                            strcat(NodeModulePath, ".js");
+                        }
+                        if (FileExists(NodeModulePath))
+                        {
                             IteratePointer->Text = NodeModulePath;
                             LocalFileFound = true;
-                            cJSON_Delete(PackageJSON);
+                        }
+                        printf("NodeModulePath: %s\n", NodeModulePath);
+                    }
+                    if (!LocalFileFound)
+                    {
+                        NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
+                        strcpy(NodeModulePath, "node_modules/");
+                        strcat(NodeModulePath, IteratePointer->Text);
+                        printf("Checking module path: %s\n", NodeModulePath);
+                        if (DirectoryExists(NodeModulePath)) // Check if the module exists in the node_modules directory
+                        {
+                            NodeModulePath = NodeModuleEntryPoint(NodeModulePath);
+                            // free(IteratePointer->Text);
+                            IteratePointer->Text = NodeModulePath;
+                            LocalFileFound = true;
                         }
                     }
                 }
                 if (!LocalFileFound) // Module cannot be found anywhere
                 {
+
                     ThrowFatalError("Could not find module: %s\n", IteratePointer->Text);
                 }
             }
+            printf("faketest2.js\n"); //
         }
         IteratePointer++;
     }
