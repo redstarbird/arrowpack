@@ -404,8 +404,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
     struct RegexMatch *CommentLocations = GetAllRegexMatches(FileContents, "/\\*.*\\*/", 0, 0);
     struct RegexMatch *CommentLocations2 = GetAllRegexMatches(FileContents, "//.*\n", 0, 1);
     CombineRegexMatchArrays(&CommentLocations, &CommentLocations2);
-    free(CommentLocations2);
-    CommentLocations2 = NULL;
 
     struct RegexMatch *CJSDependencies = BasicRegexDependencies(filename, "require[^)]*", 0, 1, CommentLocations); // Get commonJS dependencies
     printf("test123\n");

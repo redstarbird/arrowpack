@@ -559,6 +559,8 @@ char **ArrowDeserialize(const char *serialized, int *n_strings)
         {
             count++;
             strings = realloc(strings, count * sizeof(char *));
+            str = realloc(str, str_len+2);
+            str[str_len] = '\0';
             strings[count - 1] = str;
             str = NULL;
             str_len = 0;
