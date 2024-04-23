@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include "../C/FileTypesHandler.h"
+#include "../Regex/RegexFunctions.h"
 
 typedef struct FileRule
 {
@@ -15,11 +16,24 @@ typedef struct FileRule
 
 typedef struct Node Node;
 
+typedef struct HTMLCustomAttribrutes
+{
+    char **AttributeContents;
+    char **AttributeNames;
+    int length;
+} HTMLCustomAttribrutes;
+
+union extraData
+{
+    struct HTMLCustomAttribrutes *HTMLCustomAttributes;
+};
+
 typedef struct Edge // Wraps a regular Node struct and includes the start and end positions of where the node is referenced so it doesn't need to be worked out again
 {
     struct Node *vertex; // Pointer to the vertex at the end of the edge
     struct Edge *next;   // Pointer to the next edge in the list
     unsigned int StartRefPos, EndRefPos;
+    union extraData extraData;
 } Edge;
 
 typedef struct HiddenEdge

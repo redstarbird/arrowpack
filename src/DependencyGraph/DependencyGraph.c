@@ -9,7 +9,6 @@
 #include "../C/FileHandler.h"
 #include <emscripten.h>
 #include "../C/cJSON/cJSON.h" // https://github.com/DaveGamble/cJSON
-#include "../Regex/RegexFunctions.h"
 #include "../C/BundleFiles.h"
 #include "../C/StringRelatedFunctions.h"
 #include "./FindDependencies.h"

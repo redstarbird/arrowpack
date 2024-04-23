@@ -115,11 +115,80 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
             }
         }
     }
-    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include src=\"[^>]*\"", 14, 2, CommentLocations); // Find all HTML include matches
+    struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include[^>]*src[^>]*=[^>]*\"[^>]*\"[^>]*", 0, 1, CommentLocations); // Find all HTML include matches
 
     MakeMatchesFullPath(HTMLIncludeMatches, filename); // Turn all HTML dependency paths into full paths
+
     struct RegexMatch *IteratePointer = &HTMLIncludeMatches[0];
+    while (!IteratePointer->IsArrayEnd)
+    {
+        bool srcTagFound = false;
+        int dataTagsFound = 0;
+        union extraData *extraData = malloc(sizeof(union extraData));
+
+        for (int i = 0; i < strlen(IteratePointer->Text); i++)
+        {
+            if (IteratePointer->Text[i])
+            {
+                if (strncasecmp(IteratePointer->Text + i, "data", 4) == 0)
+                {
+                    printf("Data tag found: %s\n", IteratePointer->Text + i);
+                }
+                if (!srcTagFound)
+                {
+                    bool equalsFound = false;
+                    bool openStringFound = false;
+                    int openStringLocation = 0;
+                    bool stringStartsDoubleParenthesis = false;
+
+                    if (strncasecmp(IteratePointer->Text + i, "src", 3) == 0)
+                    {
+                        for (int j = i + 3; j < strlen(IteratePointer->Text); j++)
+                        {
+
+                            printf("ITeratePointer[j]: %c, equals %i, open string found %i\n", IteratePointer->Text[j], equalsFound, openStringFound);
+
+                            if (equalsFound)
+                            {
+                                if (IteratePointer->Text[j] == '"' || IteratePointer->Text[j] == '\'')
+                                {
+                                    if (openStringFound)
+                                    {
+                                        if ((stringStartsDoubleParenthesis && IteratePointer->Text[j] == '"') || (!stringStartsDoubleParenthesis && IteratePointer->Text[j] == '\''))
+                                        {
+                                            /*dataTags[dataTagsFound] = malloc(sizeof(char) * (j - openStringLocation));
+                                            strncpy(IteratePointer->Text + openStringLocation, dataTags[dataTagsFound], j - openStringLocation - 1);
+                                            dataTags[dataTagsFound][j - openStringLocation] = '\0';
+                                            dataTagsFound++;
+                                            dataTags = realloc(dataTags, sizeof(char *) * (dataTagsFound + 1));
+                                            printf("Found src %s\n", dataTags[dataTagsFound]);*/
+                                            printf("FOund %s\n", IteratePointer->Text + openStringLocation);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        openStringFound = true;
+                                        openStringLocation = j;
+                                        stringStartsDoubleParenthesis = IteratePointer->Text[j] == '"';
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (IteratePointer->Text[j] == '=')
+                                {
+                                    equalsFound = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        IteratePointer++;
+    }
     char *TempStringPointer;
+
     /*
         ╭━━━╮╭━━━╮╭━━━╮
         ┃╭━╮┃┃╭━╮┃┃╭━╮┃

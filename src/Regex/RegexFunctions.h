@@ -8,12 +8,12 @@
 #include <regex.h>
 #include "../C/StringRelatedFunctions.h"
 #include "../C/ProblemHandler.h"
-#include "../Regex/RegexFunctions.h"
 
 typedef struct RegexMatch
 {
     char *Text;
     unsigned int StartIndex, EndIndex;
+    union extraData *extraData;
     bool IsArrayEnd;
 } RegexMatch;
 

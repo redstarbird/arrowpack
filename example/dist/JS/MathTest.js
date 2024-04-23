@@ -1,2 +1,2 @@
-const assert = require('assert');
-assert(2 + 2 === 4);
+//const assert = require('assert');
+//assert(2 + 2 === 4);
