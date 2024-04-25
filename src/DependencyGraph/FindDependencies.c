@@ -117,8 +117,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
     }
     struct RegexMatch *HTMLIncludeMatches = BasicRegexDependencies(filename, "<include[^>]*src[^>]*=[^>]*\"[^>]*\"[^>]*", 0, 1, CommentLocations); // Find all HTML include matches
 
-    MakeMatchesFullPath(HTMLIncludeMatches, filename); // Turn all HTML dependency paths into full paths
-
     struct RegexMatch *IteratePointer = &HTMLIncludeMatches[0];
     while (!IteratePointer->IsArrayEnd)
     {
@@ -162,13 +160,16 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                                             dataTagsFound++;
                                             dataTags = realloc(dataTags, sizeof(char *) * (dataTagsFound + 1));
                                             printf("Found src %s\n", dataTags[dataTagsFound]);*/
-                                            printf("FOund %s\n", IteratePointer->Text + openStringLocation);
+                                            IteratePointer->Text[j] = '\0';
+                                            IteratePointer->Text += openStringLocation;
+
+                                            printf("FOund %s\n", IteratePointer->Text);
                                         }
                                     }
                                     else
                                     {
                                         openStringFound = true;
-                                        openStringLocation = j;
+                                        openStringLocation = j + 1;
                                         stringStartsDoubleParenthesis = IteratePointer->Text[j] == '"';
                                     }
                                 }
@@ -187,6 +188,9 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
         }
         IteratePointer++;
     }
+
+    MakeMatchesFullPath(HTMLIncludeMatches, filename); // Turn all HTML dependency paths into full paths
+
     char *TempStringPointer;
 
     /*
