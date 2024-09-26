@@ -172,6 +172,7 @@ let StructsPointer;
 // Main function for bundling files
 function Bundle() {
 	var temp;
+	console.log(chalk.yellow("Here!"));
 
 	// Find all files in CWD and all subdirectories
 	if (Settings.getValue("largeProject") === false) {
@@ -198,7 +199,6 @@ function Bundle() {
 	DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR"); // Create temporary directory for temp files
 
 	if (WalkedFiles && WalkedFiles.length > 0) {
-
 		var WrappedWalkedFiles = ArrowSerializer.ArrowSerialize(WalkedFiles);
 		CFunctions._CheckWasm(); // Check that Wasm has been initialized correctly
 		CFunctions._InitFileTypes(); // Initialize file types structs
