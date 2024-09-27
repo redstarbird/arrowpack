@@ -6,6 +6,7 @@ module.exports = {
 	bundleCSSInHTML: true,
 	productionMode: false,
 	addBaseTag: true,
+	bundleJS: true,
 	faviconPath: "favicon.ico",
 	transformers: {
 		"*.html": ["extensions/transformer.js"]

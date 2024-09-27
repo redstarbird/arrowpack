@@ -717,7 +717,7 @@ void BundleFile(struct Node *GraphNode)
         }
         else if (FileTypeID == JSFILETYPE_ID) // File is a JS file
         {
-            if (DependencyFileType == JSFILETYPE_ID) // Bundle JS in a JS file
+            if (DependencyFileType == JSFILETYPE_ID && GetSetting("bundleJS")->valueint == true) // Bundle JS in a JS file
             {
                 BundleJSinJS();
             }
