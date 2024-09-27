@@ -9,6 +9,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     printf("Copying file: %s to location: %s\n", FileToCopy, FileToCopyTo);
     ColorNormal();
     FILE *input = fopen(FileToCopy, "r");
+    EnsureDirectory(GetTrueBasePath(FileToCopyTo));
     FILE *output = fopen(FileToCopyTo, "w");
     if (!input || !output)
     {
