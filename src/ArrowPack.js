@@ -40,7 +40,9 @@ const argv = require("arrowargs")(process.argv.slice(2)) // Handle command line 
 		alias: "config-path",
 		describe: "Path to config file if not in working directory",
 		type: "string"
-	}).option("dev", { alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false })
+	}).option("dev", {
+		alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false
+	}).option("v", { alias: "version", describe: "Display version information", type: "boolean", default: false })
 	.help().argv;
 
 
@@ -144,6 +146,10 @@ async function JSValidateFiles(FileContents, PluginPath, FilePath) {
 let CFunctions;
 let StructsPointer;
 
+if (argv.v) {
+	const version = require("../package.json").version;
+	console.log(version);
+} else {
 (async () => { // Dev server code
 	CFunctions = await CFunctionFactory();
 
@@ -166,7 +172,7 @@ let StructsPointer;
 			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
 		});
 	} Bundle();
-})();
+})();}
 
 
 // Main function for bundling files
