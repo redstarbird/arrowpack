@@ -1,7 +1,7 @@
 # Changelog
 
 Any features, notable changes and bug fixes will be found in the file.
-Based of off [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 # [0.2.4] - Unreleased
 
@@ -31,18 +31,18 @@ Based of off [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Added
 
 -   Core
-    -   Major code cleanup
+    -   Major code cleanup [Details](https://github.com/redstarbird/arrowpack/commit/4754abe4de44567149294e260df9d0e68f7631bd)
 -   Config
-    -   Allow config files with .cjs file extension
+    -   Allow config files with .cjs file extension [Details](https://github.com/redstarbird/arrowpack/commit/a9b9d37e6f1a7d3f2eb9c6e75cbfd65aacecf527)
 
 ### Fixed
 
 -   Core
 
-    -   Fixed memory error when deserializing file paths
+    -   Fixed memory error when deserializing file paths [Details](https://github.com/redstarbird/arrowpack/commit/38da02622a3009c725b49e68155e57c6b86e629f)
 
 -   Dev Server
-    -   Fixed error with added trailing slash to URLs
+    -   Fixed error with added trailing slash to URLs [Details](https://github.com/redstarbird/arrowpack/commit/cc88066ac0ea6bb0286c49715e967397409e678d)
 
 # [0.2.1] - 2023-04-01
 
