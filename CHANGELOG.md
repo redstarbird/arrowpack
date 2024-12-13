@@ -49,7 +49,7 @@ Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 ### Fixed
 
 -   Core
-    -   Fixed major crash when no command line arguments were present
+    -   Fixed major crash when no command line arguments were present [Details](https://github.com/redstarbird/arrowpack/commit/27d8fb0bbbb67a81da37f084fa0cc80d01ccae97)
 
 # [0.2.0] - 2023-03-23
 
