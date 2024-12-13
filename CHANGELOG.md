@@ -3,12 +3,49 @@
 Any features, notable changes and bug fixes will be found in the file.
 Based of off [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
-# [0.2.2] - Unreleased
+# [0.2.4] - Unreleased
+
+### Added
+
+-   Core
+    -   Added version command line option [Details](https://github.com/redstarbird/arrowpack/commit/a5637be2d13e917e96646b7a5ad463ea24319964)
+-   Config
+    -   Added setting to disable JS module bundling [Details](https://github.com/redstarbird/arrowpack/commit/0664c99dd3a328581d8ceb5af7dbaee3f82e424c)
+
+### Fixed
+
+-   Core
+    -   Stopped automatically printing the configuration to console [Details](https://github.com/redstarbird/arrowpack/commit/577c60ddc39e6229f1911a4ea149185b12c4b70b)
+-   Dev Server
+    -   Fix bug with dev server crashing due to not picking up new directories [Details](https://github.com/redstarbird/arrowpack/commit/0252f72ab0935e16a02e4ec15027844eb6c670c3)
+
+# [0.2.3] - 2024-04-25
+
+### Fixed
+
+-   HTML
+    -   Fixed a bug where HTML dependencies wouldn't be detected properly [Details](https://github.com/redstarbird/arrowpack/commit/8c865417cc0cd4a5d58e658eb1276a76142b0e86)
 
 ### Added
 
 -   Config
     -   Allow config files with .cjs file extension
+
+# [0.2.2] - 2024-04-23
+
+### Added
+
+-   Core
+    -   Major code cleanup
+
+### Fixed
+
+-   Core
+
+    -   Fixed memory error when deserializing file paths
+
+-   Dev Server
+    -   Fixed error with added trailing slash to URLs
 
 # [0.2.1] - 2023-04-01
 
