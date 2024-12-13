@@ -42,7 +42,11 @@ const argv = require("arrowargs")(process.argv.slice(2)) // Handle command line 
 		type: "string"
 	}).option("dev", {
 		alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false
-	}).option("v", { alias: "version", describe: "Display version information", type: "boolean", default: false })
+	}).option("v", {
+		alias: "version", describe: "Display version information", type: "boolean", default: false
+	}).option("init", {
+		alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false
+	})
 	.help().argv;
 
 
@@ -149,30 +153,34 @@ let StructsPointer;
 if (argv.v) {
 	const version = require("../package.json").version;
 	console.log(version);
+} else if (argv.init) {
+	const initialise = require("./js/Initialise.js");
+	initialise();
 } else {
-(async () => { // Dev server code
-	CFunctions = await CFunctionFactory();
+	(async () => { // Dev server code
+		CFunctions = await CFunctionFactory();
 
-	if (argv.dev === true) { // Check if dev server is enabled
-		console.log("Entering dev mode");
-		const DevServer = require("./js/DevServer.js");
-		DevServer.StartServer(Settings);
+		if (argv.dev === true) { // Check if dev server is enabled
+			console.log("Entering dev mode");
+			const DevServer = require("./js/DevServer.js");
+			DevServer.StartServer(Settings);
 
-		const watcher = chokidar.watch(Settings.getValue("entry")); // Watch file system of CWD
-		watcher.on("change", (FilePath) => { // Wait for files to be changed
-			console.log("File " + FilePath + " has changed, rebuilding...");
-			var StartTime = performance.now();
-			var RebuiltFiles = CFunctions.ccall( // Call C function to rebuild files
-				"RebuildFiles",
-				"string",
-				["number", "string", "number"],
-				[StructsPointer, FilePath, 1]);
-			RebuiltFiles = ArrowDeserialize(RebuiltFiles); // Deserialise serialised string of changed files
-			DevServer.SendUpdatedPage(RebuiltFiles, Settings); // Send the updated pages to clients
-			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
-		});
-	} Bundle();
-})();}
+			const watcher = chokidar.watch(Settings.getValue("entry")); // Watch file system of CWD
+			watcher.on("change", (FilePath) => { // Wait for files to be changed
+				console.log("File " + FilePath + " has changed, rebuilding...");
+				var StartTime = performance.now();
+				var RebuiltFiles = CFunctions.ccall( // Call C function to rebuild files
+					"RebuildFiles",
+					"string",
+					["number", "string", "number"],
+					[StructsPointer, FilePath, 1]);
+				RebuiltFiles = ArrowDeserialize(RebuiltFiles); // Deserialise serialised string of changed files
+				DevServer.SendUpdatedPage(RebuiltFiles, Settings); // Send the updated pages to clients
+				console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
+			});
+		} Bundle();
+	})();
+}
 
 
 // Main function for bundling files
