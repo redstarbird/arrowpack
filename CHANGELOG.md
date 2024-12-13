@@ -26,17 +26,14 @@ Based of off [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -   HTML
     -   Fixed a bug where HTML dependencies wouldn't be detected properly [Details](https://github.com/redstarbird/arrowpack/commit/8c865417cc0cd4a5d58e658eb1276a76142b0e86)
 
-### Added
-
--   Config
-    -   Allow config files with .cjs file extension
-
 # [0.2.2] - 2024-04-23
 
 ### Added
 
 -   Core
     -   Major code cleanup
+-   Config
+    -   Allow config files with .cjs file extension
 
 ### Fixed
 
