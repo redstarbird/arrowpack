@@ -45,7 +45,7 @@ class settingsSingleton {
 
 		var AddFileSeperatorToEnd = ["entry", "exit"];
 		for (let i = 0; i < AddFileSeperatorToEnd.length; i++) { // Adds file path separator to end of each path in settings
-			if (this.settings[AddFileSeperatorToEnd[i][this.settings[AddFileSeperatorToEnd[i]].length - 1]] !== "/") {
+			if (this.settings[AddFileSeperatorToEnd[i]][this.settings[AddFileSeperatorToEnd[i]].length - 1] !== "/") {
 				this.settings[AddFileSeperatorToEnd[i]] += "/";
 			}
 		}
