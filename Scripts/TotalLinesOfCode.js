@@ -1,43 +1,71 @@
 const fs = require('fs');
+const path = require('path');
 
-var Total = 0;
-// This function takes the path to a directory as an argument, along with an array of directory names to exclude, and prints the total number of lines of code in all the files in that directory and its subdirectories, excluding the directories in the exclude list
-function countLines(directoryPath, excludeList) {
-    // Read the contents of the directory
-    const directoryContents = fs.readdirSync(directoryPath);
+/**
+ * Recursively count lines of code for each programming language in the given directory.
+ * 
+ * @param {string} dir - Directory to search in.
+ * @param {Object} options - Options for the search.
+ * @param {Set<string>} options.excludedDirs - Directories to exclude.
+ * @param {Object} options.languageExtensions - Map of programming languages to file extensions.
+ * @returns {Object} - An object containing lines of code for each language.
+ */
+function countLinesOfCodeByLanguage(dir, { excludedDirs = new Set(), languageExtensions = {} } = {}) {
+    const lineCounts = {}; // To store line counts for each language
 
-    // Initialize the total number of lines to 0
-    let totalLines = 0;
+    const files = fs.readdirSync(dir, { withFileTypes: true });
 
-    // Iterate over the contents of the directory
-    for (const fileName of directoryContents) {
-        // Construct the full path to the file
-        const filePath = `${directoryPath}/${fileName}`;
+    for (const file of files) {
+        const filePath = path.join(dir, file.name);
 
-        // Check if the file is a regular file (not a directory or symlink, etc.)
-        if (fs.statSync(filePath).isFile()) {
-            // If the file is a regular file, check if it is a code file by checking its file extension
-            if (filePath.endsWith('.js') || filePath.endsWith('.py') || filePath.endsWith('.java') || filePath.endsWith('.cpp') || filePath.endsWith('.c')) {
-                // Read the contents of the file
-                const fileContents = fs.readFileSync(filePath, 'utf8');
-
-                // Split the contents of the file on the newline character to get an array of lines
-                const lines = fileContents.split('\n');
-
-                // Print the number of lines in the file
-                console.log(`${filePath}: ${lines.length}`);
-
-                // Add the number of lines in the file to the total number of lines
-                Total += lines.length;
+        if (file.isDirectory()) {
+            if (!excludedDirs.has(file.name)) {
+                const subDirCounts = countLinesOfCodeByLanguage(filePath, { excludedDirs, languageExtensions });
+                for (const [language, lines] of Object.entries(subDirCounts)) {
+                    lineCounts[language] = (lineCounts[language] || 0) + lines;
+                }
             }
-        } else if (fs.statSync(filePath).isDirectory() && !excludeList.includes(fileName)) {
-            // If the file is a directory, and it is not in the exclude list, recursively count the lines of code in the directory
-            countLines(filePath, excludeList);
+        } else {
+            const ext = path.extname(file.name);
+            const language = Object.keys(languageExtensions).find(lang => languageExtensions[lang].has(ext));
+
+            if (language) {
+                const fileContent = fs.readFileSync(filePath, 'utf8');
+                const lineCount = fileContent.split('\n').length;
+                lineCounts[language] = (lineCounts[language] || 0) + lineCount;
+            }
         }
     }
 
-    // Return the total number of lines
+    return lineCounts;
 }
-countLines('./',
-    ['node_modules', '.git', 'cJSON', '.vs', 'Build', "OldFiles"]); // Directories to ignore
-console.log(`Total: ${Total}`); // Prints the total lines of code
+
+const excludedDirs = new Set(['node_modules', '.git', 'cJSON', '.vs', 'Build', 'OldFiles']);
+const languageExtensions = {
+    JavaScript: new Set(['.js', '.jsx']),
+    TypeScript: new Set(['.ts', '.tsx']),
+    C: new Set(['.c', '.h']),
+    CPlusPlus: new Set(['.cpp', '.hpp']),
+    Python: new Set(['.py']),
+    Go: new Set(['.go']),
+    Fortran: new Set(['.for']),
+    Rust: new Set(['.rs']),
+};
+
+const cwd = process.cwd();
+const lineCounts = countLinesOfCodeByLanguage(cwd, { excludedDirs, languageExtensions });
+
+console.log('\x1b[1mLines of code by programming language:\x1b[0m');
+
+// Determine the maximum width for aligned output
+const maxLanguageLength = Math.max(...Object.keys(lineCounts).map(lang => lang.length));
+const maxLineCountLength = Math.max(...Object.values(lineCounts).map(lines => lines.toString().length));
+
+// Sort entries by line count in descending order
+const sortedEntries = Object.entries(lineCounts).sort(([, a], [, b]) => b - a);
+
+for (const [language, lines] of sortedEntries) {
+    const languageFormatted = language.padEnd(maxLanguageLength, ' ');
+    const linesFormatted = lines.toString().padStart(maxLineCountLength, ' ');
+    console.log(`\x1b[36m${languageFormatted}\x1b[0m: \x1b[33m${linesFormatted}\x1b[0m`);
+}
