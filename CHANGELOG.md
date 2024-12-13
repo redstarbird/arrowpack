@@ -123,6 +123,6 @@ Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -   HTML
     -   Fixed dependencies being inserted in the wrong location [Details](https://github.com/redstarbird/arrowpack/commit/f70b97990e4059bc6923633fb1a7f267844b8840)
 -   Dev Server
-    -   Stopped page shifting when reloading
-    -   Fixed dev server not finding the correct page when query parameters are present
-    -   Fixed dev server not detecting script tags
+    -   Stopped page shifting when reloading [Details](https://github.com/redstarbird/arrowpack/commit/ba8e449d84901a0e5dbde5e4f947abab16b02f21)
+    -   Fixed dev server not finding the correct page when query parameters are present [Details](https://github.com/redstarbird/arrowpack/commit/a665bc28861c0b4960b9043bedf93da755200c86)
+    -   Fixed dev server not detecting script tags [Details](https://github.com/redstarbird/arrowpack/commit/958e90c80567859a4098b7c746efb34f3ff8819d)
