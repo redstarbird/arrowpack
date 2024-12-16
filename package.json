@@ -33,7 +33,7 @@
 		"arrowpack": "src/ArrowPack.js"
 	},
 	"dependencies": {
-		"arrowargs": "^0.0.3",
+		"arrowargs": "^0.0.4",
 		"assert": "^2.0.0",
 		"chalk": "^4.1.2",
 		"chokidar": "^4.0.1",
