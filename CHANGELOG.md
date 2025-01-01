@@ -9,6 +9,7 @@ Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
 -   Core
     -   Added version command line option [Details](https://github.com/redstarbird/arrowpack/commit/a5637be2d13e917e96646b7a5ad463ea24319964)
+    -   Added command line init command to setup arrowpack in a directory [Details](https://github.com/redstarbird/arrowpack/commit/d8c375570b18a612bbf572a10c92978d385a2b20)
 -   Config
     -   Added setting to disable JS module bundling [Details](https://github.com/redstarbird/arrowpack/commit/0664c99dd3a328581d8ceb5af7dbaee3f82e424c)
 
@@ -18,6 +19,8 @@ Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
     -   Stopped automatically printing the configuration to console [Details](https://github.com/redstarbird/arrowpack/commit/577c60ddc39e6229f1911a4ea149185b12c4b70b)
 -   Dev Server
     -   Fix bug with dev server crashing due to not picking up new directories [Details](https://github.com/redstarbird/arrowpack/commit/0252f72ab0935e16a02e4ec15027844eb6c670c3)
+-   Config
+    -   Fixed bug with extra trailing slash always being added to paths in config [Details](https://github.com/redstarbird/arrowpack/commit/2fefa2cb74421a1966c2362723bbfed85b8607e0)
 
 # [0.2.3] - 2024-04-25
 
