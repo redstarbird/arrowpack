@@ -6,7 +6,6 @@ A web bundling application that makes your website faster and easier to maintain
 
 **WIP logo**
 
-
 ## Version 0.2.1
 
 ### This project is still in early beta and breaking changes may occur!
@@ -16,7 +15,7 @@ A web bundling application that makes your website faster and easier to maintain
 | Feature                    | Implemented |
 | -------------------------- | ----------- |
 | HTML Includes              | ✅          |
-| CSS Bundling               | ✅          |
+| CSS Bundling               | ❌          |
 | HTML/CSS Minifier          | ❌          |
 | Javascript Module Bundler  | ✅          |
 | Node.JS modules on browser | ❌          |
