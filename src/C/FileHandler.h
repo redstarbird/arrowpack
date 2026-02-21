@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include "StringRelatedFunctions.h"
 #include "ProblemHandler.h"
 
