@@ -56,9 +56,9 @@ int count_edges(struct Node *vertex);
 
 typedef struct Graph
 {
-    int VerticesNum; // Number of vertices in the graph
-    Node **Vertexes; // Array of pointers to the head of the linked lists for each vertex
-    struct Node **SortedArray;
+    int VerticesNum;           // Number of vertices in the graph
+    Node **Vertexes;           // Array of pointers to the head of the linked lists for each vertex
+    struct Node **SortedArray; // Array that contains all of the vertex in the order that they need to be bundled
 } Graph;
 struct Graph *CreateGraph(); // Creates dependency tree/graph/array
 // Function to create a new edge
