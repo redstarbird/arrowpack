@@ -188,98 +188,70 @@ function Bundle() {
 	var temp;
 	console.log(chalk.yellow("Here!"));
 
-	// Find all files in CWD and all subdirectories
-	if (Settings.getValue("largeProject") === false) {
-		temp = DirFunctions.RecursiveWalkDir(Settings.getValue("entry")); // eventually add pluginAPI event here
-	} else { // Use Wasm module to recusively find all files (doesn't currently work)
-		let RecursiveWalkDirWASM = fs.readFileSync("../Build/RecursiveWalkDir.wasm"); const { WebAssembly } = require("wasi");
-		let compiledWalkDirWASM = WebAssembly.compile(wasm);
-		let InstanceWalkDirWASM = WebAssembly.instantiate(compiledWalkDirWASM);
-		const { InstanceWalkDirWASMExports } = instance;
-		temp = InstanceWalkDirWASMExports.walk_dir(Settings.getValue("entry"));
-	}
-	var WalkedFiles = temp.Files;
-	var WalkedDirs = temp.Directories;
-
-	// Create exit directories for all entry directories
-	if (WalkedDirs) {
-		WalkedDirs.forEach(Dir => {
-			var tempDir = Settings.getValue("exit") + Dir.substring(Settings.getValue("entry").length);
-
-			DirFunctions.mkdirIfNotExists(tempDir);
-		});
-	}
-
 	DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR"); // Create temporary directory for temp files
 
-	if (WalkedFiles && WalkedFiles.length > 0) {
-		var WrappedWalkedFiles = ArrowSerializer.ArrowSerialize(WalkedFiles);
-		CFunctions._CheckWasm(); // Check that Wasm has been initialized correctly
-		CFunctions._InitFileTypes(); // Initialize file types structs
+	CFunctions._CheckWasm(); // Check that Wasm has been initialized correctly
+	CFunctions._InitFileTypes(); // Initialize file types structs
 
-		const StringifiedJSON = JSON.stringify(Settings.settings) // Convert settings to a JSON string
+	const StringifiedJSON = JSON.stringify(Settings.settings) // Convert settings to a JSON string
 
-		var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); // Initialize settings on the Wasm side
-		if (Success !== 1) { throw "Error setting up Wasm settings"; }
+	var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); // Initialize settings on the Wasm side
+	if (Success !== 1) { throw "Error setting up Wasm settings"; }
 
-		StructsPointer = CFunctions.ccall( // Find all dependencies and create the dependency graph
-			"CreateGraph",
-			"number",
-			["string"],
-			[WrappedWalkedFiles]
-		);
+	StructsPointer = CFunctions.ccall( // Find all dependencies and create the dependency graph
+		"CreateGraph",
+		"number",
+	);
 
-		if (!ObjectIsEmpty(Settings.settings.validators)) { // Run validators on the Wasm side if any exist
-			Success = false;
-			const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
-			Success = CFunctions.ccall(
-				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, ValidateJSFunctionPointer, 2]
-			)
-
-		}
-		let TransformJSFunctionPointer = Success;
-
-		if (!ObjectIsEmpty(Settings.settings.transformers)) { // Run transformers on the Wasm side if any exist
-			Success = false;
-			TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
-			Success = CFunctions.ccall(
-				"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
-			)
-			if (Success !== 1) { throw "Error transforming files!"; }
-		}
-
+	if (!ObjectIsEmpty(Settings.settings.validators)) { // Run validators on the Wasm side if any exist
 		Success = false;
-		CFunctions._topological_sort(StructsPointer); // Sort the dependency graph topologically
+		const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
+		Success = CFunctions.ccall(
+			"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, ValidateJSFunctionPointer, 2]
+		)
 
-		Success = 0;
-		Success = CFunctions.ccall( // Bundle all the files in the graph
-			"BundleFiles",
-			"number",
-			["number"],
-			[StructsPointer]
-		);
-
-		if (!ObjectIsEmpty(Settings.settings.postProcessors)) { // Run the post processors on the Wasm side if any exist
-			Success = false;
-			Success = CFunctions.ccall(
-				"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, TransformJSFunctionPointer, 3]
-			);
-		}
-
-		if (Success === 1 || Success === 0) {
-			console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n")); // Print the bundle time
-
-			if (argv.dev) {
-				console.log("Dev server running...");
-			}
-			else {
-				DeletePreprocessDir();
-			}
-
-		}
-	} else {
-		console.log(chalk.yellowBright("Could not find any files to be bundled")); // No files were found in the entry directory
 	}
+	let TransformJSFunctionPointer = Success;
+
+	if (!ObjectIsEmpty(Settings.settings.transformers)) { // Run transformers on the Wasm side if any exist
+		Success = false;
+		TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
+		Success = CFunctions.ccall(
+			"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
+		)
+		if (Success !== 1) { throw "Error transforming files!"; }
+	}
+
+	Success = false;
+	CFunctions._topological_sort(StructsPointer); // Sort the dependency graph topologically
+
+	Success = 0;
+	Success = CFunctions.ccall( // Bundle all the files in the graph
+		"BundleFiles",
+		"number",
+		["number"],
+		[StructsPointer]
+	);
+
+	if (!ObjectIsEmpty(Settings.settings.postProcessors)) { // Run the post processors on the Wasm side if any exist
+		Success = false;
+		Success = CFunctions.ccall(
+			"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, TransformJSFunctionPointer, 3]
+		);
+	}
+
+	if (Success === 1 || Success === 0) {
+		console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n")); // Print the bundle time
+
+		if (argv.dev) {
+			console.log("Dev server running...");
+		}
+		else {
+			DeletePreprocessDir();
+		}
+
+	}
+
 }
 
 // Clean up the preprocess directory on exit

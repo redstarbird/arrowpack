@@ -464,26 +464,33 @@ void CreateDependencyEdges(struct Node *vertex, struct Graph **DependencyGraph)
 }
 
 // Main function for creating dependency Graph
-struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph(char *Wrapped_paths)
+struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph()
 {
-    printf("Creating dependency Graph!\n");
+    printf("Creating dependency Graph...\n");
 
-    int *ArrayLength = malloc(sizeof(int));
-    *ArrayLength = 0;
+    int pathsNum = 0;
 
-    printf("Wrapped paths: %s\n", Wrapped_paths);
-    char **paths = ArrowDeserialize(Wrapped_paths, ArrayLength);
-
-    size_t GraphSize = (int)sizeof(struct Node) * *ArrayLength;
+    char **returned_paths = GetAllFilesInDirectory(GetSetting("entry")->valuestring, true, &pathsNum);
+    if (pathsNum == 0)
+    {
+        printf("No files found :( \n");
+    }
+    else
+    {
+        for (int i = 0; i < pathsNum; i++)
+        {
+            printf("Found file: %s\n", returned_paths[i]);
+        }
+    }
 
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
     DependencyGraph->VerticesNum = 0;                             // Sets number of vertices in graph
 
     DependencyGraph->Vertexes = malloc(sizeof(struct Node));
-    for (unsigned int i = 0; i < *ArrayLength; i++) // Sets up values for each element in the Graph
+    for (unsigned int i = 0; i < pathsNum; i++) // Sets up values for each element in the Graph
     {
 
-        add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(paths[i], ""), GetFileTypeID(paths[i]), NULL));
+        add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(returned_paths[i], ""), GetFileTypeID(returned_paths[i]), NULL));
     }
     ColorGreen();
     printf("Finding dependencies...\n\n\n");

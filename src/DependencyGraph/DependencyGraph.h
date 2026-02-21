@@ -60,7 +60,7 @@ typedef struct Graph
     Node **Vertexes; // Array of pointers to the head of the linked lists for each vertex
     struct Node **SortedArray;
 } Graph;
-struct Graph *CreateGraph(char *Wrapped_paths); // Creates dependency tree/graph/array
+struct Graph *CreateGraph(); // Creates dependency tree/graph/array
 // Function to create a new edge
 Edge *create_edge(struct Node *vertex, int StartRefPos, int EndRefPos);
 
