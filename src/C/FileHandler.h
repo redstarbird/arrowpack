@@ -16,4 +16,6 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo);
 bool FileExists(char *FilePath);
 void EnsureDirectory(const char *DirectoryPath);
 bool DirectoryExists(const char *path);
+char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCount);
+
 #endif // !FILEHANDLERH

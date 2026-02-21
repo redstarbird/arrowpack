@@ -142,3 +142,55 @@ void EnsureDirectory(const char *DirectoryPath)
     free(Temp);
     free(ParentDir);
 }
+
+// Function to walk a directory and return an array of strings containing the paths of all files in the directory and optionally subdirectories
+char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCount)
+{
+    char pathBuffer[1024];
+    struct dirent *dp;
+    struct stat statbuf;
+    DIR *dir = opendir(directoryPath);
+
+    // Check if the directory was opened successfully
+    if (dir == NULL)
+    {
+        *fileCount = 0;
+        return NULL;
+    }
+
+    char **filePaths = malloc(1024 * sizeof(char *));
+    int count = 0;
+    while ((dp = readdir(dir)) != NULL)
+    {
+        // Skip the current and parent directory entries
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        // Construct the full path to the file or directory
+        snprintf(pathBuffer, sizeof(pathBuffer), "%s/%s", directoryPath, dp->d_name);
+
+        // Check if the path is a regular file or a directory
+        if (stat(pathBuffer, &statbuf) == 0 && S_ISREG(statbuf.st_mode))
+        {
+            // Regular file, add it to the list of file paths
+            filePaths[count] = strdup(pathBuffer);
+            count++;
+        }
+        else if (recursive && S_ISDIR(statbuf.st_mode))
+        {
+            // Directory, recursively walk it
+            char **subDirFiles = GetAllFilesInDirectory(pathBuffer, recursive, fileCount);
+            for (int i = 0; i < *fileCount; i++)
+            {
+                filePaths[count + i] = subDirFiles[i];
+            }
+            count += *fileCount;
+        }
+    }
+
+    closedir(dir);
+    *fileCount = count;
+    return filePaths;
+}
