@@ -22,6 +22,11 @@ Based off of [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -   Config
     -   Fixed bug with extra trailing slash always being added to paths in config [Details](https://github.com/redstarbird/arrowpack/commit/2fefa2cb74421a1966c2362723bbfed85b8607e0)
 
+### Performance
+
+-   Resolving
+    -   Improved the performance of walking the entry directory by moving JS code to C [Details](https://github.com/redstarbird/arrowpack/commit/https://github.com/redstarbird/arrowpack/commit/570fe953642e86c54f3e0c98dddcda626e0c0543)
+
 # [0.2.3] - 2024-04-25
 
 ### Fixed
