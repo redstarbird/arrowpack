@@ -169,7 +169,7 @@ char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCoun
         }
 
         // Construct the full path to the file or directory
-        snprintf(pathBuffer, sizeof(pathBuffer), "%s/%s", directoryPath, dp->d_name);
+        snprintf(pathBuffer, sizeof(pathBuffer), "%s%s", directoryPath, dp->d_name);
 
         // Check if the path is a regular file or a directory
         if (stat(pathBuffer, &statbuf) == 0 && S_ISREG(statbuf.st_mode))
