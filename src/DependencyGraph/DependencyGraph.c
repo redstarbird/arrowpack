@@ -468,8 +468,8 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph()
 {
     printf("Creating dependency Graph...\n");
 
+    // Get all of the files from the entry directory
     int pathsNum = 0;
-
     char **returned_paths = GetAllFilesInDirectory(GetSetting("entry")->valuestring, true, &pathsNum);
     if (pathsNum == 0)
     {
@@ -483,23 +483,26 @@ struct Graph EMSCRIPTEN_KEEPALIVE *CreateGraph()
         }
     }
 
+    // Create a new dependency graph
     struct Graph *DependencyGraph = malloc(sizeof(struct Graph)); // Allocates memory for graph
     DependencyGraph->VerticesNum = 0;                             // Sets number of vertices in graph
-
     DependencyGraph->Vertexes = malloc(sizeof(struct Node));
+
+    // Add all of the vertexes to the graph
     for (unsigned int i = 0; i < pathsNum; i++) // Sets up values for each element in the Graph
     {
 
         add_vertex(DependencyGraph, create_vertex(TurnToFullRelativePath(returned_paths[i], ""), GetFileTypeID(returned_paths[i]), NULL));
     }
+
     ColorGreen();
     printf("Finding dependencies...\n\n\n");
     ColorReset();
-    int TempNum = 0;
-    while (TempNum < DependencyGraph->VerticesNum) // Loops through each node and finds dependencies
+
+    // Resolve dependencies and create edges between all vertices
+    for (unsigned int i = 0; i < DependencyGraph->VerticesNum; i++) // Loops through each node and finds dependencies
     {
-        CreateDependencyEdges(DependencyGraph->Vertexes[TempNum], &DependencyGraph);
-        TempNum++;
+        CreateDependencyEdges(DependencyGraph->Vertexes[i], &DependencyGraph);
     }
 
     return DependencyGraph;
