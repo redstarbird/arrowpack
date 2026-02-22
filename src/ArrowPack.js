@@ -148,7 +148,7 @@ async function JSValidateFiles(FileContents, PluginPath, FilePath) {
 }
 
 let CFunctions;
-let StructsPointer;
+let DependencyGraphPtr;
 
 if (argv.v) {
 	const version = require("../package.json").version;
@@ -173,7 +173,7 @@ if (argv.v) {
 					"RebuildFiles",
 					"string",
 					["number", "string", "number"],
-					[StructsPointer, FilePath, 1]);
+					[DependencyGraphPtr, FilePath, 1]);
 				RebuiltFiles = ArrowDeserialize(RebuiltFiles); // Deserialise serialised string of changed files
 				DevServer.SendUpdatedPage(RebuiltFiles, Settings); // Send the updated pages to clients
 				console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 + " seconds\n\n"));
@@ -198,7 +198,7 @@ function Bundle() {
 	var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]); // Initialize settings on the Wasm side
 	if (Success !== 1) { throw "Error setting up Wasm settings"; }
 
-	StructsPointer = CFunctions.ccall( // Find all dependencies and create the dependency graph
+	DependencyGraphPtr = CFunctions.ccall( // Find all dependencies and create the dependency graph
 		"CreateGraph",
 		"number",
 	);
@@ -207,7 +207,7 @@ function Bundle() {
 		Success = false;
 		const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
 		Success = CFunctions.ccall(
-			"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, ValidateJSFunctionPointer, 2]
+			"ExecutePlugin", "number", ["number", "number", "number"], [DependencyGraphPtr, ValidateJSFunctionPointer, 2]
 		)
 
 	}
@@ -217,26 +217,26 @@ function Bundle() {
 		Success = false;
 		TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
 		Success = CFunctions.ccall(
-			"TransformFiles", "number", ["number", "number"], [StructsPointer, TransformJSFunctionPointer]
+			"TransformFiles", "number", ["number", "number"], [DependencyGraphPtr, TransformJSFunctionPointer]
 		)
 		if (Success !== 1) { throw "Error transforming files!"; }
 	}
 
 	Success = false;
-	CFunctions._topological_sort(StructsPointer); // Sort the dependency graph topologically
+	CFunctions._topological_sort(DependencyGraphPtr); // Sort the dependency graph topologically
 
 	Success = 0;
 	Success = CFunctions.ccall( // Bundle all the files in the graph
 		"BundleFiles",
 		"number",
 		["number"],
-		[StructsPointer]
+		[DependencyGraphPtr]
 	);
 
 	if (!ObjectIsEmpty(Settings.settings.postProcessors)) { // Run the post processors on the Wasm side if any exist
 		Success = false;
 		Success = CFunctions.ccall(
-			"ExecutePlugin", "number", ["number", "number", "number"], [StructsPointer, TransformJSFunctionPointer, 3]
+			"ExecutePlugin", "number", ["number", "number", "number"], [DependencyGraphPtr, TransformJSFunctionPointer, 3]
 		);
 	}
 
