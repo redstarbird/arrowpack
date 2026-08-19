@@ -34,6 +34,6 @@ struct Asset
     Asset **dependencies;
     size_t dependenciesCount;
     size_t dependenciesCapacity;
-}
+};
 
 #endif // !ASSET_H
