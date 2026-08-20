@@ -12,6 +12,7 @@ class settingsSingleton {
 			largeProject: false,
 			bundleCSSInHTML: true,
 			productionMode: true,
+			bundleJS: true,
 			devPort: 8080,
 			devSocketPort: 8081,
 			addBaseTag: false,
