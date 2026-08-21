@@ -815,10 +815,13 @@ void PostProcessFile(struct Node *node, struct Graph *graph)
             AddShiftNum(IteratePointer->StartIndex, IteratePointer->EndIndex - IteratePointer->StartIndex - 1, &shiftLocations, &ShiftlocationLength);
             IteratePointer++;
         }
+        // Remove export keywords from final JS files (only if js has been bundled)
+        if (GetSetting("bundleJS")->valueint == true)
+        {
 
-        // Remove export keywords from final JS files
-        FileContents = RemoveSubstring(FileContents, "export default ");
-        FileContents = RemoveSubstring(FileContents, "export ");
+            FileContents = RemoveSubstring(FileContents, "export default ");
+            FileContents = RemoveSubstring(FileContents, "export ");
+        }
 
         CreateFileWrite(ExitPath, FileContents); // Save the final file
     }
