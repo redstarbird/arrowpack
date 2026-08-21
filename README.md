@@ -2,11 +2,9 @@
 
 A web bundling application that makes your website faster and easier to maintain
 
-<img align="center" width="300" height="300" src="https://github.com/redstarbird/arrowpack/blob/main/Logo_WIP.svg">
-
 **WIP logo**
 
-## Version 0.2.1
+## Version 0.2.4
 
 ### This project is still in early beta and breaking changes may occur!
 
@@ -29,11 +27,11 @@ A web bundling application that makes your website faster and easier to maintain
 
 Dependencies:
 
--   Go >= 1.11
--   gcc
--   Tinygo
--   Emscripten
--   Python >= 3.7
+- Go >= 1.11
+- gcc
+- Tinygo
+- Emscripten
+- Python >= 3.7
 
 ## Run build script
 
