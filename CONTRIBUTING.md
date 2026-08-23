@@ -56,7 +56,7 @@ Where `type` is one of the following:
 
 The `number` should be the issue number.
 
-The `sumamry` should be around two or three words, briefly summarising the issue, e.g `css-parse-crash`.
+The `summary` should be around two or three words, briefly summarising the issue, e.g `css-parse-crash`.
 
 An example of a full branch name: `fix/issue-87/css-parser-crash`.
 
