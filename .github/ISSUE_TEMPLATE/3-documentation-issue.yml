@@ -1,0 +1,25 @@
+name: Documentation Issue
+description: Report an error, typo, or unclear/missing information in the documentation
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: urls
+    attributes:
+      label: Link(s) to the affected page(s)
+      description: Where in the documentation did you find this issue? If it affects multiple pages, please list them on separate lines. If this is about missing page(s), leave this section blank.
+    validations:
+      required: false
+    
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong with the documentation
+      description: Please describe the error, typo, or missing information.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix (optional)
+      description: If you know how the docs should be rewritten, please write it here.
