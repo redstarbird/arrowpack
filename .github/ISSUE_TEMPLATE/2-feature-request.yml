@@ -14,7 +14,7 @@ body:
       label: Pre-submission Checks
       options:
         - label: I have searched the existing issues to ensure this has not already been requested.
-            required: true
+          required: true
   - type: textarea
     id: problem
     attributes:
