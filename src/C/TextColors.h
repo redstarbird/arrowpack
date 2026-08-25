@@ -15,4 +15,4 @@ void ColorWhite();
 void ColorReset();
 void ColorNormal();
 
-#endif // !TEXTCOLORS_H
+#endif  // !TEXTCOLORS_H

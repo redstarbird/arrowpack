@@ -1,6 +1,6 @@
 #include "settingsSingleton.h"
 
-struct SettingsSingleton Settings; // Initialises global settings structure
+struct SettingsSingleton Settings;  // Initialises global settings structure
 
 static bool LastStringWasKey;
 static size_t LastKeyLength = 0;
@@ -58,8 +58,8 @@ static int SetSetting(char *key, char *value)
 
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String)
 {
-    printf("Received settings string: %s,Last key: %s, Last string was key: %i \n", String, LastKey, LastStringWasKey);
-    if (LastStringWasKey == false)
+    printf("Received settings string: %s,Last key: %s, Last string was key: %i \n", String, LastKey,
+LastStringWasKey); if (LastStringWasKey == false)
     {
         LastKey = strdup(String);
     }

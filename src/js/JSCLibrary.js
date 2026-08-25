@@ -1,18 +1,19 @@
 
 
-
 mergeInto(LibraryManager.library, {
-    IsNodeBuiltInJS: function (name) {
+    IsNodeBuiltInJS: function(name) {
         name = Module.UTF8ToString(name);
         const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
         return NodeBrowserModules.IsNodeBuiltin(name);
     },
-    EnsureNodeBuiltinBrowserModuleJS: function (name) {
+
+    EnsureNodeBuiltinBrowserModuleJS: function(name) {
         name = Module.UTF8ToString(name);
         const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
         NodeBrowserModules.EnsureInstalled(name);
     },
-    NodeModuleBrowserPackageNameJS: function (name) {
+
+    NodeModuleBrowserPackageNameJS: function(name) {
         name = Module.UTF8ToString(name);
         const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
         const string = NodeBrowserModules.NodeModuleBrowserPackageName(name);
@@ -20,6 +21,6 @@ mergeInto(LibraryManager.library, {
         var lengthBytes = Module.lengthBytesUTF8(string) + 1;
         var stringOnWasmHeap = Module._malloc(string);
 
-        return Module.stringToNewUTF8(string); // Return the encoded string
+        return Module.stringToNewUTF8(string);  // Return the encoded string
     }
 })

@@ -1,13 +1,14 @@
 #ifndef STRINGRELATEDFUNCTIONS_H
 #define STRINGRELATEDFUNCTIONS_H
 
-#include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
 #include <emscripten.h>
-#include <stdlib.h>
-#include <glob.h>
 #include <fnmatch.h>
+#include <glob.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "../Regex/RegexFunctions.h"
 #include "../SettingsSingleton/settingsSingleton.h"
 #include "IntFunctions.h"
@@ -17,11 +18,14 @@
 
 int EMSCRIPTEN_KEEPALIVE LastOccurenceOfChar(const char *text, char character);
 
-bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string, char character); // Checks if string contains a certain character
+bool EMSCRIPTEN_KEEPALIVE containsCharacter(const char *string,
+                                            char character);  // Checks if string contains a certain character
 
-char EMSCRIPTEN_KEEPALIVE *GetFileExtension(const char *path); // Returns the file extension for the given path without the dot char
+char EMSCRIPTEN_KEEPALIVE *
+GetFileExtension(const char *path);  // Returns the file extension for the given path without the dot char
 
-char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex, int EndIndex); // Returns substring between start and end indexes
+char EMSCRIPTEN_KEEPALIVE *getSubstring(char *Text, int StartIndex,
+                                        int EndIndex);  // Returns substring between start and end indexes
 
 char **SplitStringByChar(char *str, const char delimiter);
 
@@ -71,4 +75,4 @@ bool MatchGlob(const char *FilePath, const char *GlobPattern);
 
 int NumOfCharOccurences(const char *text, const char character);
 
-#endif // !STRINGFUNCTIONS_H
+#endif  // !STRINGFUNCTIONS_H

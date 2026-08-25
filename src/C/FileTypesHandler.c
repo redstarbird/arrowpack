@@ -18,21 +18,19 @@ static void SetShortName(char *stringToSet, char *ReplaceString)
     SetString(stringToSet, ReplaceString, 10);
 }
 
-int GetFileTypeID(const char *path) // Returns the file type ID of the specified file path
+int GetFileTypeID(const char *path)  // Returns the file type ID of the specified file path
 {
     char *FileExtension = GetFileExtension(path);
-    if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0 || strcasecmp(FileExtension, "htmla") == 0)
-    {
+    if (strcasecmp(FileExtension, "html") == 0 || strcasecmp(FileExtension, "htm") == 0 ||
+        strcasecmp(FileExtension, "htmla") == 0) {
         free(FileExtension);
         return HTMLFILETYPE_ID;
     }
-    else if (strcasecmp(FileExtension, "css") == 0)
-    {
+    else if (strcasecmp(FileExtension, "css") == 0) {
         free(FileExtension);
         return CSSFILETYPE_ID;
     }
-    else if (strcasecmp(FileExtension, "js") == 0 || strcasecmp(FileExtension, "cjs") == 0)
-    {
+    else if (strcasecmp(FileExtension, "js") == 0 || strcasecmp(FileExtension, "cjs") == 0) {
         free(FileExtension);
         return JSFILETYPE_ID;
     }
@@ -40,7 +38,7 @@ int GetFileTypeID(const char *path) // Returns the file type ID of the specified
     return -1;
 }
 
-void InitFileTypes() // Initializes the file types struct array
+void InitFileTypes()  // Initializes the file types struct array
 {
     printf("Setting up file types struct\n");
     unsigned int FileTypesNum = 5;

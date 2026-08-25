@@ -1,6 +1,7 @@
 #include "Stack.h"
 
-struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variable) // Creates and initializes a new stack
+struct Stack *CreateStack(unsigned int Capacity, unsigned int type,
+                          bool Variable)  // Creates and initializes a new stack
 {
     size_t TypeSize = 0;
 
@@ -8,8 +9,7 @@ struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variabl
     stack->capacity = Capacity;
     stack->top = -1;
     stack->Variable = Variable;
-    switch (type)
-    {
+    switch (type) {
     case STACK_INT:
         TypeSize = sizeof(int);
         stack->array.IntArray = malloc(stack->capacity * TypeSize);
@@ -23,26 +23,23 @@ struct Stack *CreateStack(unsigned int Capacity, unsigned int type, bool Variabl
     return stack;
 }
 
-bool StackIsFull(struct Stack *stack) // Returns whether a given stack is full
+bool StackIsFull(struct Stack *stack)  // Returns whether a given stack is full
 {
     return stack->top == stack->capacity - 1;
 }
 
-bool StackIsEmpty(struct Stack *stack) // Returns whether a given stack is empty
+bool StackIsEmpty(struct Stack *stack)  // Returns whether a given stack is empty
 {
     return stack->top == -1;
 }
-void StackpushV(struct Stack *stack, struct Node *Value) // Push a value onto a stack of vertices
+void StackpushV(struct Stack *stack, struct Node *Value)  // Push a value onto a stack of vertices
 {
-    if (StackIsFull(stack))
-    {
-        if (stack->Variable)
-        {
+    if (StackIsFull(stack)) {
+        if (stack->Variable) {
             stack->capacity *= 2;
             stack->array.VertexArray = realloc(stack->array.VertexArray, stack->capacity * sizeof(struct Node *));
         }
-        else
-        {
+        else {
             CreateWarning("Tried to push value to stack, but stack is full");
             return;
         }
@@ -50,50 +47,43 @@ void StackpushV(struct Stack *stack, struct Node *Value) // Push a value onto a 
 
     stack->array.VertexArray[++stack->top] = Value;
 }
-void StackpushI(struct Stack *stack, int Value) // Push a value onto a stack of integers
+void StackpushI(struct Stack *stack, int Value)  // Push a value onto a stack of integers
 {
-    if (StackIsFull(stack))
-    {
-        if (stack->Variable)
-        {
+    if (StackIsFull(stack)) {
+        if (stack->Variable) {
             stack->capacity *= 2;
             stack->array.IntArray = realloc(stack->array.IntArray, stack->capacity * sizeof(int));
         }
-        else
-        {
+        else {
             CreateWarning("Tried to push value to stack, but stack is full");
             return;
         }
     }
     stack->array.IntArray[++stack->top] = Value;
 }
-int StackpopI(struct Stack *stack) // Need to make overload for this function
+int StackpopI(struct Stack *stack)  // Need to make overload for this function
 {
-    if (StackIsEmpty(stack))
-    {
+    if (StackIsEmpty(stack)) {
         printf("Tried to remove top value from stack but stack is empty");
     }
 
     return stack->array.IntArray[stack->top--];
 }
-void StackpopV(struct Stack *stack) // Need to make overload for this function
+void StackpopV(struct Stack *stack)  // Need to make overload for this function
 {
-    if (StackIsEmpty(stack))
-    {
+    if (StackIsEmpty(stack)) {
         printf("Tried to remove top value from stack but stack is empty");
     }
     stack->top--;
     return;
 }
-void *Stackpop(struct Stack *stack) // Gets the top value from stack and removes it from stack
+void *Stackpop(struct Stack *stack)  // Gets the top value from stack and removes it from stack
 {
-    if (StackIsEmpty(stack))
-    {
+    if (StackIsEmpty(stack)) {
         CreateWarning("Tried to pop value from empty stack\n");
         return NULL;
     }
-    switch (stack->Type)
-    {
+    switch (stack->Type) {
     case STACK_VERTEX:
         return (void *)stack->array.VertexArray[stack->top--];
         break;

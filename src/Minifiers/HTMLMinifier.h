@@ -7,4 +7,4 @@
 
 void MinifyHTML(char *html);
 
-#endif // !HTMLMINIFIER_H
+#endif  // !HTMLMINIFIER_H

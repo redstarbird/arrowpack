@@ -5,4 +5,4 @@
 
 void print_progress_bar(int current, int total);
 
-#endif // !PROGRESSBAR_H
+#endif  // !PROGRESSBAR_H
