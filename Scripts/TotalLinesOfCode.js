@@ -3,29 +3,31 @@ const path = require('path');
 
 /**
  * Recursively count lines of code for each programming language in the given directory.
- * 
+ *
  * @param {string} dir - Directory to search in.
  * @param {Object} options - Options for the search.
  * @param {Set<string>} options.excludedDirs - Directories to exclude.
  * @param {Object} options.languageExtensions - Map of programming languages to file extensions.
  * @returns {Object} - An object containing lines of code for each language.
  */
-function countLinesOfCodeByLanguage(dir, { excludedDirs = new Set(), languageExtensions = {} } = {}) {
-    const lineCounts = {}; // To store line counts for each language
+function countLinesOfCodeByLanguage(dir, {excludedDirs = new Set(), languageExtensions = {}} = {})
+{
+    const lineCounts = {};  // To store line counts for each language
 
-    const files = fs.readdirSync(dir, { withFileTypes: true });
+    const files = fs.readdirSync(dir, {withFileTypes: true});
 
     for (const file of files) {
         const filePath = path.join(dir, file.name);
 
         if (file.isDirectory()) {
             if (!excludedDirs.has(file.name)) {
-                const subDirCounts = countLinesOfCodeByLanguage(filePath, { excludedDirs, languageExtensions });
+                const subDirCounts = countLinesOfCodeByLanguage(filePath, {excludedDirs, languageExtensions});
                 for (const [language, lines] of Object.entries(subDirCounts)) {
                     lineCounts[language] = (lineCounts[language] || 0) + lines;
                 }
             }
-        } else {
+        }
+        else {
             const ext = path.extname(file.name);
             const language = Object.keys(languageExtensions).find(lang => languageExtensions[lang].has(ext));
 
@@ -53,7 +55,7 @@ const languageExtensions = {
 };
 
 const cwd = process.cwd();
-const lineCounts = countLinesOfCodeByLanguage(cwd, { excludedDirs, languageExtensions });
+const lineCounts = countLinesOfCodeByLanguage(cwd, {excludedDirs, languageExtensions});
 
 console.log('\x1b[1mLines of code by programming language:\x1b[0m');
 
