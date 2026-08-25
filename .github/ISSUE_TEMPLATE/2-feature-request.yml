@@ -32,9 +32,9 @@ body:
     validations:
       required: true
   
-    - type: textarea
-      id: alternatives
-      attributes:
-        label: Are there any alternatives you have considered?
-      validations:
-        required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Are there any alternatives you have considered?
+    validations:
+      required: false
