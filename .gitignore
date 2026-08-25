@@ -37,3 +37,6 @@ packages/ArrowPack/pcre2tempbuild
 
 # Temp preprocess directory
 ARROWPACK_TEMP_PREPROCESS_DIR/
+
+# Wasm build files
+Build
