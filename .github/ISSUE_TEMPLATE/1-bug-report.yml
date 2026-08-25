@@ -17,36 +17,36 @@ body:
         - label: I am using the latest version of arrowpack
           required: true
 
-- type: input
-  id: platform
-  attributes:
-    label: Platform
-    description: Give details about the platform that you are using, including your OS, OS version, and architecture.
-  validations:
-    required: true
-
-- type: textarea
-  id: description
-  attributes:
-    label: Description of the bug
-    description: A clear description of what the bug is, including the behaviour that is expected to occur and the behaviour that actually occurs instead.
-    placeholder: What happened?
-  validations:
-    required: true
-
-- type: textarea
-  id: steps-to-trigger
-  attributes:
-    label: Specific steps to reproduce the bug
-    description: Please provide specific actionable steps to trigger this bug.
-  validations:
-    required: true
-
-- type: textarea
-  id: logs
-  attributes:
-    labels: Logs/Error output
-    description: Please copy and paste any relevant terminal output, errors, or crash dumps here
-    render: shell
-  validations:
-    required: false
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Give details about the platform that you are using, including your OS, OS version, and architecture.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the bug
+      description: A clear description of what the bug is, including the behaviour that is expected to occur and the behaviour that actually occurs instead.
+      placeholder: What happened?
+    validations:
+      required: true
+  
+  - type: textarea
+    id: steps-to-trigger
+    attributes:
+      label: Specific steps to reproduce the bug
+      description: Please provide specific actionable steps to trigger this bug.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: logs
+    attributes:
+      labels: Logs/Error output
+      description: Please copy and paste any relevant terminal output, errors, or crash dumps here
+      render: shell
+    validations:
+      required: false
