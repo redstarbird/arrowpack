@@ -28,7 +28,7 @@
 		"build": "python3 ./Build.py",
 		"lines": "node ./Scripts/TotalLinesOfCode.js",
 		"prepublishOnly": "npm run build",
-		"format": "git ls-files '*.c' '*.h' '*.js' | xargs clang-format -style=file -i"
+		"format": "git ls-files '*.c' '*.h' '*.js' ':(exclude)build/' ':(exclude)example/' | xargs clang-format -style=file -i"
 	},
 	"bin": {
 		"arrowpack": "src/ArrowPack.js"
