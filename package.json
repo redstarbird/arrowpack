@@ -27,7 +27,8 @@
 		"test": "node ./__tests__/ArrowPack.test.js",
 		"build": "python3 ./Build.py",
 		"lines": "node ./Scripts/TotalLinesOfCode.js",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "npm run build",
+		"format": "git ls-files '*.c' '*.h' '*.js' | xargs clang-format -style=file -i"
 	},
 	"bin": {
 		"arrowpack": "src/ArrowPack.js"
