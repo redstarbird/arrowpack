@@ -4,4 +4,4 @@
 int min(int x, int y);
 int max(int x, int y);
 
-#endif // !INTFUNCTIONS_
+#endif  // !INTFUNCTIONS_

@@ -1,5 +1,6 @@
 /* This file is responsible for all of the file handling functions */
 #include "FileHandler.h"
+
 #include <emscripten.h>
 
 // Copy a file from one place to another
@@ -11,8 +12,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     FILE *input = fopen(FileToCopy, "r");
     EnsureDirectory(GetTrueBasePath(FileToCopyTo));
     FILE *output = fopen(FileToCopyTo, "w");
-    if (!input || !output)
-    {
+    if (!input || !output) {
         ThrowFatalError("Error opening file %s or %s\n", FileToCopy, FileToCopyTo);
     }
     size_t BufferSize = 1024;
@@ -22,8 +22,7 @@ void CopyFile(char *FileToCopy, char *FileToCopyTo)
     // Read the data from the input file and write it to the output file
     // in chunks of BUFFER_SIZE bytes
     size_t bytesRead;
-    while ((bytesRead = fread(buffer, 1, BufferSize, input)) > 0)
-    {
+    while ((bytesRead = fread(buffer, 1, BufferSize, input)) > 0) {
         fwrite(buffer, 1, bytesRead, output);
         BufferSize *= 2;
         buffer = realloc(buffer, BufferSize);
@@ -39,41 +38,34 @@ void CreateFileWrite(char *path, char *text)
     EnsureDirectory(GetTrueBasePath(path));
     FILE *FilePTR;
     FilePTR = fopen(path, "w");
-    if (!FilePTR)
-    {
+    if (!FilePTR) {
         ThrowFatalError("Error opening file %s\n", path);
     }
-    if (strlen(text) > 0)
-    {
-        for (int i = 0; i < strlen(text); i++)
-        {
+    if (strlen(text) > 0) {
+        for (int i = 0; i < strlen(text); i++) {
             fputc(text[i], FilePTR);
         }
     }
 
     fclose(FilePTR);
 }
-void CreateFile(char *path)
-{
-}
+void CreateFile(char *path) {}
 
 // Reads data from a file and returns it as a string
 char EMSCRIPTEN_KEEPALIVE *ReadDataFromFile(char *path)
-{ // returns contents of file
+{  // returns contents of file
     FILE *filePTR = fopen(path, "r");
 
-    if (filePTR == NULL)
-    {
+    if (filePTR == NULL) {
         printf("Error opening file %s\n", path);
         return NULL;
     }
-    fseek(filePTR, 0, SEEK_END);      // seek to end of file
-    long int length = ftell(filePTR); // get length of file
-    fseek(filePTR, 0, SEEK_SET);      // go back to start of file
+    fseek(filePTR, 0, SEEK_END);       // seek to end of file
+    long int length = ftell(filePTR);  // get length of file
+    fseek(filePTR, 0, SEEK_SET);       // go back to start of file
 
     char *buffer = malloc(length + 1);
-    if (buffer == NULL)
-    {
+    if (buffer == NULL) {
         printf("Error creating buffer\n");
         exit(1);
     }
@@ -106,36 +98,28 @@ void EnsureDirectory(const char *DirectoryPath)
     struct stat st;
     char *ParentDir = strdup(DirectoryPath);
     int i;
-    for (i = strlen(ParentDir) - 1; i >= 0; i--)
-    {
-        if (ParentDir[i] == '/')
-        {
+    for (i = strlen(ParentDir) - 1; i >= 0; i--) {
+        if (ParentDir[i] == '/') {
             ParentDir[i] = '\0';
             break;
         }
     }
-    if (i < 0)
-    {
+    if (i < 0) {
         ParentDir = ".";
     }
-    if (stat(ParentDir, &st) != 0)
-    {
+    if (stat(ParentDir, &st) != 0) {
         // Parent directory does not exist, create it recursively
         EnsureDirectory(ParentDir);
     }
-    if (stat(DirectoryPath, &st) != 0)
-    {
+    if (stat(DirectoryPath, &st) != 0) {
         // Directory does not exist, create it
-        if (mkdir(DirectoryPath, 0700) != 0)
-        {
+        if (mkdir(DirectoryPath, 0700) != 0) {
             perror("Error creating directory");
         }
     }
-    else
-    {
+    else {
         // Directory exists, check if it is actually a directory
-        if (!S_ISDIR(st.st_mode))
-        {
+        if (!S_ISDIR(st.st_mode)) {
             fprintf(stderr, "%s is not a directory\n", DirectoryPath);
         }
     }
@@ -143,7 +127,8 @@ void EnsureDirectory(const char *DirectoryPath)
     free(ParentDir);
 }
 
-// Function to walk a directory and return an array of strings containing the paths of all files in the directory and optionally subdirectories
+// Function to walk a directory and return an array of strings containing the paths of all files in
+// the directory and optionally subdirectories
 char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCount)
 {
     char pathBuffer[1024];
@@ -152,38 +137,33 @@ char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCoun
     DIR *dir = opendir(directoryPath);
 
     // Check if the directory was opened successfully
-    if (dir == NULL)
-    {
+    if (dir == NULL) {
         *fileCount = 0;
         return NULL;
     }
 
     char **filePaths = malloc(1024 * sizeof(char *));
     int count = 0;
-    while ((dp = readdir(dir)) != NULL)
-    {
+    while ((dp = readdir(dir)) != NULL) {
         // Skip the current and parent directory entries
-        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
-        {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
             continue;
         }
 
         // Construct the full path to the file or directory
-        snprintf(pathBuffer, sizeof(pathBuffer), ((directoryPath[strlen(directoryPath) - 1] == '/') ? "%s%s" : "%s/%s"), directoryPath, dp->d_name);
+        snprintf(pathBuffer, sizeof(pathBuffer), ((directoryPath[strlen(directoryPath) - 1] == '/') ? "%s%s" : "%s/%s"),
+                 directoryPath, dp->d_name);
 
         // Check if the path is a regular file or a directory
-        if (stat(pathBuffer, &statbuf) == 0 && S_ISREG(statbuf.st_mode))
-        {
+        if (stat(pathBuffer, &statbuf) == 0 && S_ISREG(statbuf.st_mode)) {
             // Regular file, add it to the list of file paths
             filePaths[count] = strdup(pathBuffer);
             count++;
         }
-        else if (recursive && S_ISDIR(statbuf.st_mode))
-        {
+        else if (recursive && S_ISDIR(statbuf.st_mode)) {
             // Directory, recursively walk it
             char **subDirFiles = GetAllFilesInDirectory(pathBuffer, recursive, fileCount);
-            for (int i = 0; i < *fileCount; i++)
-            {
+            for (int i = 0; i < *fileCount; i++) {
                 filePaths[count + i] = subDirFiles[i];
             }
             count += *fileCount;

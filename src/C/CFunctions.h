@@ -4,4 +4,4 @@
 
 char *GetCommandOutput(const char *command);
 
-#endif // !CFUNCTIONS_H
+#endif  // !CFUNCTIONS_H

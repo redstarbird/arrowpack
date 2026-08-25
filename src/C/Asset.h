@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <stdio.h>
 
-typedef enum
-{
+typedef enum {
     ASSET_HTML,
     ASSET_CSS,
     ASSET_JS,
@@ -19,8 +18,7 @@ typedef enum
     ASSET_RAW_BLOB
 } AssetType;
 
-struct Asset
-{
+struct Asset {
     AssetType type;
     const char *filepath;
     const char *absPath;
@@ -36,4 +34,4 @@ struct Asset
     size_t dependenciesCapacity;
 };
 
-#endif // !ASSET_H
+#endif  // !ASSET_H

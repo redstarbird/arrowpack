@@ -1,7 +1,8 @@
 // This doesn't work currently :()
 const fs = require("fs");
 
-function oneLine(inputPath) {
+function oneLine(inputPath)
+{
     // Read the contents of the input file
     let program = fs.readFileSync(inputPath, "utf8");
 

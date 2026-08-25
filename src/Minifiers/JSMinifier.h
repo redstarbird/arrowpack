@@ -2,8 +2,8 @@
 #define JSMINIFIER_H
 
 #include "../C/StringRelatedFunctions.h"
-#include "../Regex/RegexFunctions.h"
 #include "../C/StringShiftHandler.h"
+#include "../Regex/RegexFunctions.h"
 
 void RemoveSingleLineComments(char *Text);
 

@@ -5,4 +5,4 @@
 #include <stdlib.h>
 #include <string.h>
 
-#endif // !CSS_AST_H
+#endif  // !CSS_AST_H

@@ -1,6 +1,7 @@
 var child_process = require('child_process');
 
-const BrowserBuiltinModules = { // Map each node module name to its browser module equivalent
+const BrowserBuiltinModules = {
+    // Map each node module name to its browser module equivalent
     "assert": "assert",
     "buffer": "buffer",
     "console": "console-browserify",
@@ -28,7 +29,8 @@ const BrowserBuiltinModules = { // Map each node module name to its browser modu
 
 const InstallEnsured = [];
 
-function CheckInstalled(PackageName) { // Checks whether a given nodeJS package is installed
+function CheckInstalled(PackageName)
+{  // Checks whether a given nodeJS package is installed
 
     let Package = null;
     try {
@@ -39,23 +41,28 @@ function CheckInstalled(PackageName) { // Checks whether a given nodeJS package 
     return Package !== null;
 }
 
-function EnsureInstalled(PackageName) {
+function EnsureInstalled(PackageName)
+{
     console.log("Package: " + PackageName);
     /*
     if (InstallEnsured.findIndex(PackageName) === -1) {
         InstallEnsured.push(PackageName);
     }*/
     if (!CheckInstalled(PackageName)) {
-        console.log("Installing browser compatible node module " + PackageName + "... This is a 1 time install for this package, install all browser packages with 'arrowpack install-browser-modules'");
-        child_process.execSync('npm install ' + BrowserBuiltinModules[PackageName], { stdio: [0, 1, 2] });
+        console.log(
+            "Installing browser compatible node module " + PackageName +
+            "... This is a 1 time install for this package, install all browser packages with 'arrowpack install-browser-modules'");
+        child_process.execSync('npm install ' + BrowserBuiltinModules[PackageName], {stdio: [0, 1, 2]});
     }
 }
 
-function IsNodeBuiltin(PackageName) {
+function IsNodeBuiltin(PackageName)
+{
     return PackageName in BrowserBuiltinModules;
 }
 
-function NodeModuleBrowserPackageName(PackageName) {
+function NodeModuleBrowserPackageName(PackageName)
+{
     return BrowserBuiltinModules[PackageName];
 }
 
