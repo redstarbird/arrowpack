@@ -45,7 +45,7 @@ body:
   - type: textarea
     id: logs
     attributes:
-      labels: Logs/Error output
+      label: Logs/Error output
       description: Please copy and paste any relevant terminal output, errors, or crash dumps here
       render: shell
     validations:
