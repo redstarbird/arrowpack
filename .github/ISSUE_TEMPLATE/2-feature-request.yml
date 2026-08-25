@@ -1,0 +1,40 @@
+name: Enhancement/Feature Request
+description: Suggest an idea/enhancement for this project
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an idea to make arrowpack better.
+
+        Please fill in as much of this form as possible.
+  - type: checkboxes
+    id: presubmit-checks
+    attributes:
+      label: Pre-submission Checks
+      options:
+        - label: I have searched the existing issues to ensure this has not already been requested.
+            required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem might this feature solve?
+      description: A clear description of the problem that this feature would solve.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: solution
+    attributes:
+      label: What is the feature you are proposing to solve this problem?
+      description: A clear, concise description of your requested feature/enhancement.
+      placeholder: How should this feature work?
+    validations:
+      required: true
+  
+    - type: textarea
+      id: alternatives
+      attributes:
+        label: Are there any alternatives you have considered?
+      validations:
+        required: false
