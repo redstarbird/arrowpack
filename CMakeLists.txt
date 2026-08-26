@@ -105,7 +105,6 @@ else() # Handle release mode (max optimisations)
     target_link_options(CFunctions PRIVATE
         "-O3"
         "-sELIMINATE_DUPLICATE_FUNCTIONS=1"
-        "-sMINIFY_HTML=1"
         )
 
 endif()
