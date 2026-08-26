@@ -65,8 +65,6 @@ target_link_options(CFunctions PRIVATE
     "-sEXIT_RUNTIME=1"
     # Allows Wasm memory to grow dynamically
     "-sALLOW_MEMORY_GROWTH=1"
-    # Export all C functions to JS
-    "-sEXPORT_ALL=1"
 )
 
 # Default build type to Release
