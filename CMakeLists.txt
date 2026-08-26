@@ -40,19 +40,32 @@ set_target_properties(CFunctions PROPERTIES
 
 # Base Emscripten compiler and linker flags
 target_link_options(CFunctions PRIVATE
-    "--no-entry" # The C source does not contain a "main" entry point
+    # The C source does not contain a "main" entry point (build as a library)
+    "--no-entry"
+    # Plugin JS functions that can be called from C
     "--js-library" "${CMAKE_CURRENT_SOURCE_DIR}/src/js/JSCLibrary.js"
+    # Allow for addFunction to be used at runtime to dynamically create C function pointers
     "-sALLOW_TABLE_GROWTH=1"
+    # Optimise built JS for node.js (remove browser-specific code)
     "-sENVIRONMENT=node"
+    # Export commonJS instead of ES6
     "-sEXPORT_ES6=0"
-    "-sMODULARIZE=1"
     "-sUSE_ES6_IMPORT_META=0"
+    # Wraps generated JS into a module
+    "-sMODULARIZE=1"
+    # Exposes malloc to JS
     "-sEXPORTED_FUNCTIONS=_malloc"
+    # Expose built-in Emscripten functions to JS
     "-sEXPORTED_RUNTIME_METHODS=['ccall','addFunction','lengthBytesUTF8','stringToUTF8','UTF8ToString','stringToNewUTF8']"
+    # Allow C to read directly from OS by replacing C IO functions with Node.js fs calls
     "-sNODERAWFS=1"
+    # Optimise compiled Wasm
     "-sBINARYEN=1"
+    # Run standard library cleanups
     "-sEXIT_RUNTIME=1"
+    # Allows Wasm memory to grow dynamically
     "-sALLOW_MEMORY_GROWTH=1"
+    # Export all C functions to JS
     "-sEXPORT_ALL=1"
 )
 
