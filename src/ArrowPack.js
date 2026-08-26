@@ -5,7 +5,7 @@ const path = require("path");
 const chalk = require("chalk");
 const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
 const DirFunctions = require("./js/DirFunctions");
-const CFunctionFactory = require("../Build/CFunctions.js");
+const CFunctionFactory = require("../build/CFunctions.js");
 const Sleep = require("../src/js/Sleep");
 const {mkdirIfNotExists} = require("./js/DirFunctions.js");
 const chokidar = require('chokidar');
@@ -111,7 +111,7 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath)
     const Transformer = PluginsCache[PluginPath];
     const FileContents = Transformer(OriginalFileContents);  // Run the transformation on the file contents
     if (FileContents === OriginalFileContents) {             // Don't waste time encoding strings if the file
-                                                             // contents haven't changed
+        // contents haven't changed
         return null;
     }
     // Encode string into UTF8 encoding
@@ -257,7 +257,7 @@ function Bundle()
         "BundleFiles", "number", ["number"], [DependencyGraphPtr]);
 
     if (!ObjectIsEmpty(Settings.settings.postProcessors)) {  // Run the post processors on the Wasm
-                                                             // side if any exist
+        // side if any exist
         Success = false;
         Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
                                    [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
