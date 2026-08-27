@@ -79,6 +79,7 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
 
     # Debugging compiler flags
     target_compile_options(CFunctions PRIVATE
+        -O0 # Ensure no optimisations happen
         -fsanitize=undefined
         -fsanitize=address
         -g3
@@ -86,12 +87,14 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
 
     # Debugging linker flags
     target_link_options(CFunctions PRIVATE
+        -O0
         "--profiling"
         "-sRUNTIME_DEBUG=1"
         "-fsanitize=undefined"
         "-fsanitize=address"
         "-sLLD_REPORT_UNDEFINED=1"
         "-g3"
+        "-gsource-map"
         "-sSTACK_OVERFLOW_CHECK=2"
         "-sASSERTIONS=2"
     )
