@@ -14,20 +14,22 @@
 		"test": "__tests__"
 	},
 	"files": [
-		"Build",
 		"*.js",
 		"src/js",
-		"src/SettingsSingleton/SettingsSingleton.js"
+		"src/SettingsSingleton/SettingsSingleton.js",
+		"build/CFunctions.wasm"
 	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/redstarbird/arrowpack.git"
 	},
 	"scripts": {
+		"build-release": "emcmake cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build",
+		"build-debug": "emcmake cmake -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build",
+		"build": "npm run build-debug",
+		"prepublishOnly": "npm run build-release",
 		"test": "node ./__tests__/ArrowPack.test.js",
-		"build": "python3 ./Build.py",
 		"lines": "node ./Scripts/TotalLinesOfCode.js",
-		"prepublishOnly": "npm run build",
 		"format": "git ls-files '*.c' '*.h' '*.js' ':(exclude)build/' ':(exclude)example/' | xargs clang-format -style=file -i"
 	},
 	"bin": {

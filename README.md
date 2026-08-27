@@ -21,20 +21,23 @@ A web bundling application that makes your website faster and easier to maintain
 | Documentation              | ❌          |
 | HTMLA file format spec     | ❌          |
 
-## Build instruction (WIP)
+## Build instruction
 
-### Linux/ Windows WSL
+### Dependencies
 
-Dependencies:
-
-- Go >= 1.11
-- gcc
-- Tinygo
+- C compiler
 - Emscripten
-- Python >= 3.7
+- NPM
+- Node.JS
+- CMake
 
-## Run build script
+> [!NOTE]
+> Clang-format is also required for code formatting if you are writing/editing code.
+
+### Run build script
+
+The following command will build the Debug version of arrowpack:
 
 ```sh
-python3 Build.py
+npm run build
 ```

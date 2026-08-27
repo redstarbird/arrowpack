@@ -19,20 +19,30 @@ Fork the project and clone it to your local machine.
 ### 2. Setup environment
 
 #### Required components
+
 - NPM
 - Node.JS
 - C compiler (GCC or Clang)
 - Emscripten
-- Python3
+- CMake
+- Clang format
 
-#### Install dependencies
+#### Install Node.js dependencies
+
 Install Node dependencies by running `npm install`. This will install all of the Node. js-related dependencies for the JS side of the project.
 
-#### Building and testing
-Once dependencies are installed, the code can be compiled by running:
+#### Building
+
+Once dependencies are installed, the project can be compiled in debug mode using:
+
 ```bash
-python3 Build.py
+npm run build
 ```
+
+The code can also be compiled in release mode using the `build-release` npm command, this is not usually needed however unless you are testing release performance.
+
+#### Testing
+
 > [!NOTE]
 > The formal testing setup is still in progress.
 
@@ -90,7 +100,3 @@ In the description of the pull request, write `Closes <issue number>` as well as
 
 ### 6. Review
 Your code will be reviewed by a maintainer. You may be requested to make some adjustments.
-
-
-
-
