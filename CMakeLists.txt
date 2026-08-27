@@ -50,7 +50,6 @@ target_link_options(CFunctions PRIVATE
     "-sENVIRONMENT=node"
     # Export commonJS instead of ES6
     "-sEXPORT_ES6=0"
-    "-sUSE_ES6_IMPORT_META=0"
     # Wraps generated JS into a module
     "-sMODULARIZE=1"
     # Exposes malloc to JS
