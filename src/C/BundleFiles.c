@@ -1,6 +1,22 @@
 /* This file handles almost all of the bundling logic */
 #include "BundleFiles.h"
 
+// Contains state when bundling files
+typedef struct BundleContext {
+    // Contents of the current file
+    char *FileContents;
+    // Current edge (dependency) being processed
+    struct Edge *CurrentEdge;
+    // Shift locations for current file
+    struct ShiftLocation *ShiftLocations;
+    // Length of shift locations array
+    int ShiftLocationsLength;
+    // The exit path for the built dependency
+    char *DependencyExitPath;
+    // Buffer for storing text that is being inserted
+    char *InsertText;
+} BundleContext;
+
 /* Struct to hold details about an imported ESM module*/
 struct ImportedESM {
     char *name;
