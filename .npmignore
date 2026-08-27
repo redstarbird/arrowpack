@@ -39,3 +39,9 @@ desktop.ini
 
 # PCRE2 temp build directory
 packages/ArrowPack/pcre2tempbuild
+
+# Ignore build directory expect for the built Wasm/JS module
+build
+
+!build/CFunctions.js
+!build/CFunctions.wasm

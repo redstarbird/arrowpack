@@ -14,10 +14,10 @@
 		"test": "__tests__"
 	},
 	"files": [
-		"Build",
 		"*.js",
 		"src/js",
-		"src/SettingsSingleton/SettingsSingleton.js"
+		"src/SettingsSingleton/SettingsSingleton.js",
+		"build/CFunctions.wasm"
 	],
 	"repository": {
 		"type": "git",
