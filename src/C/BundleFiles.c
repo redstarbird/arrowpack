@@ -1,6 +1,22 @@
 /* This file handles almost all of the bundling logic */
 #include "BundleFiles.h"
 
+// Contains state when bundling files
+typedef struct BundleContext {
+    // Contents of the current file
+    char *FileContents;
+    // Current edge (dependency) being processed
+    struct Edge *CurrentEdge;
+    // Shift locations for current file
+    struct ShiftLocation *ShiftLocations;
+    // Length of shift locations array
+    int ShiftLocationsLength;
+    // The exit path for the built dependency
+    char *DependencyExitPath;
+    // Buffer for storing text that is being inserted
+    char *InsertText;
+} BundleContext;
+
 /* Struct to hold details about an imported ESM module*/
 struct ImportedESM {
     char *name;
@@ -24,29 +40,24 @@ int IsEndOfJSName(const char character)
     return false;
 }
 
-// Initialize variables
-char *FileContents = NULL;
-struct Edge *CurrentEdge = NULL;
-struct ShiftLocation *ShiftLocations = NULL;
-char *InsertText = NULL;
-int ShiftLocationsLength = 0;
-char *DependencyExitPath = NULL;
-
-void BundleHTMLinHTML()
+void BundleHTMLinHTML(struct BundleContext *ctx)
 {
-    FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                          GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations),
-                                          InsertText);  // Replace the <include> tag with the contents of the dependency
+    ctx->FileContents =
+        ReplaceSectionOfString(ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+                               GetShiftedAmount(ctx->CurrentEdge->EndRefPos + 1, ctx->ShiftLocations),
+                               ctx->InsertText);  // Replace the <include> tag with the contents of the dependency
 
-    AddShiftNum(CurrentEdge->StartRefPos,
-                strlen(InsertText) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos), &ShiftLocations,
-                &ShiftLocationsLength);  // Add the shift amount and location}
+    AddShiftNum(ctx->CurrentEdge->StartRefPos,
+                strlen(ctx->InsertText) - ((ctx->CurrentEdge->EndRefPos + 1) - ctx->CurrentEdge->StartRefPos),
+                &ctx->ShiftLocations,
+                &ctx->ShiftLocationsLength);  // Add the shift amount and location}
 }
 
-void BundleJSinHTML()
+void BundleJSinHTML(struct BundleContext *ctx)
 {
-    char *ReferencedString = getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                          GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations));
+    char *ReferencedString =
+        getSubstring(ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+                     GetShiftedAmount(ctx->CurrentEdge->EndRefPos, ctx->ShiftLocations));
     if (!StringContainsSubstring(ReferencedString, " defer") &&
         !StringContainsSubstring(ReferencedString,
                                  "async"))  // Don't bundle asynchronously fetched scripts
@@ -54,11 +65,12 @@ void BundleJSinHTML()
 
         int startlocation = -1;
         int endlocation = -1;
-        int TempShiftedAmount = GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations);
+        int TempShiftedAmount = GetShiftedAmount(ctx->CurrentEdge->EndRefPos, ctx->ShiftLocations);
 
         // Find the part of the <script> tag where the src attribute is
-        for (int v = GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations); v < strlen(FileContents); v++) {
-            if (strncasecmp(FileContents + v, "src", 3) == 0)  // Find "src" attribute
+        for (int v = GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations);
+             v < strlen(ctx->FileContents); v++) {
+            if (strncasecmp(ctx->FileContents + v, "src", 3) == 0)  // Find "src" attribute
             {
                 startlocation = v;
                 break;
@@ -70,85 +82,90 @@ void BundleJSinHTML()
             endlocation = startlocation;
             bool pastEquals = false;
             bool pastText = false;
-            for (int v = startlocation; v < strlen(FileContents); v++) {
+            for (int v = startlocation; v < strlen(ctx->FileContents); v++) {
                 if (!pastEquals)  // Search for '=' in src attribute
                 {
-                    if (FileContents[v] == '=')  // Equals sign is found
+                    if (ctx->FileContents[v] == '=')  // Equals sign is found
                     {
                         pastEquals = true;
                     }
                 }
                 else if (!pastText)  // Search for end of the script location
                 {
-                    if (FileContents[v] != '\'' && FileContents[v] != '\"' && FileContents[v] != ' ') {
+                    if (ctx->FileContents[v] != '\'' && ctx->FileContents[v] != '\"' && ctx->FileContents[v] != ' ') {
                         pastText = true;
                     }
                 }
                 else {
-                    if (FileContents[v] == '\'' || FileContents[v] == '\"' ||
-                        FileContents[v] == ' ')  // Search for ending quote or space
+                    if (ctx->FileContents[v] == '\'' || ctx->FileContents[v] == '\"' ||
+                        ctx->FileContents[v] == ' ')  // Search for ending quote or space
                     {
                         endlocation = v + 1;
                         break;
                     }
-                    else if (FileContents[v] == '>' || FileContents[v] == '\0')  // Check for end of the element incase
-                                                                                 // of no quotes being present
+                    else if (ctx->FileContents[v] == '>' ||
+                             ctx->FileContents[v] == '\0')  // Check for end of the element incase
+                                                            // of no quotes being present
                     {
                         endlocation = v - 1;
                         break;
                     }
                 }
             }
-            RemoveSectionOfString(FileContents, startlocation,
+            RemoveSectionOfString(ctx->FileContents, startlocation,
                                   endlocation);  // Remove the "src" attribute
-            AddShiftNum(CurrentEdge->StartRefPos, ((endlocation)-startlocation) * -1, &ShiftLocations,
-                        &ShiftLocationsLength);  // Add shift location from removing the src attribute
+            AddShiftNum(ctx->CurrentEdge->StartRefPos, ((endlocation)-startlocation) * -1, &ctx->ShiftLocations,
+                        &ctx->ShiftLocationsLength);  // Add shift location from removing the src attribute
 
             // Remove the "export" attributes from the dependency
-            InsertText = RemoveSubstring(InsertText, "export default ");
-            InsertText = RemoveSubstring(InsertText, "export ");
+            ctx->InsertText = RemoveSubstring(ctx->InsertText, "export default ");
+            ctx->InsertText = RemoveSubstring(ctx->InsertText, "export ");
 
             // Insert the dependency content into the HTML file in the script tag
-            FileContents = InsertStringAtPosition(FileContents, InsertText,
-                                                  GetShiftedAmount(CurrentEdge->EndRefPos + 1, ShiftLocations));
-            AddShiftNum(CurrentEdge->EndRefPos + 1, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+            ctx->FileContents =
+                InsertStringAtPosition(ctx->FileContents, ctx->InsertText,
+                                       GetShiftedAmount(ctx->CurrentEdge->EndRefPos + 1, ctx->ShiftLocations));
+            AddShiftNum(ctx->CurrentEdge->EndRefPos + 1, strlen(ctx->InsertText), &ctx->ShiftLocations,
+                        &ctx->ShiftLocationsLength);
         }
     }
 }
 
-void BundleCSSinHTML(struct Node *GraphNode)
+void BundleCSSinHTML(struct Node *GraphNode, struct BundleContext *ctx)
 {
     if (GetSetting("bundleCSSInHTML")->valueint == true)  // CSS will only be bundled into HTML if the setting is active
     {
         char *InsertString;
-        struct RegexMatch *StyleResults = GetAllRegexMatches(FileContents, "<style[^>]*>", 0,
+        struct RegexMatch *StyleResults = GetAllRegexMatches(ctx->FileContents, "<style[^>]*>", 0,
                                                              0);  // Check if a style tag already exists
         if (StyleResults[0].IsArrayEnd)                           // Style tag doesn't already exist
         {
 
             // Create new style tag
-            InsertString = malloc(strlen(InsertText) + 18);  // allocates space for start and end of <style> tag
+            InsertString = malloc(strlen(ctx->InsertText) + 18);  // allocates space for start and end of <style> tag
             strcpy(InsertString, "<style>");
-            strcat(InsertString, InsertText);
+            strcat(InsertString, ctx->InsertText);
             strcat(InsertString, "</style>");
 
-            struct RegexMatch *HeadTagResults =
-                GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);  // Find head tag for where to place style tag
-            if (HeadTagResults[0].IsArrayEnd == false)                    // If <head> tag is found
+            struct RegexMatch *HeadTagResults = GetAllRegexMatches(ctx->FileContents, "< ?head[^>]*>", 0,
+                                                                   0);  // Find head tag for where to place style tag
+            if (HeadTagResults[0].IsArrayEnd == false)                  // If <head> tag is found
             {
-                RemoveSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                      GetShiftedAmount(CurrentEdge->EndRefPos + 1,
-                                                       ShiftLocations));  // Remove original <link> tag that
-                                                                          // references the stylesheet file
-                AddShiftNum(CurrentEdge->StartRefPos, ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos) * -1,
-                            &ShiftLocations,
-                            &ShiftLocationsLength);  // Add shift location for link tag removal
+                RemoveSectionOfString(ctx->FileContents,
+                                      GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+                                      GetShiftedAmount(ctx->CurrentEdge->EndRefPos + 1,
+                                                       ctx->ShiftLocations));  // Remove original <link> tag that
+                                                                               // references the stylesheet file
+                AddShiftNum(ctx->CurrentEdge->StartRefPos,
+                            ((ctx->CurrentEdge->EndRefPos + 1) - ctx->CurrentEdge->StartRefPos) * -1,
+                            &ctx->ShiftLocations,
+                            &ctx->ShiftLocationsLength);  // Add shift location for link tag removal
 
                 // Add style tag
-                FileContents = InsertStringAtPosition(FileContents, InsertString, HeadTagResults[0].EndIndex);
-                AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ShiftLocations), strlen(InsertString),
-                            &ShiftLocations,
-                            &ShiftLocationsLength);  // Add shift location for style tag
+                ctx->FileContents = InsertStringAtPosition(ctx->FileContents, InsertString, HeadTagResults[0].EndIndex);
+                AddShiftNum(GetInverseShiftedAmount(HeadTagResults[0].EndIndex, ctx->ShiftLocations),
+                            strlen(InsertString), &ctx->ShiftLocations,
+                            &ctx->ShiftLocationsLength);  // Add shift location for style tag
             }
             else {
                 ColorYellow();
@@ -159,34 +176,36 @@ void BundleCSSinHTML(struct Node *GraphNode)
             }
         }
         else {
-            FileContents =
-                InsertStringAtPosition(FileContents, InsertText,
+            ctx->FileContents =
+                InsertStringAtPosition(ctx->FileContents, ctx->InsertText,
                                        StyleResults[0].EndIndex);  // Insert file dependency contents after style tag
         }
     }
 }
 
-void BundleCSSinCSS()
+void BundleCSSinCSS(struct BundleContext *ctx)
 {
-    int InsertEnd2 = CurrentEdge->EndRefPos + 1;
-    FileContents = ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                          GetShiftedAmount(InsertEnd2, ShiftLocations),
-                                          InsertText);  // Replace CSS import statement with dependency file content
-    AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos), &ShiftLocations,
-                &ShiftLocationsLength);  // Add the shift amount
+    int InsertEnd2 = ctx->CurrentEdge->EndRefPos + 1;
+    ctx->FileContents =
+        ReplaceSectionOfString(ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+                               GetShiftedAmount(InsertEnd2, ctx->ShiftLocations),
+                               ctx->InsertText);  // Replace CSS import statement with dependency file content
+    AddShiftNum(ctx->CurrentEdge->StartRefPos, strlen(ctx->InsertText) - (InsertEnd2 - ctx->CurrentEdge->StartRefPos),
+                &ctx->ShiftLocations,
+                &ctx->ShiftLocationsLength);  // Add the shift amount
 }
 
-void BundleJSinJS()
+void BundleJSinJS(struct BundleContext *ctx)
 {
     char *ReferenceText =
-        getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                     GetShiftedAmount(CurrentEdge->EndRefPos,
-                                      ShiftLocations));  // Gets the import statement used to import the dependency
+        getSubstring(ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+                     GetShiftedAmount(ctx->CurrentEdge->EndRefPos,
+                                      ctx->ShiftLocations));  // Gets the import statement used to import the dependency
 
     bool ISESModule = StringStartsWith(ReferenceText,
-                                       "import ");            //  Checks if the current dependency is an ESModule
-    struct RegexMatch *IteratePointer;                        // Defines Iterate Pointer
-    char *InsertText = ReadDataFromFile(DependencyExitPath);  // Reads the data for the current dependency
+                                       "import ");                 //  Checks if the current dependency is an ESModule
+    struct RegexMatch *IteratePointer;                             // Defines Iterate Pointer
+    char *InsertText = ReadDataFromFile(ctx->DependencyExitPath);  // Reads the data for the current dependency
     struct RegexMatch *ExtraExportMatches;  // Defines Extra Export Matches for commonJS modules to use
     struct RegexMatch *UsableExtraImports;  // Defines usable extra imports needed for commonJS
                                             // modules e.g "exports.HelloWorld"
@@ -480,16 +499,16 @@ void BundleJSinJS()
             }
         }
 
-        NewModuleExportsName = malloc(CurrentEdge->EndRefPos - CurrentEdge->StartRefPos + 11);
+        NewModuleExportsName = malloc(ctx->CurrentEdge->EndRefPos - ctx->CurrentEdge->StartRefPos + 11);
         strcpy(NewModuleExportsName,
-               getSubstring(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos + 9, ShiftLocations),
-                            GetShiftedAmount(CurrentEdge->EndRefPos - 2, ShiftLocations)));
+               getSubstring(ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos + 9, ctx->ShiftLocations),
+                            GetShiftedAmount(ctx->CurrentEdge->EndRefPos - 2, ctx->ShiftLocations)));
         RemoveCharFromString(NewModuleExportsName, '/');
         strcat(NewModuleExportsName, "_ARROWPACK");
 
         RemoveCharFromString(NewModuleExportsName, '.');
         while (StringContainsSubstring(InsertText, NewModuleExportsName) ||
-               StringContainsSubstring(FileContents, NewModuleExportsName)) {
+               StringContainsSubstring(ctx->FileContents, NewModuleExportsName)) {
             char *NewUniqueName = CreateUnusedName();
             NewModuleExportsName = realloc(NewModuleExportsName,
                                            (strlen(NewUniqueName) + strlen(NewModuleExportsName) + 1) * sizeof(char));
@@ -509,22 +528,22 @@ void BundleJSinJS()
             bool InString = false;
             bool StringStartDoubleQuotes = false;
             bool FunctionDuplicateFound = false;
-            for (int i = 0; i < strlen(FileContents) - strlen(IteratePointer->Text);
+            for (int i = 0; i < strlen(ctx->FileContents) - strlen(IteratePointer->Text);
                  i++)  // Loop through each character in the file
             {
-                if (FileContents[i] == '\'' || FileContents[i] == '\"')  // Check for string quotes
+                if (ctx->FileContents[i] == '\'' || ctx->FileContents[i] == '\"')  // Check for string quotes
                 {
                     if (InString)  // In string and string end has been found
                     {
                         if (StringStartDoubleQuotes)  // Check if the quotes are the same as the
                                                       // start of the string
                         {
-                            if (FileContents[i] == '\"') {
+                            if (ctx->FileContents[i] == '\"') {
                                 InString = false;  // End of string has been found
                             }
                         }
                         else {
-                            if (FileContents[i] == '\'') {
+                            if (ctx->FileContents[i] == '\'') {
                                 InString = false;  // End of string has been found
                             }
                         }
@@ -532,10 +551,10 @@ void BundleJSinJS()
                     else {
                         InString = true;  // Start of string has been found
                         StringStartDoubleQuotes =
-                            FileContents[i] == '\"';  // Track the quotes used for the start of the string
+                            ctx->FileContents[i] == '\"';  // Track the quotes used for the start of the string
                     }
                 }
-                else if (strncmp(FileContents + i, IteratePointer->Text,
+                else if (strncmp(ctx->FileContents + i, IteratePointer->Text,
                                  strlen(IteratePointer->Text)) == 0 &&
                          !InString)  // Check for a name collision
                 {
@@ -591,8 +610,8 @@ void BundleJSinJS()
         IteratePointer++;
     }
     // Remove export statements from dependency
-    FileContents = RemoveSubstring(FileContents, "export default ");
-    FileContents = RemoveSubstring(FileContents, "export ");
+    ctx->FileContents = RemoveSubstring(ctx->FileContents, "export default ");
+    ctx->FileContents = RemoveSubstring(ctx->FileContents, "export ");
 
     if (ISESModule)  // Bundles the files together if they are ES modules
     {
@@ -682,24 +701,24 @@ void BundleJSinJS()
     }
     if (ISESModule) {
         RemoveSectionOfString(
-            FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-            GetShiftedAmount(CurrentEdge->EndRefPos,
-                             ShiftLocations));  // Remove import because exports are defined in dependency string
-        AddShiftNum(CurrentEdge->StartRefPos, strlen(ReferenceText), &ShiftLocations,
-                    &ShiftLocationsLength);  // Add shift location
+            ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+            GetShiftedAmount(ctx->CurrentEdge->EndRefPos,
+                             ctx->ShiftLocations));  // Remove import because exports are defined in dependency string
+        AddShiftNum(ctx->CurrentEdge->StartRefPos, strlen(ReferenceText), &ctx->ShiftLocations,
+                    &ctx->ShiftLocationsLength);  // Add shift location
     }
     else {
-        FileContents =
-            ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                   GetShiftedAmount(CurrentEdge->EndRefPos, ShiftLocations) + 1,
-                                   NewModuleExportsName);  // Add object definition for imported functions/variables
+        ctx->FileContents = ReplaceSectionOfString(
+            ctx->FileContents, GetShiftedAmount(ctx->CurrentEdge->StartRefPos, ctx->ShiftLocations),
+            GetShiftedAmount(ctx->CurrentEdge->EndRefPos, ctx->ShiftLocations) + 1,
+            NewModuleExportsName);  // Add object definition for imported functions/variables
 
-        AddShiftNum(CurrentEdge->StartRefPos,
-                    strlen(NewModuleExportsName) - ((CurrentEdge->EndRefPos + 1) - CurrentEdge->StartRefPos),
-                    &ShiftLocations, &ShiftLocationsLength);  // Add shift location
+        AddShiftNum(ctx->CurrentEdge->StartRefPos,
+                    strlen(NewModuleExportsName) - ((ctx->CurrentEdge->EndRefPos + 1) - ctx->CurrentEdge->StartRefPos),
+                    &ctx->ShiftLocations, &ctx->ShiftLocationsLength);  // Add shift location
     }
-    FileContents = InsertStringAtPosition(FileContents, InsertText, 0);
-    AddShiftNum(0, strlen(InsertText), &ShiftLocations, &ShiftLocationsLength);
+    ctx->FileContents = InsertStringAtPosition(ctx->FileContents, InsertText, 0);
+    AddShiftNum(0, strlen(InsertText), &ctx->ShiftLocations, &ctx->ShiftLocationsLength);
     free(JSFileShiftLocations);
     JSFileShiftLocations = NULL;
 }
@@ -707,39 +726,41 @@ void BundleJSinJS()
 /* Used to bundle a given node */
 void BundleFile(struct Node *GraphNode)
 {
-    ShiftLocationsLength = 1;                        // Includes end element to signal the end of the array
-    ShiftLocations = malloc(sizeof(ShiftLocation));  // Allocate shift locations
-    ShiftLocations[0].location = -1;                 // Indicates end of array although probably not needed because
-                                                     // the length of the array is being stored
+    // Create bundle context for current file
+    struct BundleContext fileCtx;
+
+    fileCtx.ShiftLocationsLength = 1;                        // Includes end element to signal the end of the array
+    fileCtx.ShiftLocations = malloc(sizeof(ShiftLocation));  // Allocate shift locations
+    fileCtx.ShiftLocations[0].location = -1;                 // Indicates end of array
 
     int FileTypeID = GetFileTypeID(GraphNode->path);  // Finds the file type
 
-    FileContents = ReadDataFromFile(GraphNode->path);
+    fileCtx.FileContents = ReadDataFromFile(GraphNode->path);
 
-    if (FileContents == NULL) {
+    if (fileCtx.FileContents == NULL) {
         CreateWarning("Could not read file: %s\n", GraphNode->path);
         return;
     }
-    CurrentEdge = GraphNode->edge;
-    while (CurrentEdge != NULL)  // Loop through each dependency
+    fileCtx.CurrentEdge = GraphNode->edge;
+    while (fileCtx.CurrentEdge != NULL)  // Loop through each dependency
     {
-        struct Node *CurrentDependency = CurrentEdge->vertex;
+        struct Node *CurrentDependency = fileCtx.CurrentEdge->vertex;
         ColorGreen();
         printf("Building file: %s\n", CurrentDependency->path);
         ColorNormal();
-        DependencyExitPath = EntryToExitPath(CurrentDependency->path);
-        InsertText = ReadDataFromFile(DependencyExitPath);           // The file contents of the dependency
-        int DependencyFileType = GetFileTypeID(DependencyExitPath);  // The file type of the dependency
+        fileCtx.DependencyExitPath = EntryToExitPath(CurrentDependency->path);
+        fileCtx.InsertText = ReadDataFromFile(fileCtx.DependencyExitPath);   // The file contents of the dependency
+        int DependencyFileType = GetFileTypeID(fileCtx.DependencyExitPath);  // The file type of the dependency
 
         if (FileTypeID == HTMLFILETYPE_ID)  // Current node is a HTML file
         {
             if (DependencyFileType == HTMLFILETYPE_ID)  // Current dependency is HTML for a HTML file
             {
-                BundleHTMLinHTML();
+                BundleHTMLinHTML(&fileCtx);
             }
             else if (DependencyFileType == CSSFILETYPE_ID)  // Bundle CSS into HTML file
             {
-                BundleCSSinHTML(GraphNode);
+                BundleCSSinHTML(GraphNode, &fileCtx);
             }
             else if (DependencyFileType == JSFILETYPE_ID)  // Bundle JS into HTML file
             {
@@ -747,21 +768,22 @@ void BundleFile(struct Node *GraphNode)
             else  // Will hopefully work for most custom dependencies
             {
 
-                int InsertEnd2 = CurrentEdge->EndRefPos + 1;
-                FileContents =
-                    ReplaceSectionOfString(FileContents, GetShiftedAmount(CurrentEdge->StartRefPos, ShiftLocations),
-                                           GetShiftedAmount(InsertEnd2, ShiftLocations),
-                                           InsertText);  // Replace reference location with dependency contents
-                AddShiftNum(CurrentEdge->StartRefPos, strlen(InsertText) - (InsertEnd2 - CurrentEdge->StartRefPos),
-                            &ShiftLocations,
-                            &ShiftLocationsLength);  // Add shift location
+                int InsertEnd2 = fileCtx.CurrentEdge->EndRefPos + 1;
+                fileCtx.FileContents = ReplaceSectionOfString(
+                    fileCtx.FileContents, GetShiftedAmount(fileCtx.CurrentEdge->StartRefPos, fileCtx.ShiftLocations),
+                    GetShiftedAmount(InsertEnd2, fileCtx.ShiftLocations),
+                    fileCtx.InsertText);  // Replace reference location with dependency contents
+                AddShiftNum(fileCtx.CurrentEdge->StartRefPos,
+                            strlen(fileCtx.InsertText) - (InsertEnd2 - fileCtx.CurrentEdge->StartRefPos),
+                            &fileCtx.ShiftLocations,
+                            &fileCtx.ShiftLocationsLength);  // Add shift location
             }
         }
         else if (FileTypeID == CSSFILETYPE_ID)  // Node is a CSS file
         {
             if (DependencyFileType == CSSFILETYPE_ID)  // Bundling CSS in a CSS file
             {
-                BundleCSSinCSS();
+                BundleCSSinCSS(&fileCtx);
             }
         }
         else if (FileTypeID == JSFILETYPE_ID)  // File is a JS file
@@ -769,18 +791,19 @@ void BundleFile(struct Node *GraphNode)
             if (DependencyFileType == JSFILETYPE_ID &&
                 GetSetting("bundleJS")->valueint == true)  // Bundle JS in a JS file
             {
-                BundleJSinJS();
+                BundleJSinJS(&fileCtx);
             }
         }
-        CurrentEdge = CurrentEdge->next;  // Go to next dependency in the linked list
+        fileCtx.CurrentEdge = fileCtx.CurrentEdge->next;  // Go to next dependency in the linked list
     }
 
     if (GraphNode->FileType == HTMLFILETYPE_ID)  // Extra bundling code for HTML after dependency bundling
     {
-        FileContents = RemoveSubstring(FileContents, "</include>");  // Remove closing include tags if present
+        fileCtx.FileContents =
+            RemoveSubstring(fileCtx.FileContents, "</include>");  // Remove closing include tags if present
         struct RegexMatch *HeadTagResults =
-            GetAllRegexMatches(FileContents, "< ?head[^>]*>", 0, 0);  // Get location of head tag
-        if (!HeadTagResults[0].IsArrayEnd)                            // Check if head tag is present
+            GetAllRegexMatches(fileCtx.FileContents, "< ?head[^>]*>", 0, 0);  // Get location of head tag
+        if (!HeadTagResults[0].IsArrayEnd)                                    // Check if head tag is present
         {
             if (GetSetting("addBaseTag")->valueint)  // Add HTML <base> tag if setting is enabled
             {
@@ -791,8 +814,8 @@ void BundleFile(struct Node *GraphNode)
                 strcat(BaseTag, BasePath + strlen(GetSetting("entry")->valuestring));
                 strcat(BaseTag, "\">");
 
-                FileContents =
-                    InsertStringAtPosition(FileContents, BaseTag,
+                fileCtx.FileContents =
+                    InsertStringAtPosition(fileCtx.FileContents, BaseTag,
                                            HeadTagResults[0].EndIndex);  // Insert base tag into file contents
 
                 free(BaseTag);
@@ -801,7 +824,8 @@ void BundleFile(struct Node *GraphNode)
             if (GetSetting("faviconPath")->valuestring[0] != '\0' &&
                 GetSetting("faviconPath")->valuestring != NULL)  // Check if a favicon path is provided
             {
-                struct RegexMatch *FaviconTagResults = GetRegexMatch(FileContents, "<link\\s*rel\\s*=\"?icon\"?[^>]*");
+                struct RegexMatch *FaviconTagResults =
+                    GetRegexMatch(fileCtx.FileContents, "<link\\s*rel\\s*=\"?icon\"?[^>]*");
                 if (FaviconTagResults == NULL)  // Check there in not already a favicon
                 {
                     // Create favicon tag as string
@@ -822,19 +846,20 @@ void BundleFile(struct Node *GraphNode)
                                                                          // doesn't contain the entry path
                     }
                     strcat(FaviconLink, "\">");
-                    FileContents = InsertStringAtPosition(FileContents, FaviconLink,
-                                                          HeadTagResults[0].EndIndex);  // Add favicon path to string
+                    fileCtx.FileContents =
+                        InsertStringAtPosition(fileCtx.FileContents, FaviconLink,
+                                               HeadTagResults[0].EndIndex);  // Add favicon path to string
                 }
                 free(FaviconTagResults);
             }
         }
     }
-    CreateFileWrite(EntryToExitPath(GraphNode->path), FileContents);  // Saves final file contents
-    free(FileContents);
+    CreateFileWrite(EntryToExitPath(GraphNode->path), fileCtx.FileContents);  // Saves final file contents
+    free(fileCtx.FileContents);
     ColorGreen();
     printf("Finished bundling file:%s\n", GraphNode->path);
     ColorNormal();
-    free(ShiftLocations);
+    free(fileCtx.ShiftLocations);
 }
 
 /* Used to post process a given file */
