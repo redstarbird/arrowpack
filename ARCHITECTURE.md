@@ -61,4 +61,25 @@ A variety of plugin hooks will be available to allow for custom logic to be run 
 - `onModuleParsed` is called after the module has been parsed into an AST. An AST interface is provided to any attached plugins.
 - `onConcatenate` is used to modify/read the combined AST of an entire chunk. These plugins are provided with an interface for the final AST.
 - `onGenerated` is called when the final concatenated AST of a chunk has been generated into code. These plugins are provided with `code` and `path` parameters.
-- `onOptimize` is strictly for optimising the final generated code for each chunk. Optimiser plugins are provided with the exit file path, `path`, and the final source code: `code`. These plugins run after the transformations on the final source code during the `onGenerated` hook so these should strictly be for final optimisations. 
+- `onOptimize` is strictly for optimising the final generated code for each chunk. Optimiser plugins are provided with the exit file path, `path`, and the final source code: `code`. These plugins run after the transformations on the final source code during the `onGenerated` hook so these should strictly be for final optimisations.
+
+## JS Wrapper
+JavaScript interacts with the compiled C/C++ code via the Node.JS Node-API.
+### Arrowpack JS API
+The `src/arrowpack.js` file contains the public JavaScript API for interacting with arrowpack. 
+The main way to interact with arrowpack is via the `build` function, which can be provided with an arrowpack config object as well as optionally a list of entry files/modules for the bundler to use. This allows for other applications that use arrowpack internally to use the build function for a wide variety of uses such as general bundling, bundling specific files, bundling a specific file in a custom dev server.
+An arrowpack `DevServer` object can be created to allow the user to programmatically run a dev server that will cache the modules and dependency graph throughout its lifetime. 
+
+### CLI
+The primary way to use arrowpack for bundling applications is via the command line. This is done by running the `arrowpack` command, which uses `src/cli/cli.js` as its entry point. `cli.js` is responsible for handling any CLI-specific functionality. An external, extremely lightweight arg library, [arrowargs](https://github.com/redstarbird/arrowargs), is used for managing and parsing the command line arguments.
+
+#### CLI Parameters
+- `-dev`: runs the development server. This keeps running until the user manually stops it using <kbd>Ctrl</kbd> + <kbd>C</kbd>.
+- `-c`: used to specify a directory containing a config file rather than automatically using the current directory. Expects a string value after it representing the config directory.
+- `-v`: prints the current version of arrowpack to the terminal and then stops the program.
+
+### JS/C communication
+Transferring data across the JS/C boundary is an extreme bottleneck and needs to be minimised and optimised as much as possible.
+#### Optimisation techniques
+- **Batching data**: Data is batched before being transferred from C to JS. This allows for a large amount of data to be transferred at once to minimise overhead.
+- **Filtering plugins**: Plugins can provide a regex filter string that tells arrowpack what files they should run for. This can be computed on the C side so that JS plugins are only invoked if they are actually needed for a specific module/file.
