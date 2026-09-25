@@ -38,6 +38,10 @@ The ASTs for every file/module in a chunk are combined into a single AST.
 - A check is performed to make sure that there are no naming collisions with any of the renamed modules. If any collisions are found, a hash will then be appended to the name. 
 - All occurrences of the name are changed in all chunk ASTs to the new name. This is done carefully to ensure that shadowed local variables are not replaced.
 
+### Tree shaking
+
+Tree shaking is performed on the final AST to reduce dead code.
+
 #### AST Concatenation
 
 - The ASTs for dependencies are then inserted into their dependent module AST. They are inserted at the top of the AST.
@@ -51,6 +55,9 @@ The ASTs for every file/module in a chunk are combined into a single AST.
 - A plugin hook is then called for plugins to modify the initially generated code
 - Optimisers are then used on the final code to reduce bundle size or to increase the execution speed
 - The chunks are written to files in the exit directory
+
+# Source map genereration
+Source maps for the concatenated modules are concatenated into a "final" source map.
 
 ## Plugin hooks
 A variety of plugin hooks will be available to allow for custom logic to be run during the bundling process.
