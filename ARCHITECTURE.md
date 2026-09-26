@@ -52,7 +52,6 @@ Tree shaking is performed on the final AST to reduce dead code.
 - The ASTs for dependencies are then inserted into their dependent module AST. They are inserted at the top of the AST.
 - Require/include statements, for modules that are part of the chunk, are then removed from the AST.
 - Most of the chunk-wide code transformations happen here as it is the finalised AST form.
-- A plugin hook is then called to allow plugins to work with and modify the final AST.
 
 ### Code generation
 
