@@ -93,3 +93,91 @@ Transferring data across the JS/C boundary is an extreme bottleneck and needs to
 #### Optimisation techniques
 - **Batching data**: Data is batched before being transferred from C to JS. This allows for a large amount of data to be transferred at once to minimise overhead.
 - **Filtering plugins**: Plugins can provide a regex filter string that tells arrowpack what files they should run for. This can be computed on the C side so that JS plugins are only invoked if they are actually needed for a specific module/file.
+
+### Major data structures
+#### Dependency Graph
+```c
+typedef struct DependencyGraph {
+  // Lock for thread safety
+  pthread_mutex_t lock;
+
+  // Maps absolute (or virtual) paths to module pointers
+  HashMap* moduleMap;
+
+  // Array of all modules
+  struct Module** modules;
+  int moduleNum;
+
+  // Memory arena pool for all modules and ASTs
+  struct MemoryArena* arena;
+}
+```
+
+#### Module
+Represents a module/asset.
+```c
+typedef enum {MODULE_JS, MODULE_HTML, MODULE_CSS, MODULE_IMAGE, MODULE_ASSET} ModuleType;
+
+typedef struct Module {
+  // Absolute file path or virtual ID
+  char* path;
+  // Module type
+  ModuleType type;
+
+  // The original source code
+  char *sourceCode;
+  size_t sourceSize;
+
+  // Pointer to the root of the AST
+  void *ast;
+
+  // Array of the module's dependencies
+  struct DependencyEdge** dependencies;
+  size_t dependencyCount;
+
+  // Number of times this module is imported (for chunking)
+  int refCount;
+}
+```
+#### DependencyEdge
+```c
+typedef enum {
+  IMPORT_STATIC,
+  IMPORT DYNAMIC,
+  IMPORT REQUIRE     // require('./module.js')
+} ImportType;
+
+typedef struct DependencyEdge {
+  // Original path in the import/require statement
+  char* relativePath;
+
+  // Resolved absolute path/ID
+  char* absolutePath;
+
+  // Type of import
+  ImportType type;
+
+  // Pointer to the dependency
+  struct Module* dependency;
+}
+
+```
+#### Chunk
+```c
+typedef struct Chunk {
+  // Final path/name
+  char* chunkID;
+
+  // Type of module
+  ModuleType type;
+
+  // Array of the chunk's modules
+  struct Module** modules;
+  size_t moduleNum;
+
+  // List of chunks depended on by this chunk
+  struct Chunk **chunkDependency;
+  size_t depChunkCount;
+}
+```
+
