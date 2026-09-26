@@ -26,7 +26,7 @@ A chunk is created for every explicitly defined entry point. In a project with a
 During the dependency graph building stage, DFS is used on the chunk's dependencies and they are added to the chunk if they are synchronous dependencies. When a dynamic (async) import is found, a seperate chunk will be created for it and it will be pushed to a queue to process.
 
 #### Code/chunk splitting
-Deduplicate chunks by looking for modules that exist in lots of different chunks and splitting them into their own chunks. Each module storares a reference count to see how many different chunks depend upon it. Modules that are imported into multiple different distinct chunks.
+Deduplicate chunks by looking for modules that exist in lots of different chunks and splitting them into their own chunks. Each module stores a reference count to see how many different chunks depend upon it. Modules that are imported into multiple different distinct chunks.
 
 ### Dependency sorting
 
