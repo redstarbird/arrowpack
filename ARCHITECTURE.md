@@ -43,15 +43,15 @@ The ASTs for every file/module in a chunk are combined into a single AST.
 - A check is performed to make sure that there are no naming collisions with any of the renamed modules. If any collisions are found, a hash will then be appended to the name. 
 - All occurrences of the name are changed in all chunk ASTs to the new name. This is done carefully to ensure that shadowed local variables are not replaced.
 
-### Tree shaking
-
-Tree shaking is performed on the final AST to reduce dead code.
-
 #### AST Concatenation
 
 - The ASTs for dependencies are then inserted into their dependent module AST. They are inserted at the top of the AST.
 - Require/include statements, for modules that are part of the chunk, are then removed from the AST.
 - Most of the chunk-wide code transformations happen here as it is the finalised AST form.
+
+### Tree shaking
+
+Tree shaking is performed on the final AST to reduce dead code.
 
 ### Code generation
 
