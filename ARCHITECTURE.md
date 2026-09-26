@@ -60,7 +60,7 @@ Tree shaking is performed on the final AST to reduce dead code.
 - Optimisers are then used on the final code to reduce bundle size or to increase the execution speed
 - The chunks are written to files in the exit directory
 
-# Source map genereration
+### Source map generation
 Source maps for the concatenated modules are concatenated into a "final" source map.
 
 ## Plugin hooks
