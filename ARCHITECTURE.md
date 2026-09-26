@@ -16,16 +16,21 @@ The dependency graph build process consists of the following steps:
 - Dependencies are then extracted from the AST
 - The process is then recursively continued for any newly found dependencies until all transformations are complete and all dependencies have been resolved and added to the dependency graph.
 
+#### Concurrency
+All modules are independent to each other until the graph is fully resolved so multi-threading can be used to speed up the building the dependency graph. 
+
+### Chunk creation/identification
+
+A chunk is created for every explicitly defined entry point. In a project with an entry directory and no explicitly defined entry points, this will instead be done via using HTML files as entry points. 
+
+During the dependency graph building stage, DFS is used on the chunk's dependencies and they are added to the chunk if they are synchronous dependencies. When a dynamic (async) import is found, a seperate chunk will be created for it and it will be pushed to a queue to process.
+
+#### Code/chunk splitting
+Deduplicate chunks by looking for modules that exist in lots of different chunks and splitting them into their own chunks. Each module storares a reference count to see how many different chunks depend upon it. Modules that are imported into multiple different distinct chunks.
+
 ### Dependency sorting
 
 The dependency graph then needs to be used to find the order in which the dependencies have to be built. This is done by performing a DFS [topological sort](https://en.wikipedia.org/wiki/Topological_sorting) on the dependency graph to find the order in which the files are built. The exact order is not guaranteed to be the same on every run as unrelated files may be built in different orders.
-
-### Chunking
-
-- Create a new chunk for each entry point
-- Use a DFS on the chunk's dependencies and add them to the chunk if they are synchronous dependencies
-- Create a new chunk for async dependencies which are set as a dependency for the current chunk. This chunk is then pushed to a queue to be processed
-- Deduplicate chunks by looking for modules that exist in lots of different chunks and splitting them into their own chunks
 
 ### Combine chunk ASTs
 
