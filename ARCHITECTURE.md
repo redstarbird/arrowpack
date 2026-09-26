@@ -78,7 +78,9 @@ JavaScript interacts with the compiled C/C++ code via the Node.JS Node-API.
 ### Arrowpack JS API
 The `src/arrowpack.js` file contains the public JavaScript API for interacting with arrowpack. 
 The main way to interact with arrowpack is via the `build` function, which can be provided with an arrowpack config object as well as optionally a list of entry files/modules for the bundler to use. This allows for other applications that use arrowpack internally to use the build function for a wide variety of uses such as general bundling, bundling specific files, bundling a specific file in a custom dev server.
-An arrowpack `DevServer` object can be created to allow the user to programmatically run a dev server that will cache the modules and dependency graph throughout its lifetime. 
+
+#### Dev server
+An arrowpack `DevServer` object can be created to allow the user to programmatically run a dev server that will cache the modules and dependency graph throughout its lifetime. The dev server can be used either in on-demand mode or watch mode. Watch mode will build the entire project initially and will watch for changes to any source files. When a change occurs, the modified file will be rebuilt so that the build directory always contains an up-to-date build while the dev server is running. On-demand mode will not build the project initially but will instead wait for the browser to request a route/file. When this route is requested, that file and its dependency tree will be built on demand and sent to the browser.
 
 ### CLI
 The primary way to use arrowpack for bundling applications is via the command line. This is done by running the `arrowpack` command, which uses `src/cli/cli.js` as its entry point. `cli.js` is responsible for handling any CLI-specific functionality. An external, extremely lightweight arg library, [arrowargs](https://github.com/redstarbird/arrowargs), is used for managing and parsing the command line arguments.
