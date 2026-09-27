@@ -1,21 +1,21 @@
 
 
 mergeInto(LibraryManager.library, {
-    IsNodeBuiltInJS: function(name) {
+    IsNodeBuiltInJS: function (name) {
         name = Module.UTF8ToString(name);
-        const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
+        const NodeBrowserModules = require("NodeBrowserModules.js");
         return NodeBrowserModules.IsNodeBuiltin(name);
     },
 
-    EnsureNodeBuiltinBrowserModuleJS: function(name) {
+    EnsureNodeBuiltinBrowserModuleJS: function (name) {
         name = Module.UTF8ToString(name);
-        const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
+        const NodeBrowserModules = require("NodeBrowserModules.js");
         NodeBrowserModules.EnsureInstalled(name);
     },
 
-    NodeModuleBrowserPackageNameJS: function(name) {
+    NodeModuleBrowserPackageNameJS: function (name) {
         name = Module.UTF8ToString(name);
-        const NodeBrowserModules = require("../src/js/NodeBrowserModules.js");
+        const NodeBrowserModules = require("NodeBrowserModules.js");
         const string = NodeBrowserModules.NodeModuleBrowserPackageName(name);
         console.log(string);
         var lengthBytes = Module.lengthBytesUTF8(string) + 1;
