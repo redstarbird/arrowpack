@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 "use strict";
+
+/*
+* @file The main CLI executable for arrowpack.
+* This file is responsible for interpeting the user's command and internally invoking the arrowpack API.
+* It uses the arrowargs library to register and process the command into flags and data.
+*/
+
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
