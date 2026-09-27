@@ -43,7 +43,7 @@ target_link_options(CFunctions PRIVATE
     # The C source does not contain a "main" entry point (build as a library)
     "--no-entry"
     # Plugin JS functions that can be called from C
-    "--js-library" "${CMAKE_CURRENT_SOURCE_DIR}/src/js/JSCLibrary.js"
+    "--js-library" "${CMAKE_CURRENT_SOURCE_DIR}/src/node/misc/JSCLibrary.js"
     # Allow for addFunction to be used at runtime to dynamically create C function pointers
     "-sALLOW_TABLE_GROWTH=1"
     # Optimise built JS for node.js (remove browser-specific code)
