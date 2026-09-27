@@ -2,8 +2,8 @@ const settingsSingleton = require("../SettingsSingleton/settingsSingleton");
 const fs = require("fs");
 resolve = require("path").resolve;
 
-function initialise()
-{
+// Creates a config file template
+function initialise() {
     const sampleSettings = new settingsSingleton(null);
     // Delete internal settings
     delete sampleSettings.settings["INTERNAL_CWD"];

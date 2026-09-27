@@ -11,13 +11,13 @@ const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
 const config = require("../src/node/config.js");
-const DirFunctions = require("../src/js/DirFunctions.js");
+const DirFunctions = require("../src/node/util/FSUtil.js");
 const CFunctionFactory = require("../build/CFunctions.js");
-const Sleep = require("../src/js/Sleep.js");
-const { mkdirIfNotExists } = require("../src/js/DirFunctions.js");
+const Sleep = require("../src/node/util/Sleep.js");
+const { mkdirIfNotExists } = require("../src/node/util/FSUtil.js");
 const chokidar = require('chokidar');
-const ArrowSerializer = require("../src/js/StringConversion.cjs");
-const { ArrowDeserialize } = require("../src/js/StringConversion.cjs");
+const ArrowSerializer = require("../src/node/util/serialize.cjs");
+const { ArrowDeserialize } = require("../src/node/util/serialize.cjs");
 const { createRequire } = require("module");
 const { exit } = require("process");
 const { performance } = require('perf_hooks');
@@ -179,7 +179,7 @@ if (argv.v) {
     console.log(version);
 }
 else if (argv.init) {
-    const initialise = require("../src/js/Initialise.js");
+    const initialise = require("../src/node/initialise.js");
     initialise();
 }
 else {
@@ -188,7 +188,7 @@ else {
 
         if (argv.dev === true) {  // Check if dev server is enabled
             console.log("Entering dev mode");
-            const DevServer = require("../src/js/DevServer.js");
+            const DevServer = require("../src/node/server/DevServer.js");
             DevServer.StartServer(Settings);
 
             const watcher = chokidar.watch(Settings.getValue("entry"));  // Watch file system of CWD
