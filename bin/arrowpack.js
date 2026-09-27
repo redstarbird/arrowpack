@@ -10,7 +10,7 @@
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const settingsSingleton = require("../src/SettingsSingleton/settingsSingleton.js");
+const config = require("../src/node/config.js");
 const DirFunctions = require("../src/js/DirFunctions.js");
 const CFunctionFactory = require("../build/CFunctions.js");
 const Sleep = require("../src/js/Sleep.js");
@@ -96,7 +96,7 @@ if (argv.c) {
     rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c,
         rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c)
 }
-const Settings = new settingsSingleton(rawconfigData);  // Initialize settings singleton
+const Settings = new config(rawconfigData);  // Initialize settings singleton
 
 const PluginsCache = {};  // Caches used plugins so they don't need to be reloaded every time they are used
 

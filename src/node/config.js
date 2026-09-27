@@ -3,9 +3,8 @@
 const fs = require("fs");
 
 // The settings singleton containing settings and configuration
-class settingsSingleton {
-    constructor(json)
-    {
+class config {
+    constructor(json) {
         this.settings = {
             entry: "src/",
             exit: "public/",
@@ -48,15 +47,14 @@ class settingsSingleton {
 
         var AddFileSeperatorToEnd = ["entry", "exit"];
         for (let i = 0; i < AddFileSeperatorToEnd.length;
-             i++) {  // Adds file path separator to end of each path in settings
+            i++) {  // Adds file path separator to end of each path in settings
             if (this.settings[AddFileSeperatorToEnd[i]][this.settings[AddFileSeperatorToEnd[i]].length - 1] !== "/") {
                 this.settings[AddFileSeperatorToEnd[i]] += "/";
             }
         }
         // console.log(this.settings);
     }
-    getValue(key, required)
-    {  // Will throw an error if the key is not present and required is true
+    getValue(key, required) {  // Will throw an error if the key is not present and required is true
         if (this.settings[key] !== undefined) {
             return this.settings[key];
         }
@@ -71,4 +69,4 @@ class settingsSingleton {
     }
 }
 
-module.exports = settingsSingleton;
+module.exports = config;
