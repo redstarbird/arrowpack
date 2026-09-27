@@ -3,22 +3,21 @@
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const settingsSingleton = require("./SettingsSingleton/settingsSingleton");
-const DirFunctions = require("./js/DirFunctions");
+const settingsSingleton = require("../src/SettingsSingleton/settingsSingleton.js");
+const DirFunctions = require("../src/js/DirFunctions.js");
 const CFunctionFactory = require("../build/CFunctions.js");
-const Sleep = require("../src/js/Sleep");
-const {mkdirIfNotExists} = require("./js/DirFunctions.js");
+const Sleep = require("../src/js/Sleep.js");
+const { mkdirIfNotExists } = require("../src/js/DirFunctions.js");
 const chokidar = require('chokidar');
-const ArrowSerializer = require("./js/StringConversion.cjs");
-const {ArrowDeserialize} = require("./js/StringConversion.cjs");
-const {createRequire} = require("module");
-const {exit} = require("process");
-const {performance} = require('perf_hooks');
+const ArrowSerializer = require("../src/js/StringConversion.cjs");
+const { ArrowDeserialize } = require("../src/js/StringConversion.cjs");
+const { createRequire } = require("module");
+const { exit } = require("process");
+const { performance } = require('perf_hooks');
 
 var StartTime = performance.now();  // Track the start time to track bundle time
 
-function requireModule(modulePath, exportName)
-{
+function requireModule(modulePath, exportName) {
     try {
         const imported = require(modulePath);
         return exportName ? imported[exportName] : imported;
@@ -28,8 +27,7 @@ function requireModule(modulePath, exportName)
 }
 
 // Returns whether an object is empty or not
-function ObjectIsEmpty(object)
-{
+function ObjectIsEmpty(object) {
     for (var Property in object) {
         if (object.hasOwnProperty(Property))
             return false;
@@ -40,12 +38,12 @@ function ObjectIsEmpty(object)
 const argv =
     require("arrowargs")(process.argv.slice(2))  // Handle command line arguments
         .option("c",
-                {alias: "config-path", describe: "Path to config file if not in working directory", type: "string"})
+            { alias: "config-path", describe: "Path to config file if not in working directory", type: "string" })
         .option("dev",
-                {alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false})
-        .option("v", {alias: "version", describe: "Display version information", type: "boolean", default: false})
+            { alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false })
+        .option("v", { alias: "version", describe: "Display version information", type: "boolean", default: false })
         .option("init",
-                {alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false})
+            { alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false })
         .help()
         .argv;
 
@@ -89,15 +87,14 @@ if (argv.c) {
         argv.c += "/";
     }
     rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c,
-    rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c)
+        rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c)
 }
 const Settings = new settingsSingleton(rawconfigData);  // Initialize settings singleton
 
 const PluginsCache = {};  // Caches used plugins so they don't need to be reloaded every time they are used
 
 // Function for transforming files that is called from C code
-function JSTransformFiles(EncodedOriginalContents, PluginPath)
-{
+function JSTransformFiles(EncodedOriginalContents, PluginPath) {
     const OriginalFileContents = CFunctions.UTF8ToString(EncodedOriginalContents);
     PluginPath = CFunctions.UTF8ToString(PluginPath);
 
@@ -122,8 +119,7 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath)
 }
 
 // Function for validating files
-async function JSValidateFiles(FileContents, PluginPath, FilePath)
-{
+async function JSValidateFiles(FileContents, PluginPath, FilePath) {
     // Decode UTF8 string into JS string
     PluginPath = CFunctions.UTF8ToString(PluginPath);
     FilePath = CFunctions.UTF8ToString(FilePath);
@@ -176,7 +172,7 @@ if (argv.v) {
     console.log(version);
 }
 else if (argv.init) {
-    const initialise = require("./js/Initialise.js");
+    const initialise = require("../src/js/Initialise.js");
     initialise();
 }
 else {
@@ -185,7 +181,7 @@ else {
 
         if (argv.dev === true) {  // Check if dev server is enabled
             console.log("Entering dev mode");
-            const DevServer = require("./js/DevServer.js");
+            const DevServer = require("../src/js/DevServer.js");
             DevServer.StartServer(Settings);
 
             const watcher = chokidar.watch(Settings.getValue("entry"));  // Watch file system of CWD
@@ -196,9 +192,9 @@ else {
                     "RebuildFiles", "string", ["number", "string", "number"], [DependencyGraphPtr, FilePath, 1]);
                 RebuiltFiles = ArrowDeserialize(RebuiltFiles);  // Deserialise serialised string of changed files
                 DevServer.SendUpdatedPage(RebuiltFiles,
-                                          Settings);  // Send the updated pages to clients
+                    Settings);  // Send the updated pages to clients
                 console.log(chalk.magentaBright("\n\nBundling files completed in " +
-                                                (performance.now() - StartTime) / 1000 + " seconds\n\n"));
+                    (performance.now() - StartTime) / 1000 + " seconds\n\n"));
             });
         }
         Bundle();
@@ -206,8 +202,7 @@ else {
 }
 
 // Main function for bundling files
-function Bundle()
-{
+function Bundle() {
     var temp;
     console.log(chalk.yellow("Here!"));
 
@@ -219,7 +214,7 @@ function Bundle()
     const StringifiedJSON = JSON.stringify(Settings.settings)  // Convert settings to a JSON string
 
     var Success = CFunctions.ccall("InitSettings", "number", ["string"],
-                                   [StringifiedJSON]);  // Initialize settings on the Wasm side
+        [StringifiedJSON]);  // Initialize settings on the Wasm side
     if (Success !== 1) {
         throw "Error setting up Wasm settings";
     }
@@ -234,7 +229,7 @@ function Bundle()
         Success = false;
         const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
         Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-                                   [DependencyGraphPtr, ValidateJSFunctionPointer, 2])
+            [DependencyGraphPtr, ValidateJSFunctionPointer, 2])
     }
     let TransformJSFunctionPointer = Success;
 
@@ -242,9 +237,8 @@ function Bundle()
         Success = false;
         TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
         Success = CFunctions.ccall("TransformFiles", "number", ["number", "number"],
-                                   [DependencyGraphPtr, TransformJSFunctionPointer])
-        if (Success !== 1)
-        {
+            [DependencyGraphPtr, TransformJSFunctionPointer])
+        if (Success !== 1) {
             throw "Error transforming files!";
         }
     }
@@ -260,12 +254,12 @@ function Bundle()
         // side if any exist
         Success = false;
         Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-                                   [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
+            [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
     }
 
     if (Success === 1 || Success === 0) {
         console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-                                        " seconds\n\n"));  // Print the bundle time
+            " seconds\n\n"));  // Print the bundle time
 
         if (argv.dev) {
             console.log("Dev server running...");
@@ -289,9 +283,8 @@ process.on("SIGINT", () => {
     process.exit(DelResult);
 });  // Delete the preprocess directory on force stop from user
 
-function DeletePreprocessDir()
-{  // Function to delete the preprocess directory
-    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", {recursive: true}, (err) => {
+function DeletePreprocessDir() {  // Function to delete the preprocess directory
+    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
         if (err) {
             console.error(err);
             return 1;
