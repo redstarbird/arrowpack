@@ -7,12 +7,14 @@ else {
     dirname += "/index.html";
 }
 
-function ReplaceDocument(NewHead, NewBody) {
+function ReplaceDocument(NewHead, NewBody)
+{
     document.head.innerHTML = NewHead;
     document.body.innerHTML = NewBody;
 }
 
-function extractHead(html) {
+function extractHead(html)
+{
     // Match the head element and its contents
     const headMatch = /<head[^>]*>([\s\S]*?)<\/head>/i.exec(html);
     // If a match was found, return the head content
@@ -23,7 +25,8 @@ function extractHead(html) {
     return "";
 }
 
-function extractBody(html) {
+function extractBody(html)
+{
     const bodyStart = html.indexOf("<body>");  // add 6 to exclude the <body> tag
     const bodyEnd = html.indexOf("</body>");
     return html.substring(bodyStart, bodyEnd);
@@ -43,6 +46,6 @@ ws.onmessage = (event) => {
 };
 
 // Close the websocket connection on page close
-window.addEventListener('beforeunload', function () {
+window.addEventListener('beforeunload', function() {
     ws.close();
 });

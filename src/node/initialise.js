@@ -3,7 +3,8 @@ const fs = require("fs");
 resolve = require("path").resolve;
 
 // Creates a config file template
-function initialise() {
+function initialise()
+{
     const sampleSettings = new settingsSingleton(null);
     // Delete internal settings
     delete sampleSettings.settings["INTERNAL_CWD"];
