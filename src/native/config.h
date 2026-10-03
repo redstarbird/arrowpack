@@ -8,18 +8,6 @@
 
 typedef struct SettingsSingleton {
     cJSON *Settings;
-    /*
-    char *entry;
-    char *exit;
-    char *faviconPath;
-    bool autoClear;
-    bool largeProject;
-    bool bundleCSSInHTML;
-    bool productionMode;
-    bool addBaseTag;
-    int devPort;
-    int devSocketPort;*/
-
 } SettingsSingleton;
 
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
