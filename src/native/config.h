@@ -1,5 +1,5 @@
-#ifndef SETTINGSSINGLETON_H
-#define SETTINGSSINGLETON_H
+#ifndef CONFIG_H
+#define CONFIG_H
 #include <emscripten.h>
 #include <stdlib.h>
 
@@ -25,4 +25,4 @@ typedef struct SettingsSingleton {
 int EMSCRIPTEN_KEEPALIVE SendSettingsString(char *String);
 cJSON *GetSetting(char *SettingName);
 
-#endif  // !_settingsSingleton
+#endif  // !_CONFIG_H
