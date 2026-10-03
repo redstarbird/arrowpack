@@ -8,29 +8,29 @@ endif()
 
 # All C source files
 set(SOURCES
-    src/C/cJSON/cJSON.c
-    src/DependencyGraph/DependencyGraph.c
-    src/C/StringRelatedFunctions.c
-    src/Regex/RegexFunctions.c
-    src/DependencyGraph/FindDependencies.c
-    src/SettingsSingleton/settingsSingleton.c
-    src/C/ProblemHandler.c
-    src/C/TextColors.c
-    src/C/FileHandler.c
-    src/C/IntFunctions.c
-    src/Minifiers/HTMLMinifier.c
-    src/C/FileTypesHandler.c
-    src/C/Stack.c
-    src/C/BundleFiles.c
-    src/C/ProgressBar.c
-    src/C/StringShiftHandler.c
-    src/Minifiers/JSMinifier.c
-    src/Transformers/Transform.c
-    src/Plugins/Plugins.c
-    src/C/JSImportedFunctions.c
+    src/native/external/cJSON/cJSON.c
+    src/native/graph/DependencyGraph.c
+    src/native/util/StringUtil.c
+    src/native/util/RegexUtil.c
+    src/native/graph/FindDependencies.c
+    src/native/config.c
+    src/native/util/ProblemHandler.c
+    src/native/util/TextColors.c
+    src/native/util/FileUtil.c
+    src/native/util/IntUtil.c
+    src/native/minify/HTMLMinifier.c
+    src/native/graph/FileTypesHandler.c
+    src/native/util/Stack.c
+    src/native/codegen/BundleFiles.c
+    src/native/util/ProgressBar.c
+    src/native/codegen/StringShiftHandler.c
+    src/native/minify/JSMinifier.c
+    src/native/bridge/plugins/Transform.c
+    src/native/bridge/plugins/Plugins.c
+    src/native/bridge/JSImportedFunctions.c
 )
 
-add_executable(CFunctions src/Main.c ${SOURCES})
+add_executable(CFunctions src/native/bridge/Main.c ${SOURCES})
 
 # Force output to have .js extension so Emscripten generates WebAssembly + JS wrapper
 set_target_properties(CFunctions PROPERTIES
