@@ -1,5 +1,5 @@
-#ifndef REGEXFUNCTIONS_H
-#define REGEXFUNCTIONS_H
+#ifndef REGEXUTIL_H
+#define REGEXUTIL_H
 
 #include <emscripten.h>
 #include <regex.h>
@@ -35,4 +35,4 @@ bool EMSCRIPTEN_KEEPALIVE HasRegexMatch(const char *text, const char *pattern);
 
 void EMSCRIPTEN_KEEPALIVE regextest(char *text, const char *pattern);
 
-#endif  // !REGEXFUNCTIONS_H
+#endif  // !REGEXUTIL_H

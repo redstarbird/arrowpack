@@ -1,5 +1,5 @@
-#ifndef STRINGRELATEDFUNCTIONS_H
-#define STRINGRELATEDFUNCTIONS_H
+#ifndef STRINGUTIL_H
+#define STRINGUTIL_H
 
 #include <emscripten.h>
 #include <fnmatch.h>
@@ -75,4 +75,4 @@ bool MatchGlob(const char *FilePath, const char *GlobPattern);
 
 int NumOfCharOccurences(const char *text, const char character);
 
-#endif  // !STRINGFUNCTIONS_H
+#endif  // !STRINGUTIL_H

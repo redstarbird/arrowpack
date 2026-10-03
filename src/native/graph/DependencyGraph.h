@@ -1,5 +1,5 @@
-#ifndef DEPENDENCYTREE_H
-#define DEPENDENCYTREE_H
+#ifndef DEPENDENCYGRAPH_H
+#define DEPENDENCYGRAPH_H
 
 #define PATH_SEPARATOR '/'
 
@@ -86,4 +86,4 @@ struct Node **FindAllDependenciesOfVertex(struct Node *Vertex, const size_t MaxS
 void EMSCRIPTEN_KEEPALIVE topological_sort(Graph *graph);
 void RemoveEdges(struct Node *);
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTypeID, struct Graph **DependencyGraph);
-#endif
+#endif  // !DEPENDENCYGRAPH_H

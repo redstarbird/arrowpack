@@ -1,5 +1,5 @@
-#ifndef FILEHANDLER_H
-#define FILEHANDLER_H
+#ifndef FILEUTIL_H
+#define FILEUTIL_H
 
 #include <dirent.h>
 #include <stdbool.h>
@@ -20,4 +20,4 @@ void EnsureDirectory(const char *DirectoryPath);
 bool DirectoryExists(const char *path);
 char **GetAllFilesInDirectory(char *directoryPath, bool recursive, int *fileCount);
 
-#endif  // !FILEHANDLERH
+#endif  // !FILEUTIL_H

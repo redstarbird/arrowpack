@@ -1,7 +1,7 @@
-#ifndef INTFUNCTIONS_H
-#define INTFUNCTIONS_H
+#ifndef INTUTIL_H
+#define INTUTIL_H
 
 int min(int x, int y);
 int max(int x, int y);
 
-#endif  // !INTFUNCTIONS_
+#endif  // !INTUTIL_H
