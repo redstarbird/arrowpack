@@ -1,6 +1,6 @@
-#include "RegexFunctions.h"
+#include "RegexUtil.h"
 
-#include "../DependencyGraph/DependencyGraph.h"
+#include "../graph/DependencyGraph.h"
 
 // Removes a regex match from an array and destroys it
 void RemoveRegexMatch(struct RegexMatch *match)

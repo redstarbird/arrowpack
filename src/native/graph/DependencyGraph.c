@@ -1,20 +1,7 @@
 #include "DependencyGraph.h"
 
-#include <emscripten.h>
-#include <limits.h>
-#include <regex.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../C/BundleFiles.h"
-#include "../C/FileHandler.h"
-#include "../C/Stack.h"
-#include "../C/StringRelatedFunctions.h"
-#include "../C/TextColors.h"
-#include "../C/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON
-#include "../SettingsSingleton/settingsSingleton.h"
+#include "../codegen/BundleFiles.h"
+#include "../util/Stack.h"
 #include "./FindDependencies.h"
 
 // Recursively finds all dependents of a given vertex including nested dependents

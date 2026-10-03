@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../C/ProblemHandler.h"
-#include "../C/StringRelatedFunctions.h"
+#include "./ProblemHandler.h"
+#include "./StringUtil.h"
 
 typedef struct RegexMatch {
     char *Text;

@@ -3,8 +3,8 @@
 #include <emscripten.h>
 #include <stdlib.h>
 
-#include "../C/StringRelatedFunctions.h"
-#include "../C/cJSON/cJSON.h"
+#include "./external/cJSON/cJSON.h"
+#include "./util/StringUtil.h"
 
 typedef struct SettingsSingleton {
     cJSON *Settings;

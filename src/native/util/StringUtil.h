@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../Regex/RegexFunctions.h"
-#include "../SettingsSingleton/settingsSingleton.h"
-#include "IntFunctions.h"
+#include "../config.h"
+#include "IntUtil.h"
+#include "RegexUtil.h"
 #include "TextColors.h"
 
 #define PREPROCESS_DIR "ARROWPACK_TEMP_PREPROCESS_DIR"

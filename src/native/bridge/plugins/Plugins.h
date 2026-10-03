@@ -4,11 +4,11 @@
 #include <emscripten.h>
 #include <stdbool.h>
 
-#include "../C/FileHandler.h"
-#include "../C/ProblemHandler.h"
-#include "../C/StringRelatedFunctions.h"
-#include "../DependencyGraph/DependencyGraph.h"
-#include "../SettingsSingleton/settingsSingleton.h"
+#include "../../config.h"
+#include "../../graph/DependencyGraph.h"
+#include "../../util/FileUtil.h"
+#include "../../util/ProblemHandler.h"
+#include "../../util/StringUtil.h"
 
 bool EMSCRIPTEN_KEEPALIVE ExecutePlugin(struct Graph *DependencyGraph, char *(*functionPTR)(char *, char *, char *),
                                         int pluginIndex);

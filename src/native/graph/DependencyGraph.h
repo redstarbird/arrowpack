@@ -3,10 +3,22 @@
 
 #define PATH_SEPARATOR '/'
 
+#include <emscripten.h>
+#include <limits.h>
+#include <regex.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "../C/FileTypesHandler.h"
-#include "../Regex/RegexFunctions.h"
+#include "../config.h"
+#include "../external/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON
+#include "../util/FileUtil.h"
+#include "../util/RegexUtil.h"
+#include "../util/StringUtil.h"
+#include "../util/TextColors.h"
+#include "./FileTypesHandler.h"
+
 
 typedef struct FileRule {
     char FileExtensions[4][32];

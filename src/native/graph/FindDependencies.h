@@ -6,14 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../C/FileHandler.h"
-#include "../C/JSImportedFunctions.h"
-#include "../C/ProblemHandler.h"
-#include "../C/StringRelatedFunctions.h"
-#include "../C/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON
-#include "../Regex/RegexFunctions.h"
-#include "../SettingsSingleton/settingsSingleton.h"
-#include "DependencyGraph.h"
+#include "../bridge/JSImportedFunctions.h"
+#include "../config.h"
+#include "../external/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON
+#include "../util/FileUtil.h"
+#include "../util/ProblemHandler.h"
+#include "../util/RegexUtil.h"
+#include "../util/StringUtil.h"
+#include "./DependencyGraph.h"
 
 RegexMatch EMSCRIPTEN_KEEPALIVE *BasicRegexDependencies(char *filename, const char *pattern, unsigned int Startpos,
                                                         unsigned int Endpos, struct RegexMatch *CommentLocations);

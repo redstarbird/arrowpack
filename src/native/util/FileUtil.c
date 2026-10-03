@@ -1,5 +1,5 @@
 /* This file is responsible for all of the file handling functions */
-#include "FileHandler.h"
+#include "FileUtil.h"
 
 #include <emscripten.h>
 

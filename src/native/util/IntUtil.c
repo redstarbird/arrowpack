@@ -1,5 +1,5 @@
 /* This file contains basic integer functions */
-#include "IntFunctions.h"
+#include "IntUtil.h"
 
 int min(int x, int y)  // Returns the minimum of two integers
 {

@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "../DependencyGraph/DependencyGraph.h"
+#include "../graph/DependencyGraph.h"
+
+
 // A structure to represent a stack
 struct Stack {
     unsigned int Type;

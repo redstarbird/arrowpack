@@ -4,10 +4,10 @@
 #include <emscripten.h>
 #include <stdio.h>
 
-#include "./C/BundleFiles.h"
-#include "./C/FileHandler.h"
-#include "./DependencyGraph/DependencyGraph.h"
-#include "./SettingsSingleton/settingsSingleton.h"
+#include "../codegen/BundleFiles.h"
+#include "../config.h"
+#include "../graph/DependencyGraph.h"
+#include "../util/FileUtil.h"
 
 char *EMSCRIPTEN_KEEPALIVE
 RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,

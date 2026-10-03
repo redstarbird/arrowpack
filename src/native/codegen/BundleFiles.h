@@ -4,16 +4,16 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "../DependencyGraph/DependencyGraph.h"
-#include "../Minifiers/HTMLMinifier.h"
-#include "../Minifiers/JSMinifier.h"
-#include "../Regex/RegexFunctions.h"
-#include "./FileHandler.h"
-#include "./JSImportedFunctions.h"
-#include "FileTypesHandler.h"
-#include "ProblemHandler.h"
-#include "ProgressBar.h"
-#include "StringRelatedFunctions.h"
+#include "../bridge/JSImportedFunctions.h"
+#include "../graph/DependencyGraph.h"
+#include "../graph/FileTypesHandler.h"
+#include "../minify/HTMLMinifier.h"
+#include "../minify/JSMinifier.h"
+#include "../util/FileUtil.h"
+#include "../util/ProblemHandler.h"
+#include "../util/ProgressBar.h"
+#include "../util/RegexUtil.h"
+#include "../util/StringUtil.h"
 #include "StringShiftHandler.h"
 
 bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph);

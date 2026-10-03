@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "./StringRelatedFunctions.h"
+#include "../util/StringUtil.h"
 #include "emscripten.h"
 
 typedef struct FileType {

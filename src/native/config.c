@@ -1,4 +1,4 @@
-#include "settingsSingleton.h"
+#include "config.h"
 
 struct SettingsSingleton Settings;  // Initialises global settings structure
 

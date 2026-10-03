@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "ProblemHandler.h"
-#include "StringRelatedFunctions.h"
+#include "StringUtil.h"
 
 void CreateFileWrite(char *path, char *text);
 char *ReadDataFromFile(char *path);
