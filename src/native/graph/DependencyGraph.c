@@ -18,7 +18,6 @@ void VertexRecursiveSearch(struct Node *Vertex, struct Stack *stack, bool FindDe
 
     // For finding dependencies
     if (FindDependencies) {
-        printf("Finding dependencies, not dependents\n");
         struct Edge *currentEdge = Vertex->edge;
         while (currentEdge != NULL)  // Loop through all edges
         {

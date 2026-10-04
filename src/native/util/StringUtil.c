@@ -103,7 +103,7 @@ char EMSCRIPTEN_KEEPALIVE *TurnToFullRelativePath(const char *PATH, char *BasePa
 {
     char *NewPath;  // Buffer to hold the absolute path
     char *path = strdup(PATH);
-    printf("Path: %s, basepath: %s\n", path, BasePath);
+
     if (StringStartsWith(PATH, "node_modules")) {
         return path;
     }
@@ -466,7 +466,7 @@ char *IntToString(int Integer)
         IntStringLength++;
         Temp2 *= 10;
     }
-    printf("String length: %d\n", IntStringLength);
+
     char *String =
         malloc(sizeof(char) * (IntStringLength + 1));  // Allocates the string using the length calculated earlier
     char *ptr = &String[0];
@@ -485,7 +485,7 @@ char *IntToString(int Integer)
         *--ptr = temp % 10 + '0';  // Add the character code of the number to the string
         count++;
     }
-    printf("String %s\n", String);
+
     return String;
 }
 
@@ -527,7 +527,6 @@ serialized string
 */
 char **ArrowDeserialize(const char *serialized, int *n_strings)
 {
-    printf("Deserialise: %s\n", serialized);
     // Define custom separator and escape characters
     const char separator = '\x1f';
     const char escape = '\x1e';

@@ -145,9 +145,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                     if (strncasecmp(IteratePointer->Text + i, "src", 3) == 0) {
                         for (int j = i + 3; j < strlen(IteratePointer->Text); j++) {
 
-                            printf("ITeratePointer[j]: %c, equals %i, open string found %i\n", IteratePointer->Text[j],
-                                   equalsFound, openStringFound);
-
                             if (equalsFound) {
                                 if (IteratePointer->Text[j] == '"' || IteratePointer->Text[j] == '\'') {
                                     if (openStringFound) {
@@ -163,8 +160,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindHTMLDependencies(struct Node *vertex
                                             dataTags[dataTagsFound]);*/
                                             IteratePointer->Text[j] = '\0';
                                             IteratePointer->Text += openStringLocation;
-
-                                            printf("FOund %s\n", IteratePointer->Text);
                                         }
                                     }
                                     else {
@@ -487,7 +482,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
 
     struct RegexMatch *CJSDependencies =
         BasicRegexDependencies(filename, "require[^)]*", 0, 1, CommentLocations);  // Get commonJS dependencies
-    printf("test123\n");
+
     if (CJSDependencies == NULL) {
         printf("CJS null\n");
         return NULL;
@@ -533,7 +528,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
         }
         if (startLocation != -1 && endLocation != -1)  // Dependency name has been found
         {
-            printf("resaltest2: %s\n", IteratePointer->Text);
+
             strcpy(IteratePointer->Text, getSubstring(IteratePointer->Text, startLocation, endLocation - 1));
             bool LocalFileFound = false;
 
@@ -541,8 +536,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 !StringEndsWith(IteratePointer->Text,
                                 ".js"))  // Dependency name doesn't include file extension
             {
-                // Add .js file extensiom
-                printf("here: %s\n", IteratePointer->Text);
+                // Add .js file extension
                 char *TempCheckPath = TurnToFullRelativePath(IteratePointer->Text, GetBasePath(filename));
                 int TempLength = strlen(TempCheckPath);
                 TempCheckPath = realloc(TempCheckPath, TempLength + 5);
@@ -557,14 +551,13 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 else  // Check if the file exists with a .cjs extension
                 {
                     strcpy(TempCheckPath + TempLength, ".cjs");
-                    printf("tset2\n");
+
                     char *RelativeCheckPath = TurnToFullRelativePath(TempCheckPath, GetBasePath(filename));
                     if (FileExists(RelativeCheckPath)) {
                         LocalFileFound = true;
                         free(IteratePointer->Text);
                         IteratePointer->Text = RelativeCheckPath;
                     }
-                    printf("test3\n");
                 }
             }
 
@@ -582,7 +575,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                 if (IsNodeBuiltin(IteratePointer->Text)) {
                     EnsureNodeBuiltinBrowserModule(IteratePointer->Text);
                     IteratePointer->Text = NodeModuleBrowserPackageName(IteratePointer->Text);
-                    printf("Iterate: %s\n", IteratePointer->Text);
 
                     char *ModulePath = malloc(17 + strlen(IteratePointer->Text));
                     strcpy(ModulePath, "node_modules/");
@@ -603,7 +595,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                         strcpy(NodeModulePath, FileBasePath);
                         strcat(NodeModulePath, IteratePointer->Text);
                         if (!StringEndsWith(NodeModulePath, ".js")) {
-                            printf("IteratePointer->Text: %s\n", IteratePointer->Text);
                             NodeModulePath = realloc(NodeModulePath, strlen(NodeModulePath) + 4);
                             strcat(NodeModulePath, ".js");
                         }
@@ -611,13 +602,12 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                             IteratePointer->Text = NodeModulePath;
                             LocalFileFound = true;
                         }
-                        printf("NodeModulePath: %s\n", NodeModulePath);
                     }
                     if (!LocalFileFound) {
                         NodeModulePath = malloc(14 + strlen(IteratePointer->Text));
                         strcpy(NodeModulePath, "node_modules/");
                         strcat(NodeModulePath, IteratePointer->Text);
-                        printf("Checking module path: %s\n", NodeModulePath);
+
                         if (DirectoryExists(NodeModulePath))  // Check if the module exists in the
                                                               // node_modules directory
                         {
@@ -634,7 +624,6 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                     ThrowFatalError("Could not find module: %s\n", IteratePointer->Text);
                 }
             }
-            printf("faketest2.js\n");  //
         }
         IteratePointer++;
     }
