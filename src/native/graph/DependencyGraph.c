@@ -117,44 +117,6 @@ void EMSCRIPTEN_KEEPALIVE topological_sort(Graph *graph)
     }
 }
 
-// Unused old function
-struct FileRule GetFileRuleFromPath(const char *path, struct FileRule *fileRules)
-{
-
-    unsigned int pathLen = strlen(path);
-
-    int lastFullStop = 0;
-    for (unsigned int i = 0; i < pathLen; i++) {
-        if (path[i] == '.') {
-            lastFullStop = i;
-        }
-    }
-    if (lastFullStop == 0) {
-        ThrowFatalError("Error: could not file character \".\" in path %s", path);
-    }
-
-    lastFullStop++;
-    const int length = pathLen - lastFullStop;  // gets length of file ext
-    char extension[length];
-    for (int i = 0; i < length; i++) {
-        extension[i] = path[lastFullStop + i];  // string includes fullstop
-    }
-
-    for (int i = 0; i < sizeof(*fileRules) / sizeof(struct FileRule); i++) {
-        for (int j = 0; j < 4; j++) {
-            if (fileRules[i].FileExtensions[j] == NULL || *fileRules[i].FileExtensions[j] == '\0') {
-                break;
-            }
-            if (strcasecmp(fileRules[i].FileExtensions[j], extension) == 0) {
-                return fileRules[i];
-            }
-        }
-    }
-    ThrowFatalError("Could not find rule for processing file %s\n", path);
-    struct FileRule rule;
-    return rule;
-}
-
 // Finds all dependencies of a given file
 RegexMatch EMSCRIPTEN_KEEPALIVE *GetDependencies(struct Node *vertex, int FileTypeID, struct Graph **DependencyGraph)
 {
