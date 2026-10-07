@@ -1,11 +1,11 @@
 #ifndef FINDDEPENDENCIES_H
 #define FINDDEPENDENCIES_H
 
-#include <emscripten.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "../bridge/Export.h"
 #include "../bridge/JSImportedFunctions.h"
 #include "../config.h"
 #include "../external/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON

@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
-#include <emscripten.h>
 #include <stdlib.h>
 
+#include "./bridge/Export.h"
 #include "./external/cJSON/cJSON.h"
 #include "./util/StringUtil.h"
 

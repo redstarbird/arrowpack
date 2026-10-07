@@ -3,7 +3,6 @@
 
 #define PATH_SEPARATOR '/'
 
-#include <emscripten.h>
 #include <limits.h>
 #include <regex.h>
 #include <stdbool.h>
@@ -11,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../bridge/Export.h"
 #include "../config.h"
 #include "../external/cJSON/cJSON.h"  // https://github.com/DaveGamble/cJSON
 #include "../util/FileUtil.h"

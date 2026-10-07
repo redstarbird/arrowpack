@@ -1,13 +1,13 @@
 // This file is used to compile all the C WASM functions into one file to minimize file size and
 // WASM performance.
 
-#include <emscripten.h>
 #include <stdio.h>
 
 #include "../codegen/BundleFiles.h"
 #include "../config.h"
 #include "../graph/DependencyGraph.h"
 #include "../util/FileUtil.h"
+#include "./Export.h"
 
 char *EMSCRIPTEN_KEEPALIVE
 RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,

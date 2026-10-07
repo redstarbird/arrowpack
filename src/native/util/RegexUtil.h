@@ -1,12 +1,12 @@
 #ifndef REGEXUTIL_H
 #define REGEXUTIL_H
 
-#include <emscripten.h>
 #include <regex.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../bridge/Export.h"
 #include "./ProblemHandler.h"
 #include "./StringUtil.h"
 
