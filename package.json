@@ -45,5 +45,8 @@
 		"helloworldify": "^1.0.0",
 		"jshint": "^2.13.5",
 		"ws": "^8.12.1"
+	},
+	"devDependencies": {
+		"node-api-headers": "^1.9.0"
 	}
 }
