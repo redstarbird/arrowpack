@@ -2,7 +2,8 @@
  * @file NapiBridge.c
  * @brief The bridge/interface between the Node.js N-api and the native C code.
  * Any functions/values that need to be accessible on the JS side are given and Napi wrapper function
- * and defined as part of a JS Napi module
+ * and defined as part of a JS Napi module.
+ * @see Documentation for N-api: https://nodejs.org/api/n-api.html
  */
 
 #ifndef __EMSCRIPTEN__
