@@ -25,8 +25,8 @@
 		"url": "https://github.com/redstarbird/arrowpack.git"
 	},
 	"scripts": {
-		"build:native:release": "cmake-js build --out build",
-		"build:native:debug": "cmake-js build --debug --out build",
+		"build:native:release": "cmake-js build --out build/native",
+		"build:native:debug": "cmake-js build --debug --out build/native",
 		"build:wasm:release": "emcmake cmake -B build/wasm -DCMAKE_BUILD_TYPE=Release && cmake --build build/wasm",
 		"build:wasm:debug": "emcmake cmake -B build/wasm -DCMAKE_BUILD_TYPE=Debug && cmake --build build/wasm",
 		"build-release": "npm run build:native:release && npm run build:wasm:release",
