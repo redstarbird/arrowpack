@@ -126,6 +126,15 @@ else()
         PREFIX ""
         OUTPUT_NAME "arrowpack"
         SUFFIX ".node"
+
+        # Ensure arrowpack.node is directly in the build/native directory
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+
+        LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
     )
 
     target_link_libraries(arrowpack_native ${CMAKE_JS_LIB})
