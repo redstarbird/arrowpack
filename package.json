@@ -41,6 +41,7 @@
 		"assert": "^2.0.0",
 		"chalk": "^4.1.2",
 		"chokidar": "^5.0.0",
+		"cmake-js": "^8.0.0",
 		"codependency": "^2.1.0",
 		"helloworldify": "^1.0.0",
 		"jshint": "^2.13.5",
