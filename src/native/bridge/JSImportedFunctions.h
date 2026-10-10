@@ -1,8 +1,9 @@
 #if !defined(JSIMPORTEDFUNCTIONS_H)
 #    define JSIMPORTEDFUNCTIONS_H
-#    include <emscripten.h>
 #    include <stdbool.h>
 #    include <stdlib.h>
+
+#    include "./Export.h"
 
 extern EMSCRIPTEN_KEEPALIVE bool IsNodeBuiltInJS(char *name);
 extern EMSCRIPTEN_KEEPALIVE void EnsureNodeBuiltinBrowserModuleJS(char *name);

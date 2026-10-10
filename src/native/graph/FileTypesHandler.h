@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../bridge/Export.h"
 #include "../util/StringUtil.h"
-#include "emscripten.h"
 
 typedef struct FileType {
     char FileExtensions[8][16];
