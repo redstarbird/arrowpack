@@ -10,7 +10,7 @@ let nativeInstance = null;
 function createWasmAdapter(wasmModule) {
     return {
         backendType: "wasm",
-        CheckNative: () => wasmModule.ccall("CheckWasm", null, [], []),
+        CheckNative: () => wasmModule.ccall("CheckNative", "number", [], []),
         InitFileTypes: () => wasmModule.ccall("InitFileTypes", null, [], []),
         InitSettings: (StringifiedJSON) => wasmModule.ccall("InitSettings", "number", ["string"], StringifiedJSON),
         CreateGraph: () => wasmModule.ccall("CreateGraph", "number", [], []),

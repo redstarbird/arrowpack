@@ -125,7 +125,10 @@ RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,
     return FinalChangedFiles;
 }
 
-void EMSCRIPTEN_KEEPALIVE CheckWasm()
+// Basic check that the native module is working properly by ensuring
+// the number is correctly returned across the native boundary to JS
+int EMSCRIPTEN_KEEPALIVE CheckNative()
 {
-    printf("Wasm started Successfully...\n");
+    // Return the ultimate answer
+    return 42;
 }

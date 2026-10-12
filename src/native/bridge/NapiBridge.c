@@ -22,7 +22,16 @@
 // Declarations from Main.c
 extern char *RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles, int FilesNum);
 extern bool InitSettings(char *JSON);
+extern int CheckNative();
 
+static napi_value Napi_CheckNative(napi_env env, napi_callback_info info)
+{
+    int result = CheckNative();
+    napi_value ret;
+    napi_create_int32(env, (int32_t)result, &ret);
+
+    return ret;
+}
 
 static napi_value Napi_InitSettings(napi_env env, napi_callback_info info)
 {
@@ -157,6 +166,7 @@ static napi_value Napi_RebuildFiles(napi_env env, napi_callback_info info)
 static napi_value Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor properties[] = {
+        DECLARE_NAPI_METHOD("CheckNative", Napi_CheckNative),
         DECLARE_NAPI_METHOD("InitSettings", Napi_InitSettings),
         DECLARE_NAPI_METHOD("InitFileTypes", Napi_InitFileTypes),
         DECLARE_NAPI_METHOD("CreateGraph", Napi_CreateGraph),
