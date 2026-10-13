@@ -275,13 +275,16 @@ else {
 }
 
 /*
-* CLI tuned wrapper for the arrowpack API build
+* CLI wrapper for the arrowpack API build function
 */
 function Bundle() {
     arrowpack.build(Settings.settings).then(() => {
+
+        // Output bundling time
         console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
             " seconds\n\n"));
 
+        // If the dev server is not running, remove the preprocess directory after building/bundling
         if (argv.dev) {
             console.log("Dev server running...");
         }
