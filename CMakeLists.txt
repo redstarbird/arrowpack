@@ -24,6 +24,7 @@ set(SOURCES
     src/native/bridge/plugins/Plugins.c
     src/native/bridge/JSImportedFunctions.c
     src/native/bridge/Main.c
+    src/native/bridge/NapiBridge.c
 )
 
 
@@ -120,6 +121,8 @@ else()
     message(STATUS "Building Native Node-API target")
 
     add_library(arrowpack_native SHARED ${SOURCES} ${CMAKE_JS_SRC})
+
+    target_include_directories(arrowpack_native PRIVATE ${CMAKE_JS_INC})
 
     set_target_properties(
         arrowpack_native PROPERTIES
