@@ -12,10 +12,10 @@ function createWasmAdapter(wasmModule) {
         backendType: "wasm",
         CheckNative: () => wasmModule.ccall("CheckNative", "number", [], []),
         InitFileTypes: () => wasmModule.ccall("InitFileTypes", null, [], []),
-        InitSettings: (StringifiedJSON) => wasmModule.ccall("InitSettings", "number", ["string"], StringifiedJSON),
+        InitSettings: (StringifiedJSON) => wasmModule.ccall("InitSettings", "number", ["string"], [StringifiedJSON]),
         CreateGraph: () => wasmModule.ccall("CreateGraph", "number", [], []),
-        TopologicalSort: (GraphPtr) => wasmModule.ccall("topological_sort", "number", [], GraphPtr),
-        BundleFiles: (GraphPtr) => wasmModule.ccall("BundleFiles", "number", ["number"], GraphPtr),
+        topological_sort: (GraphPtr) => wasmModule.ccall("topological_sort", "number", [], [GraphPtr]),
+        BundleFiles: (GraphPtr) => wasmModule.ccall("BundleFiles", "number", ["number"], [GraphPtr]),
         RebuildFiles: (GraphPtr, FilePath) => wasmModule.ccall("RebuildFiles", "string", ["number", "string", "number"], [GraphPtr, FilePath, 1])
     };
 }
