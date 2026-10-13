@@ -32,17 +32,19 @@ async function loadNative() {
     but could possibly be in "Release" or "Debug" dir depending on local build process
     */
     const pathOptions = [
-        path.resolve(__dirname, "build/native/arrowpack.node"),
-        path.resolve(__dirname, "build/native/Release/arrowpack.node"),
-        path.resolve(__dirname, "build/native/Debug/arrowpack.node")
+        path.resolve(__dirname, "../../build/native/arrowpack.node"),
+        path.resolve(__dirname, "../../build/native/Release/arrowpack.node"),
+        path.resolve(__dirname, "../../build/native/Debug/arrowpack.node")
     ];
 
     // Attempt to load N-API module from the possibly paths
-    for (let i = 0, len = pathOptions.length; i < len; i++) {
-        if (fs.existsSync(pathOptions[i])) {
+    for (const pathOption of pathOptions) {
+        console.log("Trying path: " + pathOption);
+        if (fs.existsSync(pathOption)) {
             try {
-                const nativeModule = require(pathOptions[i]);
+                const nativeModule = require(pathOption);
                 nativeModule.backendType = "napi";
+                return nativeModule;
             } catch (err) {
                 console.warn("Native N-API module failed to load " + err.message + ". Falling back to WebAssembly...");
             }
