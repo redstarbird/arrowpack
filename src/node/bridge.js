@@ -60,4 +60,4 @@ async function loadNative() {
     throw new Error("Unable to load either the native N-API addon (arrowpack.node) or WASM Module (CFunctions.js)!")
 }
 
-module.exports = { loadNative };
+module.exports = loadNative;
