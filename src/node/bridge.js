@@ -39,7 +39,6 @@ async function loadNative() {
 
     // Attempt to load N-API module from the possibly paths
     for (const pathOption of pathOptions) {
-        console.log("Trying path: " + pathOption);
         if (fs.existsSync(pathOption)) {
             try {
                 const nativeModule = require(pathOption);
