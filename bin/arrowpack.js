@@ -14,15 +14,16 @@ const config = require("../src/node/config.js");
 const DirFunctions = require("../src/node/util/FSUtil.js");
 const CFunctionFactory = require("../build/CFunctions.js");
 const chokidar = require('chokidar');
-const {ArrowDeserialize} = require("../src/node/util/serialize.cjs");
-const {performance} = require('perf_hooks');
+const { ArrowDeserialize } = require("../src/node/util/serialize.cjs");
+const { performance } = require('perf_hooks');
+const loadNativeModule = require("../src/node/bridge.js")
+
 
 // Track the start time to track bundle time
 var StartTime = performance.now();
 
 // Currently unused helper function
-function requireModule(modulePath, exportName)
-{
+function requireModule(modulePath, exportName) {
     try {
         const imported = require(modulePath);
         return exportName ? imported[exportName] : imported;
@@ -32,8 +33,7 @@ function requireModule(modulePath, exportName)
 }
 
 // Returns whether an object is empty or not
-function ObjectIsEmpty(object)
-{
+function ObjectIsEmpty(object) {
     for (var Property in object) {
         if (object.hasOwnProperty(Property))
             return false;
@@ -46,12 +46,12 @@ function ObjectIsEmpty(object)
 const argv =
     require("arrowargs")(process.argv.slice(2))
         .option("c",
-                {alias: "config-path", describe: "Path to config file if not in working directory", type: "string"})
+            { alias: "config-path", describe: "Path to config file if not in working directory", type: "string" })
         .option("dev",
-                {alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false})
-        .option("v", {alias: "version", describe: "Display version information", type: "boolean", default: false})
+            { alias: "dev-server", describe: "Starts the arrowpack dev server", type: "boolean", default: false })
+        .option("v", { alias: "version", describe: "Display version information", type: "boolean", default: false })
         .option("init",
-                {alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false})
+            { alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false })
         .help()
         .argv;
 
@@ -124,8 +124,7 @@ const Settings = new config(rawconfigData);
 const PluginsCache = {};
 
 // Function for transforming files that is called from C code
-function JSTransformFiles(EncodedOriginalContents, PluginPath)
-{
+function JSTransformFiles(EncodedOriginalContents, PluginPath) {
     const OriginalFileContents = CFunctions.UTF8ToString(EncodedOriginalContents);
     PluginPath = CFunctions.UTF8ToString(PluginPath);
 
@@ -150,8 +149,7 @@ function JSTransformFiles(EncodedOriginalContents, PluginPath)
 }
 
 // Function for validating files
-async function JSValidateFiles(FileContents, PluginPath, FilePath)
-{
+async function JSValidateFiles(FileContents, PluginPath, FilePath) {
     // Decode UTF8 string into JS string
     PluginPath = CFunctions.UTF8ToString(PluginPath);
     FilePath = CFunctions.UTF8ToString(FilePath);
@@ -242,14 +240,18 @@ else {
                 // Store start time to track bundling time
                 var StartTime = performance.now();
 
+
+                let nativeModule = loadNativeModule();
+
                 /*
                  * Calls the native C RebuildFiles function from Main.c
-                 * Called via ccall and provided the graph pointer, the path of the changed file, and the number of
+                 * Called via native module abstraction object and provided the graph pointer, the path of the changed file, and the number of
                  * files (currently always 1) This returns a serialised array of files that were modified so that
                  * clients connected to those files can be refreshed
                  */
-                var RebuiltFiles = CFunctions.ccall("RebuildFiles", "string", ["number", "string", "number"],
-                                                    [DependencyGraphPtr, FilePath, 1]);
+                var RebuiltFiles = nativeModule.RebuildFiles(DependencyGraphPtr, FilePath, 1);
+                //var RebuiltFiles = CFunctions.ccall("RebuildFiles", "string", ["number", "string", "number"],
+                //    [DependencyGraphPtr, FilePath, 1]);
 
                 // Deserialise string of changed files
                 RebuiltFiles = ArrowDeserialize(RebuiltFiles);
@@ -258,7 +260,7 @@ else {
                 DevServer.SendUpdatedPage(RebuiltFiles, Settings);
 
                 console.log(chalk.magentaBright("\n\nBundling files completed in " +
-                                                (performance.now() - StartTime) / 1000 + " seconds\n\n"));
+                    (performance.now() - StartTime) / 1000 + " seconds\n\n"));
             });
         }
 
@@ -268,8 +270,7 @@ else {
 }
 
 // Main function for bundling files
-function Bundle()
-{
+function Bundle() {
     // Create temporary directory for temp files
     DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
 
@@ -299,7 +300,7 @@ function Bundle()
         Success = false;
         const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
         Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-                                   [DependencyGraphPtr, ValidateJSFunctionPointer, 2])
+            [DependencyGraphPtr, ValidateJSFunctionPointer, 2])
     }
 
     // Run transformers on the Wasm side if any exist
@@ -308,9 +309,8 @@ function Bundle()
         Success = false;
         TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
         Success = CFunctions.ccall("TransformFiles", "number", ["number", "number"],
-                                   [DependencyGraphPtr, TransformJSFunctionPointer])
-        if (Success !== 1)
-        {
+            [DependencyGraphPtr, TransformJSFunctionPointer])
+        if (Success !== 1) {
             throw "Error transforming files!";
         }
     }
@@ -325,12 +325,12 @@ function Bundle()
     if (!ObjectIsEmpty(Settings.settings.postProcessors)) {
         Success = false;
         Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-                                   [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
+            [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
     }
 
     if (Success === 1 || Success === 0) {
         console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-                                        " seconds\n\n"));
+            " seconds\n\n"));
 
         if (argv.dev) {
             console.log("Dev server running...");
@@ -361,9 +361,8 @@ process.on("SIGINT", () => {
 });
 
 // Deletes the preprocess directory
-function DeletePreprocessDir()
-{
-    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", {recursive: true}, (err) => {
+function DeletePreprocessDir() {
+    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
         if (err) {
             console.error(err);
             return 1;
