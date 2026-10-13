@@ -5,7 +5,7 @@
  */
 
 const loadNativeModule = require("./bridge.js")
-const DirFunctions = require("../src/node/util/FSUtil.js");
+const DirFunctions = require("./util/FSUtil.js");
 const Config = require("./config.js")
 
 async function build(config) {
