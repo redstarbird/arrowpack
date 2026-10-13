@@ -217,8 +217,6 @@ else if (argv.init) {
 else {
     // Runs the main bundler and handles dev server
     (async () => {
-        // Get native module
-        CFunctions = await CFunctionFactory();
 
         // -dev: start dev server, setup file watcher, bundle
         if (argv.dev === true) {
@@ -274,17 +272,18 @@ else {
 * CLI tuned wrapper for the arrowpack API build
 */
 function Bundle() {
-    arrowpack.build();
+    arrowpack.build(Settings.settings).then(() => {
+        console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
+            " seconds\n\n"));
 
-    console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-        " seconds\n\n"));
-
-    if (argv.dev) {
-        console.log("Dev server running...");
+        if (argv.dev) {
+            console.log("Dev server running...");
+        }
+        else {
+            DeletePreprocessDir();
+        }
     }
-    else {
-        DeletePreprocessDir();
-    }
+    )
 }
 
 /*
