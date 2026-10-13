@@ -57,7 +57,7 @@ static napi_value Napi_InitSettings(napi_env env, napi_callback_info info)
 
     // Convert JS JSON string to C string
     char *json = malloc(strSize + sizeof(char));  // Add null terminator
-    status = napi_get_value_string_utf8(env, args[0], json, 0, &strSize);
+    status = napi_get_value_string_utf8(env, args[0], json, strSize + 1, &strSize);
     if (status != napi_ok) {
         // Todo
     }
@@ -87,7 +87,7 @@ static napi_value Napi_CreateGraph(napi_env env, napi_callback_info info)
 
     // napi_external is used to store the raw pointer to the dependency graph
     napi_value result;
-    napi_create_external(env, (void *)&graph, NULL, NULL, &result);
+    napi_create_external(env, (void *)graph, NULL, NULL, &result);
     return result;
 }
 
@@ -148,7 +148,7 @@ static napi_value Napi_RebuildFiles(napi_env env, napi_callback_info info)
     // Alloc with null terminator added (not included from napi_get_value_string_utf8)
     serialisedPaths = (char *)malloc(serialisedPathsLength + sizeof(char));
     // Copy string in serialisedPaths buffer
-    napi_get_value_string_utf8(env, args[1], serialisedPaths, 0, &serialisedPathsLength);
+    napi_get_value_string_utf8(env, args[1], serialisedPaths, serialisedPathsLength + 1, &serialisedPathsLength);
 
     int pathsNum;
     napi_get_value_int32(env, args[2], &pathsNum);
@@ -170,14 +170,14 @@ static napi_value Init(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("InitSettings", Napi_InitSettings),
         DECLARE_NAPI_METHOD("InitFileTypes", Napi_InitFileTypes),
         DECLARE_NAPI_METHOD("CreateGraph", Napi_CreateGraph),
-        DECLARE_NAPI_METHOD("TopologicalSort", Napi_topological_sort),
+        DECLARE_NAPI_METHOD("topological_sort", Napi_topological_sort),
         DECLARE_NAPI_METHOD("BundleFiles", Napi_BundleFiles),
         DECLARE_NAPI_METHOD("RebuildFiles", Napi_RebuildFiles),
     };
 
     size_t propertiesCount = sizeof(properties) / sizeof(properties[0]);
 
-    napi_status status = napi_define_properties(env, exports, propertiesCount, &properties);
+    napi_status status = napi_define_properties(env, exports, propertiesCount, properties);
 
     if (status != napi_ok) {
         // Todo
