@@ -12,7 +12,10 @@ async function build(config) {
     // Preprocess directory
     DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
 
-    let nativeModule = await loadNativeModule();
+    config = new Config(config);
+
+
+    let nativeModule = await loadNativeModule(config);
 
     /*
     * Check that native functions can be called correctly.
@@ -28,11 +31,10 @@ async function build(config) {
 
 
     /* 
-    * Creates config and sends it to the native side.
-    InitSettings is declared in `src/native/config.h` and takes a string version of the internal config JSON,
-    this is then parsed by the external cJSON library and turned into a cJSON object using `cJSON_Parse`.
+    * Sends config to native side as stringified JSON.
+    * InitSettings is declared in `src/native/config.h` and takes a string version of the internal config JSON,
+    * this is then parsed by the external cJSON library and turned into a cJSON object using `cJSON_Parse`.
     */
-    config = new Config(config);
     const ConfigStr = JSON.stringify(config.settings)
     if (!nativeModule.InitSettings(ConfigStr)) {
         // Todo Handle error

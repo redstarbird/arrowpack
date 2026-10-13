@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const config = require("./config.js");
 
 // Stores the current native module instance, null until the first call of `loadNative`
 let nativeInstance = null;
@@ -22,7 +23,7 @@ function createWasmAdapter(wasmModule) {
 
 // Returns an abstracted interfact to the internal native module
 // This will either use a N-API (default) or Wasm (fallback) module under the hood
-async function loadNative() {
+async function loadNative(config) {
     if (nativeInstance) {
         return nativeInstance;
     }
@@ -37,15 +38,17 @@ async function loadNative() {
         path.resolve(__dirname, "../../build/native/Debug/arrowpack.node")
     ];
 
-    // Attempt to load N-API module from the possibly paths
-    for (const pathOption of pathOptions) {
-        if (fs.existsSync(pathOption)) {
-            try {
-                const nativeModule = require(pathOption);
-                nativeModule.backendType = "napi";
-                return nativeModule;
-            } catch (err) {
-                console.warn("Native N-API module failed to load " + err.message + ". Falling back to WebAssembly...");
+    // Attempt to load N-API module from the possible paths
+    if (!config.getValue("forceWasm")) {
+        for (const pathOption of pathOptions) {
+            if (fs.existsSync(pathOption)) {
+                try {
+                    const nativeModule = require(pathOption);
+                    nativeModule.backendType = "napi";
+                    return nativeModule;
+                } catch (err) {
+                    console.warn("Native N-API module failed to load " + err.message + ". Falling back to WebAssembly...");
+                }
             }
         }
     }
