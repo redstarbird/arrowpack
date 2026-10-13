@@ -17,6 +17,7 @@ const chokidar = require('chokidar');
 const { ArrowDeserialize } = require("../src/node/util/serialize.cjs");
 const { performance } = require('perf_hooks');
 const loadNativeModule = require("../src/node/bridge.js")
+const arrowpack = require("../src/node/index.js");
 
 
 // Track the start time to track bundle time
@@ -269,6 +270,24 @@ else {
     })();
 }
 
+/*
+* CLI tuned wrapper for the arrowpack API build
+*/
+function Bundle() {
+    arrowpack.build();
+
+    console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
+        " seconds\n\n"));
+
+    if (argv.dev) {
+        console.log("Dev server running...");
+    }
+    else {
+        DeletePreprocessDir();
+    }
+}
+
+/*
 // Main function for bundling files
 function Bundle() {
     // Create temporary directory for temp files
@@ -329,9 +348,6 @@ function Bundle() {
     }
 
     if (Success === 1 || Success === 0) {
-        console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-            " seconds\n\n"));
-
         if (argv.dev) {
             console.log("Dev server running...");
         }
@@ -339,7 +355,7 @@ function Bundle() {
             DeletePreprocessDir();
         }
     }
-}
+}*/
 
 /* Preprocess directory cleanup */
 
