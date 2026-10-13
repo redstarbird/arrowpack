@@ -25,6 +25,7 @@
 		"url": "https://github.com/redstarbird/arrowpack.git"
 	},
 	"scripts": {
+		"install": "cmake-js compile || echo 'Native N-API module not built, using WebAssembly fallback build. This will result in degraded performance.'",
 		"build:native:release": "cmake-js build --out build/native",
 		"build:native:debug": "cmake-js build --debug --out build/native",
 		"build:wasm:release": "emcmake cmake -B build/wasm -DCMAKE_BUILD_TYPE=Release && cmake --build build/wasm",
