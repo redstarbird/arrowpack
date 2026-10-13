@@ -43,10 +43,11 @@ async function loadNative(config) {
         for (const pathOption of pathOptions) {
             if (fs.existsSync(pathOption)) {
                 try {
-                    const nativeModule = require(pathOption);
-                    nativeModule.backendType = "napi";
-                    return nativeModule;
+                    nativeInstance = require(pathOption);
+                    nativeInstance.backendType = "napi";
+                    return nativeInstance;
                 } catch (err) {
+                    nativeInstance = null;
                     console.warn("Native N-API module failed to load " + err.message + ". Falling back to WebAssembly...");
                 }
             }
@@ -58,7 +59,8 @@ async function loadNative(config) {
     if (fs.existsSync(WasmJSPath)) {
         const WasmModuleFactory = require(WasmJSPath);
         const WasmModule = await WasmModuleFactory();
-        return createWasmAdapter(WasmModule);
+        nativeInstance = createWasmAdapter(WasmModule);
+        return nativeInstance;
     }
 
     throw new Error("Unable to load either the native N-API addon (arrowpack.node) or WASM Module (CFunctions.js)!")
