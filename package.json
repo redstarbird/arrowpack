@@ -18,7 +18,9 @@
 		"*.js",
 		"src/node",
 		"build/wasm/CFunctions.js",
-		"build/wasm/CFunctions.wasm"
+		"build/wasm/CFunctions.wasm",
+		"src/native/**/*.c",
+		"src/native/**/*.h"
 	],
 	"repository": {
 		"type": "git",

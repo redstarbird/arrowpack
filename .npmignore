@@ -1,5 +1,3 @@
-src/native
-*.c
 *.go
 *.py
 # Binaries for programs and plugins
@@ -43,3 +41,4 @@ build/*
 build/wasm/*
 !build/wasm/CFunctions.js
 !build/wasm/CFunctions.wasm
+
