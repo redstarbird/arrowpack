@@ -11,9 +11,9 @@
 #    include <node_api.h>
 #    include <stdlib.h>
 
+#    include "../codegen/BundleFiles.h"
 #    include "../config.h"
 #    include "../graph/DependencyGraph.h"
-#    include "BundleFiles.h"
 
 // Macro for declaring a napi method in a `napi_property_descriptor` struct
 #    define DECLARE_NAPI_METHOD(name, function) {name, NULL, function, NULL, NULL, NULL, napi_default, NULL}
