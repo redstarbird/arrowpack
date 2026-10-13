@@ -16,9 +16,9 @@
 	"files": [
 		"bin",
 		"*.js",
-		"src/js",
-		"src/SettingsSingleton/SettingsSingleton.js",
-		"build/CFunctions.wasm"
+		"src/node",
+		"build/wasm/CFunctions.js",
+		"build/wasm/CFunctions.wasm"
 	],
 	"repository": {
 		"type": "git",

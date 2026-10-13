@@ -1,5 +1,4 @@
-src/C
-src/go
+src/native
 *.c
 *.go
 *.py
@@ -37,11 +36,10 @@ packages/*/lib
 .idea
 desktop.ini
 
-# PCRE2 temp build directory
-packages/ArrowPack/pcre2tempbuild
-
 # Ignore build directory expect for the built Wasm/JS module
-build
+build/*
 
-!build/CFunctions.js
-!build/CFunctions.wasm
+!build/wasm
+build/wasm/*
+!build/wasm/CFunctions.js
+!build/wasm/CFunctions.wasm
