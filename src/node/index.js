@@ -44,7 +44,7 @@ async function build(config) {
     * dependencies and dependents within the graph.
     * createGraph is declared in `src/native/graph/DependencyGraph.h` and defined in `src/native/graph/DependencyGraph.c`
     */
-    let dependencyGraphPtr = nativeModule.createGraph();
+    let dependencyGraphPtr = nativeModule.CreateGraph();
 
     /*
     * Topologically sort the graph to find the order in which files need to be built/bundled.
@@ -57,7 +57,7 @@ async function build(config) {
     * Main build/codegen step.
     * Concatenates files together, mutates final files, and saves them to disk.
     */
-    let success = nativeModule.bundleFiles(dependencyGraphPtr);
+    let success = nativeModule.BundleFiles(dependencyGraphPtr);
 
     if (!success) {
         // Todo handle error
