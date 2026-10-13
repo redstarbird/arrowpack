@@ -32,8 +32,8 @@ async function build(config) {
     InitSettings is declared in `src/native/config.h` and takes a string version of the internal config JSON,
     this is then parsed by the external cJSON library and turned into a cJSON object using `cJSON_Parse`.
     */
-    config = Config(config);
-    const ConfigStr = JSON.stringify(Settings.settings)
+    config = new Config(config);
+    const ConfigStr = JSON.stringify(config.settings)
     if (!nativeModule.InitSettings(ConfigStr)) {
         // Todo Handle error
     }
