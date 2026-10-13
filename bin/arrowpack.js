@@ -53,6 +53,8 @@ const argv =
         .option("v", { alias: "version", describe: "Display version information", type: "boolean", default: false })
         .option("init",
             { alias: "initialize", describe: "Initialize arrowpack in a project", type: "boolean", default: false })
+        .option("forceWasm",
+            { describe: "Force usage of the native Wasm module instead of the default N-API module.", type: "boolean", default: false })
         .help()
         .argv;
 
@@ -102,6 +104,10 @@ if (CONFIG_FILE_NAME !== "") {
 }
 else {
     rawconfigData = {};
+}
+
+if (argv.forceWasm) {
+    rawconfigData["forceWasm"] = true;
 }
 
 // Configure internal settings
