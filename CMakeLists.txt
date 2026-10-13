@@ -22,7 +22,6 @@ set(SOURCES
     src/native/minify/JSMinifier.c
     src/native/bridge/plugins/Transform.c
     src/native/bridge/plugins/Plugins.c
-    src/native/bridge/JSImportedFunctions.c
     src/native/bridge/Main.c
     src/native/bridge/NapiBridge.c
 )
@@ -52,8 +51,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     target_link_options(CFunctions PRIVATE
         # The C source does not contain a "main" entry point (build as a library)
         "--no-entry"
-        # Plugin JS functions that can be called from C
-        "--js-library" "${CMAKE_CURRENT_SOURCE_DIR}/src/node/misc/JSCLibrary.js"
         # Allow for addFunction to be used at runtime to dynamically create C function pointers
         "-sALLOW_TABLE_GROWTH=1"
         # Optimise built JS for node.js (remove browser-specific code)
