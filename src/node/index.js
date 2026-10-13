@@ -12,14 +12,14 @@ async function build(config) {
     // Preprocess directory
     DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
 
-    let nativeModule = loadNativeModule();
+    let nativeModule = await loadNativeModule();
 
     /*
     * Check that native functions can be called correctly.
     * checkNative returns 42 to ensure that values are 
     * properly being translated between JS and C.
     */
-    if (nativeModule.checkNative() != 42) {
+    if (nativeModule.CheckNative() != 42) {
         throw new Error("Unable to communicate correctly with native module!");
     }
 
