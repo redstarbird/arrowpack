@@ -37,7 +37,7 @@ async function build(config) {
     */
     const ConfigStr = JSON.stringify(config.settings)
     if (!nativeModule.InitSettings(ConfigStr)) {
-        // Todo Handle error
+        throw new Error("Unable to initialise internal config!");
     }
 
     /*
@@ -62,7 +62,7 @@ async function build(config) {
     let success = nativeModule.BundleFiles(dependencyGraphPtr);
 
     if (!success) {
-        // Todo handle error
+        throw new Error("An error occured when attempting to bundle files!");
     }
 }
 
