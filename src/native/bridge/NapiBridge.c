@@ -59,26 +59,19 @@ static void ThrowNapiError(napi_env env, napi_status status)
     }
 }
 
-// Macro for N-API call that will handle errors
-#    define NAPI_CALL(env, call)             \
-        do {                                 \
-            napi_status status = (call);     \
-            if (status != napi_ok) {         \
-                ThrowNapiError(env, status); \
-                return NULL;                 \
-            }                                \
-        } while (0)
-
 // Macro for N-API call that will handle errors and perform a cleanup operation in case of an error
 #    define NAPI_CALL_CLEANUP(env, call, cleanup) \
         do {                                      \
             napi_status status = (call);          \
             if (status != napi_ok) {              \
                 ThrowNapiError(env, status);      \
-                (cleanup);                        \
+                cleanup;                          \
                 return NULL;                      \
             }                                     \
         } while (0)
+
+// Macro for N-API call that will handle errors
+#    define NAPI_CALL(env, call) NAPI_CALL_CLEANUP(env, call, (void)0)
 
 #    define NAPI_ASSERT_ARGC(env, actual, expected)                                                     \
         do {                                                                                            \
