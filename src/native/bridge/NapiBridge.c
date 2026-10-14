@@ -92,7 +92,7 @@ static void ThrowNapiError(napi_env env, napi_status status)
 // Declarations from Main.c
 extern char *RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles, int FilesNum);
 extern bool InitSettings(char *JSON);
-extern int CheckNative();
+extern int CheckNative(void);
 
 static napi_value Napi_CheckNative(napi_env env, napi_callback_info info)
 {
