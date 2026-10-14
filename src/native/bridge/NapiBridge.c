@@ -18,6 +18,76 @@
 // Macro for declaring a napi method in a `napi_property_descriptor` struct
 #    define DECLARE_NAPI_METHOD(name, function) {name, NULL, function, NULL, NULL, NULL, napi_default, NULL}
 
+static void ThrowNapiError(napi_env env, napi_status status)
+{
+
+    // Get error message from env or use generic fallback message instead
+    const napi_extended_error_info *error_info = NULL;
+    napi_get_last_error_info(env, &error_info);
+    const char *msg = (error_info == NULL || error_info->error_message == NULL) ? "Error occurred during N-API call."
+                                                                                : error_info->error_message;
+
+    /*
+     * Check that an exception is not already pending/in progress.
+     This must be called after napi_get_last_error_info as it returns a n-api status which overwrites any errors.
+     */
+    bool exceptionPending = false;
+    napi_is_exception_pending(env, &exceptionPending);
+    if (exceptionPending) {
+        return;
+    }
+
+    // Throw type error if the error is a type error otherwise throw a general error
+    switch (status) {
+    case napi_invalid_arg:
+    case napi_object_expected:
+    case napi_string_expected:
+    case napi_name_expected:
+    case napi_function_expected:
+    case napi_number_expected:
+    case napi_boolean_expected:
+    case napi_array_expected:
+    case napi_bigint_expected:
+    case napi_date_expected:
+    case napi_arraybuffer_expected:
+    case napi_detachable_arraybuffer_expected:
+        napi_throw_type_error(env, NULL, msg);
+        break;
+    default:
+        napi_throw_error(env, NULL, msg);
+        break;
+    }
+}
+
+// Macro for N-API call that will handle errors
+#    define NAPI_CALL(env, call)             \
+        do {                                 \
+            napi_status status = (call);     \
+            if (status != napi_ok) {         \
+                ThrowNapiError(env, status); \
+                return NULL;                 \
+            }                                \
+        } while (0)
+
+// Macro for N-API call that will handle errors and perform a cleanup operation in case of an error
+#    define NAPI_CALL_CLEANUP(env, call, cleanup) \
+        do {                                      \
+            napi_status status = (call);          \
+            if (status != napi_ok) {              \
+                ThrowNapiError(env, status);      \
+                (cleanup);                        \
+                return NULL;                      \
+            }                                     \
+        } while (0)
+
+#    define NAPI_ASSERT_ARGC(env, actual, expected)                                                     \
+        do {                                                                                            \
+            if ((actual) != (expected)) {                                                               \
+                napi_throw_type_error((env), NULL, "Incorrect number of arguments to N-API function."); \
+                return NULL;                                                                            \
+            }                                                                                           \
+        } while (0)
+
 
 // Declarations from Main.c
 extern char *RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles, int FilesNum);
@@ -28,7 +98,7 @@ static napi_value Napi_CheckNative(napi_env env, napi_callback_info info)
 {
     int result = CheckNative();
     napi_value ret;
-    napi_create_int32(env, (int32_t)result, &ret);
+    NAPI_CALL(env, napi_create_int32(env, (int32_t)result, &ret));
 
     return ret;
 }
@@ -40,37 +110,29 @@ static napi_value Napi_InitSettings(napi_env env, napi_callback_info info)
 
     napi_value args[1];
 
-    napi_status status;
-
-    status = napi_get_cb_info(env, info, &argc, args, NULL, NULL);
-
-    if (status != napi_ok) {
-        // Todo
-    }
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
+    NAPI_ASSERT_ARGC(env, argc, 1);
 
     // Get size of JSON string
     size_t strSize;
-    status = napi_get_value_string_utf8(env, args[0], NULL, 0, &strSize);
-    if (status != napi_ok) {
-        // Todo
-    }
+    NAPI_CALL(env, napi_get_value_string_utf8(env, args[0], NULL, 0, &strSize));
+
 
     // Convert JS JSON string to C string
     char *json = malloc(strSize + sizeof(char));  // Add null terminator
-    status = napi_get_value_string_utf8(env, args[0], json, strSize + 1, &strSize);
-    if (status != napi_ok) {
-        // Todo
+    if (json == NULL) {
+        napi_throw_error(env, NULL, "Failed to allocate memory!");
+        return NULL;
     }
+    NAPI_CALL_CLEANUP(env, napi_get_value_string_utf8(env, args[0], json, strSize + 1, &strSize), free(json));
 
     bool success = InitSettings(json);
     free(json);
 
     // Create JS boolean to return
     napi_value ret;
-    status = napi_get_boolean(env, success, &ret);
-    if (status != napi_ok) {
-        // Todo
-    }
+    NAPI_CALL(env, napi_get_boolean(env, success, &ret));
+
 
     return ret;
 }
@@ -87,7 +149,7 @@ static napi_value Napi_CreateGraph(napi_env env, napi_callback_info info)
 
     // napi_external is used to store the raw pointer to the dependency graph
     napi_value result;
-    napi_create_external(env, (void *)graph, NULL, NULL, &result);
+    NAPI_CALL(env, napi_create_external(env, (void *)graph, NULL, NULL, &result));
     return result;
 }
 
@@ -98,10 +160,11 @@ static napi_value Napi_topological_sort(napi_env env, napi_callback_info info)
 
     napi_value args[1];
 
-    napi_get_cb_info(env, info, &argc, args, NULL, NULL);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
+    NAPI_ASSERT_ARGC(env, argc, 1);
 
     struct Graph *graph;
-    napi_get_value_external(env, args[0], (void **)&graph);
+    NAPI_CALL(env, napi_get_value_external(env, args[0], (void **)&graph));
 
     topological_sort(graph);
 
@@ -114,16 +177,17 @@ static napi_value Napi_BundleFiles(napi_env env, napi_callback_info info)
     size_t argc = 1;
     napi_value args[1];
 
-    napi_get_cb_info(env, info, &argc, args, NULL, NULL);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
+    NAPI_ASSERT_ARGC(env, argc, 1);
 
     struct Graph *graph;
-    napi_get_value_external(env, args[0], (void **)&graph);
+    NAPI_CALL(env, napi_get_value_external(env, args[0], (void **)&graph));
 
     bool success = BundleFiles(graph);
 
     // Return success as a JS boolean
     napi_value ret;
-    napi_get_boolean(env, success, &ret);
+    NAPI_CALL(env, napi_get_boolean(env, success, &ret));
 
     return ret;
 }
@@ -135,29 +199,57 @@ static napi_value Napi_RebuildFiles(napi_env env, napi_callback_info info)
     napi_value args[3];
 
     // Get C value from JS napi_values
-    napi_get_cb_info(env, info, &argc, args, NULL, NULL);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
+    NAPI_ASSERT_ARGC(env, argc, 3);
 
     struct Graph *graph;
-    napi_get_value_external(env, args[0], (void **)&graph);
+    NAPI_CALL(env, napi_get_value_external(env, args[0], (void **)&graph));
 
+    // Get pathsNum from arguments and validate
+    int32_t pathsNum;
+    NAPI_CALL(env, napi_get_value_int32(env, args[2], &pathsNum));
+    if (pathsNum < 0) {
+        napi_throw_range_error(env, NULL, "Number of file paths to rebuild cannot be negative!");
+        return NULL;
+    }
+
+    /*
+     * Get serialisedPaths from string napi_value
+     */
     char *serialisedPaths;
     size_t serialisedPathsLength;
+
     // Get size of serialised path string
-    napi_get_value_string_utf8(env, args[1], NULL, 0, &serialisedPathsLength);
+    NAPI_CALL(env, napi_get_value_string_utf8(env, args[1], NULL, 0, &serialisedPathsLength));
+
     // Alloc with null terminator added (not included from napi_get_value_string_utf8)
     serialisedPaths = (char *)malloc(serialisedPathsLength + sizeof(char));
-    // Copy string in serialisedPaths buffer
-    napi_get_value_string_utf8(env, args[1], serialisedPaths, serialisedPathsLength + 1, &serialisedPathsLength);
+    if (serialisedPaths == NULL) {
+        napi_throw_error(env, NULL, "Failed to allocate memory!");
+        return NULL;
+    }
 
-    int pathsNum;
-    napi_get_value_int32(env, args[2], &pathsNum);
+    // Copy string in serialisedPaths buffer
+    NAPI_CALL_CLEANUP(
+        env,
+        napi_get_value_string_utf8(env, args[1], serialisedPaths, serialisedPathsLength + 1, &serialisedPathsLength),
+        free(serialisedPaths));
 
     char *retPaths = RebuildFiles(graph, serialisedPaths, pathsNum);
+    free(serialisedPaths);
 
-    // Return success as JS boolean
+    /*
+     * RebuildFiles cannot currently return NULL but it is safer to check anyway incase this is changed in future.
+     */
+    if (retPaths == NULL) {
+        napi_throw_error(env, NULL, "RebuildFiles failed (returned NULL)!");
+        return NULL;
+    }
+
+    // Return serialised array of strings representing modified files
     napi_value ret;
-    napi_create_string_utf8(env, retPaths, strlen(retPaths), &ret);
+    NAPI_CALL_CLEANUP(env, napi_create_string_utf8(env, retPaths, NAPI_AUTO_LENGTH, &ret), free(retPaths));
+    free(retPaths);
     return ret;
 }
 
@@ -177,11 +269,7 @@ static napi_value Init(napi_env env, napi_value exports)
 
     size_t propertiesCount = sizeof(properties) / sizeof(properties[0]);
 
-    napi_status status = napi_define_properties(env, exports, propertiesCount, properties);
-
-    if (status != napi_ok) {
-        // Todo
-    }
+    NAPI_CALL(env, napi_define_properties(env, exports, propertiesCount, properties));
 
     return exports;
 }
