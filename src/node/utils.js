@@ -6,7 +6,7 @@
  */
 function isPlainObject(value) {
     // Check if its even an object
-    if (typeof value !== object || object == null) {
+    if (typeof value !== Object || value == null) {
         return false;
     }
 
