@@ -13,11 +13,11 @@ const chalk = require("chalk");
 const config = require("../src/node/config.js");
 const DirFunctions = require("../src/node/util/FSUtil.js");
 const CFunctionFactory = require("../build/wasm/CFunctions.js");
-const chokidar = require('chokidar');
 const { ArrowDeserialize } = require("../src/node/util/serialize.cjs");
 const { performance } = require('perf_hooks');
 const loadNativeModule = require("../src/node/bridge.js")
 const arrowpack = require("../src/node/index.js");
+const { settings } = require("cluster");
 
 
 // Track the start time to track bundle time
@@ -221,39 +221,53 @@ else if (argv.init) {
     initialise();
 }
 else {
+
     // Runs the main bundler and handles dev server
     (async () => {
 
-        // -dev: start dev server, setup file watcher, bundle
-        if (argv.dev === true) {
+        // -dev: start dev server, this will automatically bundle when the server initially starts
+        if (argv.dev) {
             console.log("Entering dev mode");
 
+            const server = await arrowpack.createServer(Settings.settings);
+
+            // Handle clean shutdown of server upon Ctrl + C
+            process.on("SIGINT", async () => {
+                console.log("Stopping dev server...");
+                await server.stop();
+                process.exit(0);
+            })
+
+            /* 
+            
             // Start the static HTTP dev server
             const DevServer = require("../src/node/server/DevServer.js");
             DevServer.StartServer(Settings);
 
             // Watch file system of CWD
-            const watcher = chokidar.watch(Settings.getValue("entry"));
+            const watcher = chokidar.watch(Settings.getValue("entry"), { usePolling: true, ignoreInitial: true, persistent: true });
+
+            console.log("Watching: " + Settings.getValue("entry"));
 
             /**
              * When files are changed, rebuild the changed file and its dependents, then send the updated page to all
              * connected clients
-             */
-            watcher.on("change", (FilePath) => {
+             
+            watcher.on("change", async (FilePath) => {
                 console.log("File " + FilePath + " has changed, rebuilding...");
 
                 // Store start time to track bundling time
                 var StartTime = performance.now();
 
 
-                let nativeModule = loadNativeModule();
+                let nativeModule = await loadNativeModule(Settings);
 
-                /*
+                
                  * Calls the native C RebuildFiles function from Main.c
                  * Called via native module abstraction object and provided the graph pointer, the path of the changed file, and the number of
                  * files (currently always 1) This returns a serialised array of files that were modified so that
                  * clients connected to those files can be refreshed
-                 */
+                 
                 var RebuiltFiles = nativeModule.RebuildFiles(DependencyGraphPtr, FilePath, 1);
                 //var RebuiltFiles = CFunctions.ccall("RebuildFiles", "string", ["number", "string", "number"],
                 //    [DependencyGraphPtr, FilePath, 1]);
@@ -267,32 +281,25 @@ else {
                 console.log(chalk.magentaBright("\n\nBundling files completed in " +
                     (performance.now() - StartTime) / 1000 + " seconds\n\n"));
             });
+                */
+        } else {
+            await Bundle();
         }
-
-        // Call main bundle logic, this happens in normal execution and in dev mode
-        Bundle();
     })();
 }
 
 /*
 * CLI wrapper for the arrowpack API build function
 */
-function Bundle() {
-    arrowpack.build(Settings.settings).then(() => {
+async function Bundle() {
+    // Store start time to track bundling time
+    var StartTime = performance.now();
 
-        // Output bundling time
-        console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-            " seconds\n\n"));
+    await arrowpack.build(Settings.settings)
 
-        // If the dev server is not running, remove the preprocess directory after building/bundling
-        if (argv.dev) {
-            console.log("Dev server running...");
-        }
-        else {
-            DeletePreprocessDir();
-        }
-    }
-    )
+    // Output bundling time
+    console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
+        " seconds\n\n"));
 }
 
 /*

@@ -7,13 +7,22 @@
 const loadNativeModule = require("./bridge.js")
 const DirFunctions = require("./util/FSUtil.js");
 const Config = require("./config.js")
+const DevServer = require("./server/DevServer.js");
+const { isPlainObject } = require("./utils.js");
 
-async function build(config) {
+/**
+ * Reusable helper function that actually builds the project. This is called in both `build` and `createServer`.
+ * 
+ * Creates the temporary preprocess directory, initialising config class from JSON, connects to the native module, 
+ * sets up native structures, resolves depedencies, 
+ * @param {Config} config 
+ * @returns Object containing config instance, native module, and dependency graph pointer
+ */
+async function buildProject(config) {
     // Preprocess directory
-    DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
+    DirFunctions.mkdirIfNotExists("ARROWPACKk_TEMP_PREPROCESS_DIR");
 
     config = new Config(config);
-
 
     let nativeModule = await loadNativeModule(config);
 
@@ -28,7 +37,6 @@ async function build(config) {
 
     // Initialise internal C data-structure for handling different file types
     nativeModule.InitFileTypes();
-
 
     /* 
     * Sends config to native side as stringified JSON.
@@ -64,6 +72,43 @@ async function build(config) {
     if (!success) {
         throw new Error("An error occured when attempting to bundle files!");
     }
+
+    return {
+        config,
+        nativeModule,
+        dependencyGraphPtr
+    }
 }
 
-module.exports = { build: build };
+/**
+ * Runs a single one-off build of the project.
+ * @param {Object} config Arrowpack configuration object.
+ */
+async function build(config) {
+    await buildProject(config);
+}
+
+/**
+ * Performs an initial build and creates a DevServer instance.
+ * 
+ * @param {Object} config Arrowpack JSON configuration object
+ * @returns {Promise<DevServer>}
+ */
+async function createServer(config) {
+
+    const devConfig = config;
+
+
+    devConfig["productionMode"] = false;
+
+    let BundleContext = await buildProject(devConfig);
+
+    const server = new DevServer(BundleContext);
+
+    await server.start();
+
+    return server;
+
+}
+
+module.exports = { build, createServer, DevServer };
