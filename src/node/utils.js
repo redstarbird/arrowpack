@@ -15,4 +15,18 @@ function isPlainObject(value) {
     return (prototype === null || prototype === Object.prototype);
 }
 
-module.exports = { isPlainObject }
+/**
+ * Returns whether an object is empty or not
+ * @param {Object} object 
+ * @returns {boolean}
+ */
+function isObjectEmpty(object) {
+    for (var Property in object) {
+        if (object.hasOwnProperty(Property)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+module.exports = { isPlainObject, isObjectEmpty }

@@ -14,15 +14,6 @@ const Config = require("../src/node/config.js");
 const { performance } = require('perf_hooks');
 const arrowpack = require("../src/node/index.js");
 
-// Returns whether an object is empty or not
-function ObjectIsEmpty(object) {
-    for (var Property in object) {
-        if (object.hasOwnProperty(Property))
-            return false;
-    }
-    return true;
-}
-
 /**
  * Parses the command line arguments into an object
  * @returns Object containing valid command line arguments
