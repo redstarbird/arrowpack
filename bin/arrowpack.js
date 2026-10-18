@@ -11,13 +11,8 @@ const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
 const config = require("../src/node/config.js");
-const DirFunctions = require("../src/node/util/FSUtil.js");
-const CFunctionFactory = require("../build/wasm/CFunctions.js");
-const { ArrowDeserialize } = require("../src/node/util/serialize.cjs");
 const { performance } = require('perf_hooks');
-const loadNativeModule = require("../src/node/bridge.js")
 const arrowpack = require("../src/node/index.js");
-const { settings } = require("cluster");
 
 
 // Track the start time to track bundle time
