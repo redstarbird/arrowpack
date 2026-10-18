@@ -10,23 +10,9 @@
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const config = require("../src/node/config.js");
+const Config = require("../src/node/config.js");
 const { performance } = require('perf_hooks');
 const arrowpack = require("../src/node/index.js");
-
-
-// Track the start time to track bundle time
-var StartTime = performance.now();
-
-// Currently unused helper function
-function requireModule(modulePath, exportName) {
-    try {
-        const imported = require(modulePath);
-        return exportName ? imported[exportName] : imported;
-    } catch (err) {
-        return err.code;
-    }
-}
 
 // Returns whether an object is empty or not
 function ObjectIsEmpty(object) {
@@ -37,10 +23,12 @@ function ObjectIsEmpty(object) {
     return true;
 }
 
-
-// Parse command line arguments
-const argv =
-    require("arrowargs")(process.argv.slice(2))
+/**
+ * Parses the command line arguments into an object
+ * @returns Object containing valid command line arguments
+ */
+function parseArgs() {
+    return require("arrowargs")(process.argv.slice(2))
         .option("c",
             { alias: "config-path", describe: "Path to config file if not in working directory", type: "string" })
         .option("dev",
@@ -52,75 +40,168 @@ const argv =
             { describe: "Force usage of the native Wasm module instead of the default N-API module.", type: "boolean", default: false })
         .help()
         .argv;
-
-
-/**
- * Handle config file
- */
+}
 
 /**
- * Get configuration file path
- * If the -c argument is used, use it for the configuration file path.
- * If the provided path is a directory, add the config file name to the end
+ * Finds and loads the config file into a Config class instance. Validates keys and modifies the config based on command line arguments.
+ * @param {Object} argv command line arguments parsed by ArrowArgs
+ * @returns {Config} configured config object
  */
-var CONFIG_FILE_NAME = "arrowpack.config.js";
-if (argv.c) {
-    if (fs.lstatSync(argv.c).isDirectory()) {
-        CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME);
+function createConfig(argv) {
+    /**
+     * Get configuration file path
+     * If the -c argument is used, use it for the configuration file path.
+     * If the provided path is a directory, add the config file name to the end
+     */
+    var CONFIG_FILE_NAME = "arrowpack.config.js";
+    if (argv.c) {
+        if (fs.lstatSync(argv.c).isDirectory()) {
+            CONFIG_FILE_NAME = path.join(argv.c, CONFIG_FILE_NAME);
+        }
+        else {
+            CONFIG_FILE_NAME = argv.c;
+        }
+    }
+
+    /*
+    * Find the config file
+    * Attempt to find the config file with either .mjs or .cjs extension if the .js version cannot be found
+    */
+    var rawconfigData = null;
+    if (!fs.existsSync(CONFIG_FILE_NAME)) {
+        var CJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".cjs";
+        var EMJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".mjs";
+        if (fs.existsSync(CJSName)) {
+            CONFIG_FILE_NAME = CJSName;
+        }
+        else if (fs.existsSync(EMJSName)) {
+            CONFIG_FILE_NAME = EMJSName;
+        }
+        else {
+            CONFIG_FILE_NAME = "";
+        }
+    }
+
+    // Get config file data otherwise use an empty object so the config object inherits default values
+    if (CONFIG_FILE_NAME !== "") {
+        CONFIG_FILE_NAME = path.join(process.cwd(), CONFIG_FILE_NAME);
+        rawconfigData = require(CONFIG_FILE_NAME);
     }
     else {
-        CONFIG_FILE_NAME = argv.c;
+        rawconfigData = {};
+    }
+
+    if (argv.forceWasm) {
+        rawconfigData["forceWasm"] = true;
+    }
+
+    // Configure internal settings
+    if (argv.c) {
+        if (!argv.c.endsWith("/")) {
+            argv.c += "/";
+        }
+        rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c;
+        rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c)
+    }
+
+    // Initialize settings singleton
+    return new Config(rawconfigData);
+}
+
+async function runCLI() {
+    // Parse command line arguments
+    const argv = parseArgs();
+
+    // Get config object
+    const config = createConfig(argv);
+
+    /* Handle bundler execution based on command line arguments */
+
+    // v: print version and terminate
+    if (argv.v) {
+        const version = require("../package.json").version;
+        console.log(version);
+    }
+    // init: initialise directory for arrowpack
+    else if (argv.init) {
+        const initialise = require("../src/node/initialise.js");
+        initialise();
+    }
+    // dev: start dev server, this will automatically bundle when the server initially starts
+    else if (argv.dev) {
+        console.log("Entering dev mode");
+
+        const server = await arrowpack.createServer(config.settings);
+
+        // Handle clean shutdown of server upon Ctrl + C
+        process.on("SIGINT", async () => {
+            console.log("Stopping dev server...");
+            await server.stop();
+            process.exit(0);
+        })
+    }
+    // Standard control flow, one-off bundle
+    else {
+        await Bundle(config);
     }
 }
+
+/** 
+* CLI wrapper for the arrowpack API build function
+* @param {Config} config arrowpack configuration object from `runCLI`
+*/
+async function Bundle(config) {
+    // Store start time to track bundling time
+    var StartTime = performance.now();
+
+    await arrowpack.build(config.settings)
+
+    // Output bundling time
+    console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
+        " seconds\n\n"));
+}
+
+/* Preprocess directory cleanup */
+
+// Delete the preprocess directory on sigterm
+process.on("SIGTERM", () => {
+    print("Exiting due to SIGTERM, deleting temp directory...");
+    DeletePreprocessDir();
+})
+
+// Delete the preprocess directory on exit
+process.on("exit", () => {
+    DeletePreprocessDir();
+});
+
+// Delete the preprocess directory on force stop from user
+process.on("SIGINT", () => {
+    var DelResult = DeletePreprocessDir();
+    process.exit(DelResult);
+});
+
+// Deletes the preprocess directory
+function DeletePreprocessDir() {
+    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
+        if (err) {
+            console.error(err);
+            return 1;
+        }
+        else {
+            console.log("Sucessfully removed temporary preprocess directory");
+        }
+        return 0;
+    });
+}
+
+runCLI();
 
 /*
- * Find the config file
- * Attempt to find the config file with either .mjs or .cjs extension if the .js version cannot be found
- */
-var rawconfigData = null;
-if (!fs.existsSync(CONFIG_FILE_NAME)) {
-    var CJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".cjs";
-    var EMJSName = CONFIG_FILE_NAME.substring(0, CONFIG_FILE_NAME.length - 3) + ".mjs";
-    if (fs.existsSync(CJSName)) {
-        CONFIG_FILE_NAME = CJSName;
-    }
-    else if (fs.existsSync(EMJSName)) {
-        CONFIG_FILE_NAME = EMJSName;
-    }
-    else {
-        CONFIG_FILE_NAME = "";
-    }
-}
-
-// Get config file data
-if (CONFIG_FILE_NAME !== "") {
-    CONFIG_FILE_NAME = path.join(process.cwd(), CONFIG_FILE_NAME);
-    rawconfigData = require(CONFIG_FILE_NAME);
-}
-else {
-    rawconfigData = {};
-}
-
-if (argv.forceWasm) {
-    rawconfigData["forceWasm"] = true;
-}
-
-// Configure internal settings
-if (argv.c) {
-    if (!argv.c.endsWith("/")) {
-        argv.c += "/";
-    }
-    rawconfigData["INTERNAL_CONFIG_DIR"] = argv.c;
-    rawconfigData["INTERNAL_FULL_CONFIG_PATH"] = path.join(process.cwd(), argv.c)
-}
-
-// Initialize settings singleton
-const Settings = new config(rawconfigData);
-
-/**
- *  Plugin handling/logic
- * This will soon be removed/revamped into an improved plugin system
- */
+ * ===================================================================
+ * Old plugin code
+ * This will soon be removed/revamped into an improved plugin system.
+ * ===================================================================
+*/
 
 // Caches used plugins so they don't need to be reloaded every time they are used during the dev server
 const PluginsCache = {};
@@ -194,208 +275,4 @@ async function JSValidateFiles(FileContents, PluginPath, FilePath) {
         return null;
     })();
     return null;
-}
-
-
-// Hold the loaded Wasm Module
-let CFunctions;
-
-// Pointer to the dependency graph
-let DependencyGraphPtr;
-
-/* Handle bundler execution based on command line arguments */
-
-// -v: print version and terminate
-if (argv.v) {
-    const version = require("../package.json").version;
-    console.log(version);
-}
-// init: initialise directory for arrowpack
-else if (argv.init) {
-    const initialise = require("../src/node/initialise.js");
-    initialise();
-}
-else {
-
-    // Runs the main bundler and handles dev server
-    (async () => {
-
-        // -dev: start dev server, this will automatically bundle when the server initially starts
-        if (argv.dev) {
-            console.log("Entering dev mode");
-
-            const server = await arrowpack.createServer(Settings.settings);
-
-            // Handle clean shutdown of server upon Ctrl + C
-            process.on("SIGINT", async () => {
-                console.log("Stopping dev server...");
-                await server.stop();
-                process.exit(0);
-            })
-
-            /* 
-            
-            // Start the static HTTP dev server
-            const DevServer = require("../src/node/server/DevServer.js");
-            DevServer.StartServer(Settings);
-
-            // Watch file system of CWD
-            const watcher = chokidar.watch(Settings.getValue("entry"), { usePolling: true, ignoreInitial: true, persistent: true });
-
-            console.log("Watching: " + Settings.getValue("entry"));
-
-            /**
-             * When files are changed, rebuild the changed file and its dependents, then send the updated page to all
-             * connected clients
-             
-            watcher.on("change", async (FilePath) => {
-                console.log("File " + FilePath + " has changed, rebuilding...");
-
-                // Store start time to track bundling time
-                var StartTime = performance.now();
-
-
-                let nativeModule = await loadNativeModule(Settings);
-
-                
-                 * Calls the native C RebuildFiles function from Main.c
-                 * Called via native module abstraction object and provided the graph pointer, the path of the changed file, and the number of
-                 * files (currently always 1) This returns a serialised array of files that were modified so that
-                 * clients connected to those files can be refreshed
-                 
-                var RebuiltFiles = nativeModule.RebuildFiles(DependencyGraphPtr, FilePath, 1);
-                //var RebuiltFiles = CFunctions.ccall("RebuildFiles", "string", ["number", "string", "number"],
-                //    [DependencyGraphPtr, FilePath, 1]);
-
-                // Deserialise string of changed files
-                RebuiltFiles = ArrowDeserialize(RebuiltFiles);
-
-                // Send the updated pages to clients
-                DevServer.SendUpdatedPage(RebuiltFiles, Settings);
-
-                console.log(chalk.magentaBright("\n\nBundling files completed in " +
-                    (performance.now() - StartTime) / 1000 + " seconds\n\n"));
-            });
-                */
-        } else {
-            await Bundle();
-        }
-    })();
-}
-
-/*
-* CLI wrapper for the arrowpack API build function
-*/
-async function Bundle() {
-    // Store start time to track bundling time
-    var StartTime = performance.now();
-
-    await arrowpack.build(Settings.settings)
-
-    // Output bundling time
-    console.log(chalk.magentaBright("\n\nBundling files completed in " + (performance.now() - StartTime) / 1000 +
-        " seconds\n\n"));
-}
-
-/*
-// Main function for bundling files
-function Bundle() {
-    // Create temporary directory for temp files
-    DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
-
-    // Check that Wasm has been initialized correctly
-    CFunctions._CheckWasm();
-
-    // Initialize file types structs
-    CFunctions._InitFileTypes();
-
-    // Convert settings to a JSON string
-    const StringifiedJSON = JSON.stringify(Settings.settings)
-
-    // Initialize settings on the Wasm side
-    var Success = CFunctions.ccall("InitSettings", "number", ["string"], [StringifiedJSON]);
-    if (Success !== 1) {
-        throw "Error setting up Wasm settings";
-    }
-
-    // Find all dependencies and create the dependency graph
-    DependencyGraphPtr = CFunctions.ccall(
-        "CreateGraph",
-        "number",
-    );
-
-    // Run validators on the Wasm side if any exist
-    if (!ObjectIsEmpty(Settings.settings.validators)) {
-        Success = false;
-        const ValidateJSFunctionPointer = CFunctions.addFunction(JSValidateFiles, "iiii");
-        Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-            [DependencyGraphPtr, ValidateJSFunctionPointer, 2])
-    }
-
-    // Run transformers on the Wasm side if any exist
-    let TransformJSFunctionPointer = Success;
-    if (!ObjectIsEmpty(Settings.settings.transformers)) {
-        Success = false;
-        TransformJSFunctionPointer = CFunctions.addFunction(JSTransformFiles, "iiii");
-        Success = CFunctions.ccall("TransformFiles", "number", ["number", "number"],
-            [DependencyGraphPtr, TransformJSFunctionPointer])
-        if (Success !== 1) {
-            throw "Error transforming files!";
-        }
-    }
-
-    // Sort the dependency graph topologically
-    CFunctions._topological_sort(DependencyGraphPtr);
-
-    // Bundle all the files in the graph
-    Success = CFunctions.ccall("BundleFiles", "number", ["number"], [DependencyGraphPtr]);
-
-    // Run the post processors on the Wasm side if any exist
-    if (!ObjectIsEmpty(Settings.settings.postProcessors)) {
-        Success = false;
-        Success = CFunctions.ccall("ExecutePlugin", "number", ["number", "number", "number"],
-            [DependencyGraphPtr, TransformJSFunctionPointer, 3]);
-    }
-
-    if (Success === 1 || Success === 0) {
-        if (argv.dev) {
-            console.log("Dev server running...");
-        }
-        else {
-            DeletePreprocessDir();
-        }
-    }
-}*/
-
-/* Preprocess directory cleanup */
-
-// Delete the preprocess directory on sigterm
-process.on("SIGTERM", () => {
-    print("Exiting due to SIGTERM, deleting temp directory...");
-    DeletePreprocessDir();
-})
-
-// Delete the preprocess directory on exit
-process.on("exit", () => {
-    DeletePreprocessDir();
-});
-
-// Delete the preprocess directory on force stop from user
-process.on("SIGINT", () => {
-    var DelResult = DeletePreprocessDir();
-    process.exit(DelResult);
-});
-
-// Deletes the preprocess directory
-function DeletePreprocessDir() {
-    fs.rm("ARROWPACK_TEMP_PREPROCESS_DIR", { recursive: true }, (err) => {
-        if (err) {
-            console.error(err);
-            return 1;
-        }
-        else {
-            console.log("Sucessfully removed temporary preprocess directory");
-        }
-        return 0;
-    });
 }
