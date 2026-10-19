@@ -114,10 +114,10 @@ RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,
 
             BundleFiles(TempGraph);  // Bundle the changed files
             add_vertex(DependencyGraph,
-                       NewVertex);         // Add the vertex to the dependency graph (doesn't need to be
-                                           // resorted because the vertex is at the end of the graph and
-                                           // has no dependents yet)
-            FinalChangedFiles = Files[i];  // The only file changed is the new file
+                       NewVertex);                 // Add the vertex to the dependency graph (doesn't need to be
+                                                   // resorted because the vertex is at the end of the graph and
+                                                   // has no dependents yet)
+            FinalChangedFiles = strdup(Files[i]);  // The only file changed is the new file
         }
     }
 
