@@ -207,7 +207,9 @@ class DevServer extends EventEmitter {
             case ".webp":
                 contentType = "image/webp";
                 break;
-            case ".html", ".htm", "":
+            case ".html":
+            case ".htm":
+            case "":
                 contentType = "text/html";
                 break;
             default:
