@@ -94,12 +94,9 @@ async function build(config) {
  * @param {Object} config Arrowpack JSON configuration object
  * @returns {Promise<DevServer>}
  */
-async function createServer(config) {
+async function createServer(config = {}) {
 
-    const devConfig = config;
-
-
-    devConfig["productionMode"] = false;
+    const devConfig = { ...config, productionMode: false };
 
     let BundleContext = await buildProject(devConfig);
 
