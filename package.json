@@ -8,7 +8,7 @@
 	"author": "Laurence Jackson <contact@redstarbird.com>",
 	"homepage": "https://github.com/redstarbird/arrowstack/tree/main/packages/ArrowPack#readme",
 	"license": "MIT",
-	"main": "src/ArrowPack.js",
+	"main": "src/node/index.js",
 	"directories": {
 		"lib": "src",
 		"test": "__tests__"
