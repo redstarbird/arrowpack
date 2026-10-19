@@ -17,7 +17,7 @@ function createWasmAdapter(wasmModule) {
         CreateGraph: () => wasmModule.ccall("CreateGraph", "number", [], []),
         topological_sort: (GraphPtr) => wasmModule.ccall("topological_sort", "number", ["number"], [GraphPtr]),
         BundleFiles: (GraphPtr) => wasmModule.ccall("BundleFiles", "number", ["number"], [GraphPtr]),
-        RebuildFiles: (GraphPtr, FilePath, filesNum = 1) => wasmModule.ccall("RebuildFiles", "string", ["number", "string", "number"], [GraphPtr, FilePath, filesNum = 1])
+        RebuildFiles: (GraphPtr, FilePath, FilesNum = 1) => wasmModule.ccall("RebuildFiles", "string", ["number", "string", "number"], [GraphPtr, FilePath, FilesNum])
     };
 }
 
