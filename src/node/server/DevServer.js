@@ -22,7 +22,7 @@ class DevServer extends EventEmitter {
         // WebSocket server
         this.wss = null;
         // File system watcher
-        this.watcher = chokidar.watch(this.config.getValue("entry"), { usePolling: true, ignoreInitial: true, persistent: true });
+        this.watcher = null;
         // HTTP static websever
         this.webserver = null;
     }
@@ -69,6 +69,12 @@ class DevServer extends EventEmitter {
         const HandleFileChange = (filepath) => {
             this.rebuild([filepath]);
         }
+
+        /*
+        * Creates file watcher
+        * usePolling makes the watcher still work on systems such as WSL where file changes might not be usually detected
+        */
+        this.watcher = chokidar.watch(this.config.getValue("entry"), { usePolling: true, ignoreInitial: true, persistent: true });
 
         /* 
         * Start file system watcher. This calls the native `RebuildFiles` function to rebuild the specific file(s) that have changed
