@@ -28,6 +28,20 @@ class DevServer extends EventEmitter {
     }
 
     /**
+     * Fetches and transforms the client-side injected script so that it is ready to be directly added into the HTML.
+     * @returns {string} script injection element
+     */
+    _getClientInjectionScript() {
+        // Create injection script HTML element
+        let ScriptInjectData = "<script type=\"module\">" + fs.readFileSync(path.join(__dirname, "ClientDevServer.js")) +
+            "</script>";
+
+        ScriptInjectData = ScriptInjectData.replaceAll("8080", this.config.getValue("devPort"));
+
+        return ScriptInjectData;
+    }
+
+    /**
      * Starts the arrowpack dev server including the HTTP webserver, WebSocket server, and the file watcher.
      * 
      * This emits the `listening` event with the port the webserver is running on.
@@ -35,9 +49,7 @@ class DevServer extends EventEmitter {
      */
     async start() {
 
-        // Create injection script HTML element
-        const ScriptInjectData = "<script type=\"module\">" + fs.readFileSync(path.join(__dirname, "ClientDevServer.js")) +
-            "</script>";
+        const ScriptInjectData = this._getClientInjectionScript();
 
         // Start static HTTP webserver
         this.webserver = http.createServer(
