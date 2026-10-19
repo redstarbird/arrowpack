@@ -572,7 +572,7 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
             if (!LocalFileFound)  // Local module not found, it may be in node_modules or be a
                                   // built-in node.js module
             {
-                if (IsNodeBuiltin(IteratePointer->Text)) {
+                /*if (IsNodeBuiltin(IteratePointer->Text)) {
                     EnsureNodeBuiltinBrowserModule(IteratePointer->Text);
                     IteratePointer->Text = NodeModuleBrowserPackageName(IteratePointer->Text);
 
@@ -584,7 +584,8 @@ struct RegexMatch EMSCRIPTEN_KEEPALIVE *FindJSDependencies(char *filename)
                     IteratePointer->Text = ModulePath;
                     LocalFileFound = true;
                 }
-                else if (DirectoryExists("node_modules"))  // Check there is a node_modules directory
+                else */
+                if (DirectoryExists("node_modules"))  // Check there is a node_modules directory
                 {
                     // Create node_modules path of the module
                     char *NodeModulePath;

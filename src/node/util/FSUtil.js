@@ -3,13 +3,12 @@ const fs = require("fs");
 const path = require("path");
 
 // Recursively walk directory and find all files and child directories
-function RecursiveWalkDir(FolderPath, Files, Directories)
-{
+function RecursiveWalkDir(FolderPath, Files, Directories) {
     var InitialFiles = fs.readdirSync(FolderPath);
     Files = Files || [];
     Directories = Directories || [];
 
-    InitialFiles.forEach(function(file) {
+    InitialFiles.forEach(function (file) {
         let fullPath = path.join(FolderPath, file);
         if (fs.statSync(fullPath).isDirectory()) {
             // Push the full directory path to the Directories array
@@ -23,15 +22,14 @@ function RecursiveWalkDir(FolderPath, Files, Directories)
         }
     });
 
-    return {Files, Directories};
+    return { Files, Directories };
 };
 
 // Delete a directory
-function DeleteDirectory(path)
-{
+function DeleteDirectory(path) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach((file) => {
-            const curPath = "${path}/${file}";
+            const curPath = `${path}/${file}`;
             if (fs.lstatSync(curPath).isDirectory()) {
                 DeleteDirectory(curPath);
             }
@@ -44,10 +42,9 @@ function DeleteDirectory(path)
 }
 
 // Makes sure that a directory exists
-function mkdirIfNotExists(dir)
-{
+function mkdirIfNotExists(dir) {
     if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, {recursive: true});
+        fs.mkdirSync(dir, { recursive: true });
     }
 }
 

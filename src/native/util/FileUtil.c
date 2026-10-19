@@ -1,7 +1,7 @@
 /* This file is responsible for all of the file handling functions */
 #include "FileUtil.h"
 
-#include <emscripten.h>
+#include "../bridge/Export.h"
 
 // Copy a file from one place to another
 void CopyFile(char *FileToCopy, char *FileToCopyTo)

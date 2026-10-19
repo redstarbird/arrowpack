@@ -1,4 +1,5 @@
 /* This file contains all of the functions used for strings */
+#define _GNU_SOURCE
 #include "StringUtil.h"
 
 // Returns the index of the last occurence of a character or -1 if the character isn't present

@@ -1,13 +1,13 @@
 // This file is used to compile all the C WASM functions into one file to minimize file size and
 // WASM performance.
 
-#include <emscripten.h>
 #include <stdio.h>
 
 #include "../codegen/BundleFiles.h"
 #include "../config.h"
 #include "../graph/DependencyGraph.h"
 #include "../util/FileUtil.h"
+#include "./Export.h"
 
 char *EMSCRIPTEN_KEEPALIVE
 RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,
@@ -114,10 +114,10 @@ RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,
 
             BundleFiles(TempGraph);  // Bundle the changed files
             add_vertex(DependencyGraph,
-                       NewVertex);         // Add the vertex to the dependency graph (doesn't need to be
-                                           // resorted because the vertex is at the end of the graph and
-                                           // has no dependents yet)
-            FinalChangedFiles = Files[i];  // The only file changed is the new file
+                       NewVertex);                 // Add the vertex to the dependency graph (doesn't need to be
+                                                   // resorted because the vertex is at the end of the graph and
+                                                   // has no dependents yet)
+            FinalChangedFiles = strdup(Files[i]);  // The only file changed is the new file
         }
     }
 
@@ -125,7 +125,10 @@ RebuildFiles(struct Graph *DependencyGraph, char *EncodedFiles,
     return FinalChangedFiles;
 }
 
-void EMSCRIPTEN_KEEPALIVE CheckWasm()
+// Basic check that the native module is working properly by ensuring
+// the number is correctly returned across the native boundary to JS
+int EMSCRIPTEN_KEEPALIVE CheckNative()
 {
-    printf("Wasm started Successfully...\n");
+    // Return the ultimate answer
+    return 42;
 }

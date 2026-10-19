@@ -1,7 +1,6 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-#include <emscripten.h>
 #include <fnmatch.h>
 #include <glob.h>
 #include <stdbool.h>
@@ -9,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../bridge/Export.h"
 #include "../config.h"
 #include "IntUtil.h"
 #include "RegexUtil.h"

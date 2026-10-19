@@ -947,8 +947,7 @@ bool EMSCRIPTEN_KEEPALIVE BundleFiles(struct Graph *graph)
     for (int i = 0; i < graph->VerticesNum; i++) {
         PostProcessFile(graph->SortedArray[i], graph);
     }
-    ColorNormal();  // Resets colours incase of a colour not being previously reset and messing up
-                    // the user's terminal
-    IsNodeBuiltin(NULL);
+    ColorNormal();   // Resets colours incase of a colour not being previously reset and messing up
+                     // the user's terminal
     return Success;  // This is always true currently
 }
