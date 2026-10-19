@@ -20,7 +20,7 @@ const { isPlainObject } = require("./utils.js");
  */
 async function buildProject(config) {
     // Preprocess directory
-    DirFunctions.mkdirIfNotExists("ARROWPACKk_TEMP_PREPROCESS_DIR");
+    DirFunctions.mkdirIfNotExists("ARROWPACK_TEMP_PREPROCESS_DIR");
 
     config = new Config(config);
 
