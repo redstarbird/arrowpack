@@ -20,7 +20,8 @@
 		"build/wasm/CFunctions.js",
 		"build/wasm/CFunctions.wasm",
 		"src/native/**/*.c",
-		"src/native/**/*.h"
+		"src/native/**/*.h",
+		"CMakeLists.txt"
 	],
 	"repository": {
 		"type": "git",
