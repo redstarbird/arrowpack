@@ -7,6 +7,7 @@ class config {
     constructor(json) {
         this.settings = {
             entry: "src/",
+            entries: [],
             exit: "public/",
             autoClear: false,
             largeProject: false,
@@ -28,7 +29,7 @@ class config {
         };
 
         /*if (fs.existsSync("./lib")) {
-                this.settings.entry = "lib";
+        this.settings.entry = "lib";
         }*/
         if (fs.existsSync("./dist")) {  // Try to automatically detect exit directory
             this.settings.exit = "dist/";
