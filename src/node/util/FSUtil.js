@@ -48,8 +48,20 @@ function mkdirIfNotExists(dir) {
     }
 }
 
+/**
+ * @param {string[]} patterns Glob patterns
+ * @returns string[] resolved file paths
+ */
+function resolveGlobs(patterns) {
+    // Make sure patterns is an array so it can be passed to globSync
+    patterns = Array.isArray(patterns) ? patterns : [patterns];
+
+    return fs.globSync(patterns);
+}
+
 module.exports = {
     RecursiveWalkDir: RecursiveWalkDir,
     mkdirIfNotExists: mkdirIfNotExists,
-    DeleteDirectory: DeleteDirectory
+    DeleteDirectory: DeleteDirectory,
+    resolveGlobs: resolveGlobs
 }
