@@ -1,5 +1,7 @@
 module.exports = {
-	entry: "example/src",
+	entries: [
+		"src/**.html",
+	],
 	exit: "example/dist",
 	autoClear: false,
 	largeProject: false,
